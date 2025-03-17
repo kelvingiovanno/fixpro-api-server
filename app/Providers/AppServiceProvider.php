@@ -6,6 +6,7 @@ use App\Services\EncryptionService;
 use App\Services\QrCodeService;
 use App\Services\ReferralCodeService;
 use App\Services\ApiResponseService;
+use App\Services\AppConfigService;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -38,6 +39,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // if (app()->runningInConsole()) {
+        //     AppConfigService::generateAndStoreKey();
+        // }
     }
 }

@@ -22,14 +22,15 @@ class UserSettingController extends Controller
 
     public function handleSubmit(Request $request)
     {
-        $data = $request->json()->all();
+
+        $data = $request->all(); 
 
         $tableCreated = $this->createUsersTable($data);
-    
+
         return response()->json([
             'success' => $tableCreated,
-            'email' => $data['email'] ?? false,
-            'phone' => $data['phone'] ?? false,
+            'email' => isset($data['email']), 
+            'phone' => isset($data['phone']),
             'custom' => $data['custom'] ?? []
         ]);
     }
@@ -41,18 +42,20 @@ class UserSettingController extends Controller
                 
                 $table->id();
 
-                if($data['email']) {
+                if (!empty($data['email'])) {
                     $table->string('email')->nullable();
                 }
 
-                if($data['phone']) {
+                if (!empty($data['phone'])) {
                     $table->string('phone')->nullable();
                 }
-                
-                foreach ($data['custom'] as $key => $customField) {
-                    if (isset($customField['value']) && is_string($customField['value'])) {
-                        $columnName = preg_replace('/[^a-zA-Z0-9_]/', '_', strtolower(trim($customField['value'])));
-                        $table->string($columnName)->nullable();
+
+                if (!empty($data['custom']) && is_array($data['custom'])) {
+                    foreach ($data['custom'] as $customField) {
+                        if (!empty($customField) && is_string($customField)) {
+                            $columnName = preg_replace('/[^a-zA-Z0-9_]/', '_', strtolower(trim($customField)));
+                            $table->string($columnName)->nullable();
+                        }
                     }
                 }
 

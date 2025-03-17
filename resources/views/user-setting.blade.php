@@ -4,91 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dynamic Form</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h2>Select Options</h2>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen">
 
-    <form id="toggleForm" data-route="{{ route('toggle.submit') }}">
-        @csrf  {{-- CSRF token for security --}}
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h3 class="text-lg font-semibold text-gray-700">Select Options</h3>
 
-        <label>
-            <input type="checkbox" name="email" value="1"> Email
-        </label>
-        <br>
-        <label>
-            <input type="checkbox" name="phone" value="1"> Phone Number
-        </label>
-        <br>
+        <form action="{{ route('toggle.submit') }}" method="POST" class="space-y-4">
+            @csrf  
 
-        <h3>Custom Fields</h3>
-        <div id="custom-fields"></div>
-        <button type="button" id="addCustomField">Add Custom Field</button>
-        <br><br>
+            <!-- Checkboxes -->
+            <div class="space-y-2">
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" name="email" value="1" class="w-5 h-5 text-blue-600 border-gray-300 rounded">
+                    <span>Email</span>
+                </label>
+                <label class="flex items-center space-x-2">
+                    <input type="checkbox" name="phone" value="1" class="w-5 h-5 text-blue-600 border-gray-300 rounded">
+                    <span>Phone Number</span>
+                </label>
+            </div>
 
-        <button type="submit">Submit</button>
-    </form>
+            <!-- Custom Fields -->
+            <h3 class="text-lg font-semibold text-gray-700">Custom Fields</h3>
+            <div id="custom-fields" class="space-y-2"></div>
+
+            <button type="button" onclick="addCustomField()" 
+                class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 rounded transition">
+                + Add Custom Field
+            </button>
+
+            <!-- Submit Button -->
+            <button type="submit" 
+                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 rounded transition">
+                Submit
+            </button>
+        </form>
+    </div>
 
     <script>
-        $(document).ready(function () {
-            let customFieldIndex = 0;
+        function addCustomField() {
+            let container = document.getElementById("custom-fields");
 
-            // Add custom field
-            $('#addCustomField').click(function () {
-                $('#custom-fields').append(`
-                    <div class="custom-field">
-                        <input type="text" name="custom[${customFieldIndex}][value]" placeholder="Enter value">
-                        <button type="button" class="remove-field">Remove</button>
-                    </div>
-                `);
-                customFieldIndex++;
-            });
+            let div = document.createElement("div");
+            div.classList.add("custom-field", "flex", "items-center", "space-x-2");
 
-            // Remove custom field
-            $(document).on('click', '.remove-field', function () {
-                $(this).parent('.custom-field').remove();
-            });
+            let input = document.createElement("input");
+            input.type = "text";
+            input.name = "custom[]";
+            input.placeholder = "Enter value";
+            input.classList.add("flex-1", "p-2", "border", "border-gray-300", "rounded");
 
-            // Handle form submission
-            $('#toggleForm').submit(function (event) {
-                event.preventDefault();
+            let removeButton = document.createElement("button");
+            removeButton.type = "button";
+            removeButton.textContent = "✖";
+            removeButton.classList.add("bg-red-500", "hover:bg-red-600", "text-white", "p-2", "rounded", "transition");
+            removeButton.onclick = function() {
+                container.removeChild(div);
+            };
 
-                let formData = {
-                    email: $('input[name="email"]').prop('checked'),
-                    phone: $('input[name="phone"]').prop('checked'),
-                    custom: []
-                };
-
-                // Get all custom fields
-                $('.custom-field input[type="text"]').each(function () {
-                    let value = $(this).val();
-                    if (value.trim() !== '') {
-                        formData.custom.push({ value });
-                    }
-                });
-
-                let formUrl = $('#toggleForm').data('route');
-
-                // Send data via AJAX
-                $.ajax({
-                    url: formUrl,
-                    type: "POST",
-                    data: JSON.stringify(formData),
-                    contentType: "application/json",
-                    headers: {
-                        "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content')
-                    },
-                    success: function (response) {
-                        alert("Form submitted successfully!");
-                        console.log(response);
-                    },
-                    error: function (xhr, status, error) {
-                        console.error("Error:", xhr.responseText);
-                    }
-                });
-            });
-        });
+            div.appendChild(input);
+            div.appendChild(removeButton);
+            container.appendChild(div);
+        }
     </script>
+
 </body>
 </html>
