@@ -30,7 +30,7 @@ Route::middleware(AuthMiddleware::class)->group(function () {
 
     // QR Code Routes
     Route::prefix('qrcode')->name('qrcode.')->group(function () {
-        Route::get('/join', [QrCodeController::class, 'index']);
+        Route::get('/', [QrCodeController::class, 'index']);
         Route::get('/show', [QrCodeController::class, 'showQrCode'])->name('show');
         Route::get('/refresh', [QrCodeController::class, 'refreshQrCode'])->name('refresh');
     });
