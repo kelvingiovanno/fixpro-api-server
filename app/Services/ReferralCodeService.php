@@ -28,6 +28,14 @@ class ReferralCodeService
         return false;
     }
 
+    public function deleteReferralCode(): bool 
+    {
+        $deleted = ReferralCode::orderBy('created_at', 'desc')->first()?->delete();
+
+        return $deleted > 0;
+    }
+
+
     private function generateRandomString(int $length, string $characters): string
     {
         $randomString = '';

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+
 use App\Services\QrCodeService;
 use App\Services\EncryptionService;
 use App\Services\ReferralCodeService;
@@ -24,6 +26,7 @@ class QrCodeController extends Controller
 
     public function index()
     {
+        $this->referralCodeService->deleteReferralCode();
         return view('qrcode');
     }
 
@@ -51,6 +54,7 @@ class QrCodeController extends Controller
 
     public function refreshQrCode()
     {
+        $this->referralCodeService->deleteReferralCode();
         return redirect()->route('qrcode.');
     }
 }
