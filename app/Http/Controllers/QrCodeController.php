@@ -51,6 +51,6 @@ class QrCodeController extends Controller
 
     public function refreshQrCode()
     {
-        return redirect()->route('qrcode.index');
+        return redirect()->route('qrcode.');
     }
 }
