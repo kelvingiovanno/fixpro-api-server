@@ -21,7 +21,6 @@ class ReferralCodeService
     {
         if ($this->isCodeExists($_code)) 
         {
-            ReferralCode::where('code', $_code)->update(['last_active_at' => now()]);
             return true;
         }
 

@@ -14,8 +14,6 @@ return new class extends Migration
         Schema::create('referral_codes', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique();
-            $table->string('key')->unique();
-            $table->timestamp('last_active_at')->nullable();
             $table->timestamps();
         });
     }
