@@ -41,6 +41,7 @@ class AppServiceProvider extends ServiceProvider
     {
         if (app()->runningInConsole() && php_sapi_name() === 'cli') {
             if (in_array($_SERVER['argv'][1] ?? '', ['serve'])) {
+                
                 // Remove old token to force renewal
                 cache()->forget('app_auth_token');
                 

@@ -3,7 +3,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\QrCodeController;
-use App\Http\Controllers\UserSettingController;
+use App\Http\Controllers\UserFormController;
 use App\Http\Controllers\AuthController;
 use App\Http\Middleware\AuthMiddleware;
 
@@ -23,9 +23,9 @@ Route::prefix('auth')->name('auth.')->group(function () {
 Route::middleware(AuthMiddleware::class)->group(function () {
     
     // User Settings Routes
-    Route::prefix('user-setting')->name('user-setting.')->group(function () {
-        Route::get('/', [UserSettingController::class, 'index']);
-        Route::post('/submit', [UserSettingController::class, 'handleSubmit'])->name('submit');
+    Route::prefix('user-form')->name('user-setting.')->group(function () {
+        Route::get('/', [UserFormController::class, 'index']);
+        Route::post('/submit', [UserFormController::class, 'handleSubmit'])->name('submit');
     });
 
     // QR Code Routes

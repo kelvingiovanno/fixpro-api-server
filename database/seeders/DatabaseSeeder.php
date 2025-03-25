@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+
+use App\Models\UsersRole;
+use App\Models\User;
+use App\Models\UserStatus;
 
 class DatabaseSeeder extends Seeder
 {
@@ -13,11 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        UsersRole::create(['role' => 'member']);
+        UsersRole::create(['role' => 'maintenance']);
+        UsersRole::create(['role' => 'management']);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        UserStatus::create(['status' => 'pending']);
+        UserStatus::create(['status' => 'accepted']);
+        UserStatus::create(['status' => 'rejected']);
+
+        User::create(['role_id' => 1, 'instalation_id' => '123kwjqjkdhsajkhdkajshd', 'status_id' => 1]);
+        User::create(['role_id' => 1, 'instalation_id' => '512398u89qwdshakjsalkds', 'status_id' => 1]);
     }
 }

@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('app_meta', function (Blueprint $table) {
+        Schema::create('refresh_token', function (Blueprint $table) {
             $table->id();
-            $table->string('key');
-            $table->string('value');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); 
+            $table->string('token')->unique(); 
+            $table->timestamp('expires_at'); 
+            $table->boolean('revoked')->default(false); 
             $table->timestamps();
         });
     }
@@ -24,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('app_meta');
+        Schema::dropIfExists('refresh_token');
     }
 };

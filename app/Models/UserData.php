@@ -9,6 +9,8 @@ class UserData extends Model
 {
     protected $table = 'users_data';
 
+    protected $guarded = ['id', 'created_at', 'updated_at'];
+    
     public static function getColumnNames()
     {
         $columns = Schema::getColumnListing((new self)->getTable());

@@ -11,12 +11,7 @@ class ApiResponseService
      */
     public function success(mixed $data = null, string $message = 'Success', int $status = 200): JsonResponse
     {
-        return response()->json([
-            'status'  => true,
-            'message' => $message,
-            'code'    => $status,
-            'data'    => $data ?? (object)[] 
-        ], $status);
+        return $this->customResponse(true, $message, $status, $data);
     }
 
     /**
@@ -24,12 +19,7 @@ class ApiResponseService
      */
     public function error(string $message = 'Error', int $status = 400, mixed $errors = null): JsonResponse
     {
-        return response()->json([
-            'status'  => false,
-            'message' => $message,
-            'code'    => $status,
-            'errors'  => $errors ?? (object)[] 
-        ], $status);
+        return $this->customResponse(false, $message, $status, null, $errors);
     }
 
     /**
@@ -49,5 +39,19 @@ class ApiResponseService
                 'last_page'    => $data->lastPage()
             ]
         ], $status);
+    }
+
+    /**
+     * Custom Response - Can be used for any HTTP status
+     */
+    public function customResponse(bool $status, string $message, int $code, mixed $data = null, mixed $errors = null): JsonResponse
+    {
+        return response()->json([
+            'status'  => $status,
+            'message' => $message,
+            'code'    => $code,
+            'data'    => $data ?? (object)[],
+            'errors'  => $errors ?? (object)[]
+        ], $code);
     }
 }

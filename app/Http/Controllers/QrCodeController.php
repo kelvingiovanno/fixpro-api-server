@@ -33,12 +33,11 @@ class QrCodeController extends Controller
     public function showQrCode()
     {
 
-        $key = $this->encryptionService->generateKey();
         $code = $this->referralCodeService->generateCode();
 
         $host = env('APP_URL');
 
-        ReferralCode::create(['code' => $code, 'key' => $key]);
+        ReferralCode::create(['code' => $code]);
 
         $data = [
             'code' => $code,
