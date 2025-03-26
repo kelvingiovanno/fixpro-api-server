@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\ReferralCodeService;
 use App\Services\ApiResponseService;
+use App\Services\NonceService;
 
 use App\Models\UserData;
 use App\Models\User;
@@ -13,18 +13,25 @@ use Illuminate\Http\Request;
 class FormController extends Controller
 {
 
-    protected ReferralCodeService $referralCodeService;
-    protected ApiResponseService $apiResponseService;
+    private ApiResponseService $apiResponseService;
+    private NonceService $nonceService;
 
-    public function __construct(ReferralCodeService $_referralCodeService, ApiResponseService $_apiResponseService)
+    public function __construct(ApiResponseService $_apiResponseService, NonceService $_nonceService)
     {
-        $this->referralCodeService = $_referralCodeService;
         $this->apiResponseService = $_apiResponseService;
+        $this->nonceService = $_nonceService;
     }
 
     public function requestForm() 
     {
-        $data = UserData::getColumnNames();
+        $form = UserData::getColumnNames();
+        $nonceToken = $this->nonceService->generateNonce();
+
+        $data = [
+            'form' => $form,
+            'nonce_token' => $nonceToken,
+        ];
+        
         return $this->apiResponseService->success($data, 'Code accepted', 200);
     }
 

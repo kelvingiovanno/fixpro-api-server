@@ -8,7 +8,7 @@ use Illuminate\Support\Str;
 class AuthTokenService 
 {
     
-    private const CACHE_KEY = 'app_auth_token';
+    private const CACHE_KEY = 'web_auth_token';
 
     /**
      * Generate and store the token only once per server session.

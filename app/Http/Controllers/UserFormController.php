@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 
-class UserSettingController extends Controller
+class UserFormController extends Controller
 {
 
     public function index()

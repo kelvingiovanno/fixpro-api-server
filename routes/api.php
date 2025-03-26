@@ -23,10 +23,11 @@ Route::get('/generate-token', [JWTController::class, 'generateToken']);
 
 
 Route::middleware(ReferralCodeMiddleware::class)->group(function () {
-
     Route::get('/form', [FormController::class, 'requestForm']);
     Route::post('/form/submit',[FormController::class, 'submitForm']);
 });
+
+
 
 
 Route::middleware(JwtMiddleware::class)->group(function () {
