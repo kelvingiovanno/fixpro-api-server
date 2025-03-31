@@ -5,7 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
-class AuthTokenService 
+class WebAuthTokenService 
 {
     
     private const CACHE_KEY = 'web_auth_token';

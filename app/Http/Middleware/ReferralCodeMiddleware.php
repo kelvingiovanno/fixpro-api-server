@@ -20,7 +20,7 @@ class ReferralCodeMiddleware
 
     public function handle(Request $request, Closure $next)
     {
-        $code = $request->query('ref');
+        $code = $request->input('');
 
         if (!$code || !$this->referralCodeService->isCodeValid($code)) {
             return $this->apiResponseService->error('Invalid or missing referral code', 400);

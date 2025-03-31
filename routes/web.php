@@ -2,10 +2,11 @@
 
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\QrCodeController;
-use App\Http\Controllers\UserFormController;
-use App\Http\Controllers\AuthController;
-use App\Http\Middleware\AuthMiddleware;
+use App\Http\Controllers\QrCodePageController;
+use App\Http\Controllers\UserFormPageController;
+use App\Http\Controllers\WebAuthPageController;
+
+use App\Http\Middleware\WebAuthMiddleware;
 
 // Homepage
 Route::get('/', function () {
@@ -14,25 +15,25 @@ Route::get('/', function () {
 
 // Authentication Routes
 Route::prefix('auth')->name('auth.')->group(function () {
-    Route::get('/', [AuthController::class, 'index'])->name('form');  
-    Route::post('/login', [AuthController::class, 'login'])->name('login');  
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout'); 
+    Route::get('/', [WebAuthPageController::class, 'index'])->name('form');  
+    Route::post('/login', [WebAuthPageController::class, 'login'])->name('login');  
+    Route::post('/logout', [WebAuthPageController::class, 'logout'])->name('logout'); 
 });
 
 // Protected Routes (Require Authentication)
-Route::middleware(AuthMiddleware::class)->group(function () {
+Route::middleware(WebAuthMiddleware::class)->group(function () {
     
     // User Settings Routes
     Route::prefix('user-form')->name('user-setting.')->group(function () {
-        Route::get('/', [UserFormController::class, 'index']);
-        Route::post('/submit', [UserFormController::class, 'handleSubmit'])->name('submit');
+        Route::get('/', [UserFormPageController::class, 'index']);
+        Route::post('/submit', [UserFormPageController::class, 'handleSubmit'])->name('submit');
     });
 
     // QR Code Routes
     Route::prefix('qrcode')->name('qrcode.')->group(function () {
-        Route::get('/', [QrCodeController::class, 'index']);
-        Route::get('/show', [QrCodeController::class, 'showQrCode'])->name('show');
-        Route::get('/refresh', [QrCodeController::class, 'refreshQrCode'])->name('refresh');
+        Route::get('/', [QrCodePageController::class, 'index']);
+        Route::get('/show', [QrCodePageController::class, 'showQrCode'])->name('show');
+        Route::get('/refresh', [QrCodePageController::class, 'refreshQrCode'])->name('refresh');
     });
 
 });

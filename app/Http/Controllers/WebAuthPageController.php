@@ -2,16 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Services\AuthTokenService;
+use App\Services\WebAuthTokenService;
 use Illuminate\Http\Request;
 
-class AuthController extends Controller
+class WebAuthPageController extends Controller
 {
-    protected AuthTokenService $authTokenService;
+    protected WebAuthTokenService $webAuthTokenService;
 
-    public function __construct(AuthTokenService $authTokenService)
+    public function __construct(WebAuthTokenService $_webAuthTokenService)
     {
-        $this->authTokenService = $authTokenService;
+        $this->webAuthTokenService = $_webAuthTokenService;
     }
 
     public function index()
@@ -25,7 +25,7 @@ class AuthController extends Controller
             'auth_token' => 'required|string',
         ]);
 
-        if ($this->authTokenService::checkValidToken($request->auth_token)) {
+        if ($this->webAuthTokenService::checkValidToken($request->auth_token)) {
             session(['auth_token' => $request->auth_token]);
 
             return redirect()->route('auth.form')->with('success', 'Login successful!');

@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
+use App\Enums\UserRoleEnum;
+
 class User extends Model
 {
     protected $fillable = [
-        'instalation_id'
+        'application_id'
     ];
 
     protected static function boot()
@@ -15,8 +17,17 @@ class User extends Model
         parent::boot();
 
         static::creating(function ($user) {
-            $user->role_id = 1;
-            $user->status_id = 1;
+            $user->role_id = UserRoleEnum::MEMBER;
         });
+    }
+
+    public function userData()
+    {
+        return $this->hasOne(UserData::class);
+    }
+
+    public function role()
+    {
+        return $this->belongsTo(UserRole::class, 'role_id');
     }
 }

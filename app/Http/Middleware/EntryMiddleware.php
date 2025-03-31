@@ -5,12 +5,19 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Session;
 
-use App\Services\AuthTokenService;
+use App\Services\EntryService;
 
-class AuthMiddleware
+class EntryMiddleware
 {
+
+    private EntryService
+
+    public function __construct()
+    {
+        
+    }
+
     /**
      * Handle an incoming request.
      *
@@ -18,12 +25,6 @@ class AuthMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $token = Session::get('auth_token');
-
-        if (!$token || !AuthTokenService::checkValidToken($token)) {
-            return redirect('/auth'); 
-        }
-
         return $next($request);
     }
 }

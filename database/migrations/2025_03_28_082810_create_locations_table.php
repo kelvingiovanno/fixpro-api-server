@@ -11,9 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users_role', function (Blueprint $table) {
-            $table->unsignedBigInteger('id')->primary();
-            $table->string('role');
+        Schema::create('locations', function (Blueprint $table) {
+            $table->id();
+            $table->string('latitude');
+            $table->string('longtitude');
             $table->timestamps();
         });
     }
@@ -23,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users_role');
+        Schema::dropIfExists('locations');
     }
 };

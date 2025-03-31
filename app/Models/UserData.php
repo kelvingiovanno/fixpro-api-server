@@ -14,6 +14,11 @@ class UserData extends Model
     public static function getColumnNames()
     {
         $columns = Schema::getColumnListing((new self)->getTable());
-        return array_values(array_diff($columns, ['id', 'created_at', 'updated_at']));
+        return array_values(array_diff($columns, ['id', 'user_id', 'created_at', 'updated_at']));
+    }
+
+    public function User()
+    {
+        return $this->belongsTo(User::class);
     }
 }

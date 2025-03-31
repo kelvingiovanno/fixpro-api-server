@@ -4,9 +4,10 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-use App\Models\UsersRole;
+use App\Models\UserRole;
 use App\Models\User;
-use App\Models\UserStatus;
+
+use App\Enums\UserRoleEnum;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,15 +16,11 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        UsersRole::create(['role' => 'member']);
-        UsersRole::create(['role' => 'maintenance']);
-        UsersRole::create(['role' => 'management']);
+        UserRole::create(['id' => UserRoleEnum::MEMBER, 'role' => UserRoleEnum::MEMBER->label()]);
+        UserRole::create(['id' => UserRoleEnum::CREW, 'role' => UserRoleEnum::CREW->label()]);
+        UserRole::create(['id' => UserRoleEnum::MANAGEMENT,'role' => UserRoleEnum::MANAGEMENT->label()]);
 
-        UserStatus::create(['status' => 'pending']);
-        UserStatus::create(['status' => 'accepted']);
-        UserStatus::create(['status' => 'rejected']);
-
-        User::create(['role_id' => 1, 'instalation_id' => '123kwjqjkdhsajkhdkajshd', 'status_id' => 1]);
-        User::create(['role_id' => 1, 'instalation_id' => '512398u89qwdshakjsalkds', 'status_id' => 1]);
+        User::create(['role_id' => 1, 'application_id' => '123kwjqjkdhsajkhdkajshd']);
+        User::create(['role_id' => 1, 'application_id' => '512398u89qwdshakjsalkds']);
     }
 }

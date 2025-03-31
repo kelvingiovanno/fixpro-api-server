@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->foreignId('role_id')->constrained('users_role')->cascadeOnDelete('set null');
-            $table->foreignId('status_id')->constrained('users_status')->cascadeOnDelete('set null');
-            $table->string('instalation_id')->unique();
+            $table->boolean('is_actived')->default(true);
+            $table->string('application_id')->unique();
             $table->timestamps();
         });
     }

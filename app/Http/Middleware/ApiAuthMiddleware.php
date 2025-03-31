@@ -10,7 +10,7 @@ use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use App\Services\ApiResponseService;
 
-class JwtMiddleware
+class ApiAuthMiddleware
 {
     protected $apiResponse;
 

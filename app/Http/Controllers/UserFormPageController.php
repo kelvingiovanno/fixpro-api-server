@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 
-class UserFormController extends Controller
+class UserFormPageController extends Controller
 {
 
     public function index()
@@ -37,10 +37,36 @@ class UserFormController extends Controller
 
     private function createUsersTable($data)
     {
-        if (!Schema::hasTable('users_data')) {
+        if (!Schema::hasTable('users_data') && !Schema::hasTable('users_pending')) {
             Schema::create('users_data', function (Blueprint $table) use ($data) {
                 
                 $table->id();
+                $table->foreignId('user_id')->constrained('users')->cascadeOnDelete('set to null');
+
+                if (!empty($data['email'])) {
+                    $table->string('email')->nullable();
+                }
+
+                if (!empty($data['phone'])) {
+                    $table->string('phone')->nullable();
+                }
+
+                if (!empty($data['custom']) && is_array($data['custom'])) {
+                    foreach ($data['custom'] as $customField) {
+                        if (!empty($customField) && is_string($customField)) {
+                            $columnName = preg_replace('/[^a-zA-Z0-9_]/', '_', strtolower(trim($customField)));
+                            $table->string($columnName)->nullable();
+                        }
+                    }
+                }
+
+                $table->timestamps();
+            });
+
+            Schema::create('pending_applications', function (Blueprint $table) use ($data) {
+                
+                $table->id();
+                $table->string('application_id')->unique();
 
                 if (!empty($data['email'])) {
                     $table->string('email')->nullable();

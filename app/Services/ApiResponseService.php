@@ -9,9 +9,9 @@ class ApiResponseService
     /**
      * Success Response
      */
-    public function success(mixed $data = null, string $message = 'Success', int $status = 200): JsonResponse
+    public function success(mixed $data = null, string $message = 'Success', int $statusCode = 200): JsonResponse
     {
-        return $this->customResponse(true, $message, $status, $data);
+        return $this->customResponse(true, $message, $statusCode, $data);
     }
 
     /**
@@ -49,7 +49,6 @@ class ApiResponseService
         return response()->json([
             'status'  => $status,
             'message' => $message,
-            'code'    => $code,
             'data'    => $data ?? (object)[],
             'errors'  => $errors ?? (object)[]
         ], $code);

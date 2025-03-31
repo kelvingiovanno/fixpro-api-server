@@ -3,10 +3,11 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\FormController;
-use App\Http\Controllers\JWTController;
+use App\Http\Controllers\Api\FormController;
+use App\Http\Controllers\Api\UserController;
 
-use App\Http\Middleware\JwtMiddleware;
+use App\Http\Middleware\ApiAuthMiddleware;
+use App\Http\Middleware\NonceMiddleware;
 use App\Http\Middleware\ReferralCodeMiddleware;
 
 Route::get('/user', function (Request $request) {
@@ -19,22 +20,24 @@ Route::get('/hello', function () {
     return response('hello world');
 });
 
-Route::get('/generate-token', [JWTController::class, 'generateToken']);
 
 
-Route::middleware(ReferralCodeMiddleware::class)->group(function () {
-    Route::get('/form', [FormController::class, 'requestForm']);
-    Route::post('/form/submit',[FormController::class, 'submitForm']);
+Route::prefix('/entry')->group(function () {
+    Route::get('/check', [FormController::class, 'check']);
+    Route::get('/form', [FormController::class, 'requestForm'])->middleware(ReferralCodeMiddleware::class);
+    Route::post('/form',[FormController::class, 'submitForm'])->middleware(NonceMiddleware::class);
 });
 
 
-
-
-Route::middleware(JwtMiddleware::class)->group(function () {
+Route::middleware(ApiAuthMiddleware::class)->group(function () {
 
     
+    Route::prefix('user')->group(function () {
 
-
+        Route::get('/', [UserController::class], 'index');
+        Route::get('/{id}/is-accapeted', [UserController::class, 'isUserStatusAccepted']);
+        
+    });
 
 
     Route::get('/secure-endpoint', function () {

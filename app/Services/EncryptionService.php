@@ -8,9 +8,6 @@ use App\Models\ReferralCode;
 
 class EncryptionService
 {
-    /**
-     * Generate a secure encryption key.
-     */
     public function generateKey(): string
     {
         
@@ -21,17 +18,11 @@ class EncryptionService
         return base64_encode(Str::random(32));
     }
 
-    /**
-     * Encrypt data.
-     */
     public function encrypt($data): string
     {
         return Crypt::encryptString($data);
     }
-
-    /**
-     * Decrypt data.
-     */
+    
     public function decrypt($encryptedData): string
     {
         return Crypt::decryptString($encryptedData);

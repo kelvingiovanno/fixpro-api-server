@@ -6,8 +6,10 @@ use App\Services\EncryptionService;
 use App\Services\QrCodeService;
 use App\Services\ReferralCodeService;
 use App\Services\ApiResponseService;
-use App\Services\AuthTokenService;
+use App\Services\WebAuthTokenService;
 use App\Services\NonceService;
+use App\Services\Id\ApplicationIdService;
+use App\Services\EntryService;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -37,6 +39,14 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(NonceService::class, function () {
             return new NonceService();
         });
+
+        $this->app->singleton(ApplicationIdService::class, function () {
+            return new ApplicationIdService();
+        });
+
+        $this->app->singleton(EntryService::class, function () {
+            return new EntryService();
+        });
     }
 
     /**
@@ -51,7 +61,7 @@ class AppServiceProvider extends ServiceProvider
                 cache()->forget('web_auth_token');
                 
                 // Generate and store a new token
-                $authToken = AuthTokenService::generateAndStoreKey();
+                $authToken = WebAuthTokenService::generateAndStoreKey();
                 echo "\n[APP AUTH TOKEN]: $authToken\n";
             }
         }
