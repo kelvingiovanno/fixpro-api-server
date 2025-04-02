@@ -24,7 +24,7 @@ class FormController extends Controller
         $this->entryService = $_entryService;
     }
 
-    public function requestForm() 
+    public function request() 
     {
         $form = UserData::getColumnNames();
         $nonceToken = $this->entryService->generateNonce();
@@ -34,33 +34,33 @@ class FormController extends Controller
             'nonce' => $nonceToken,
         ];
         
-        return $this->apiResponseService->success($data, 'Code accepted');
+        return $this->apiResponseService->ok($data, 'Form fields and nonce token successfully retrieved');
     }
 
-    public function submitForm(Request $_request)
+    public function submit(Request $_request)
     {
-        $userData = $_request->input('form_data');        
+        $userData = $_request->input('form_data');
         $application_id = $this->entryService->generateApplicationId();
 
         $newUserData = array_merge($userData, ['application_id' => $application_id]);
 
         PendingApplication::create($newUserData);
+        
+        $data = [
+            "application_id" => $application_id
+        ];
 
-        return $this->apiResponseService->success($application_id,'Code accepted');
+        return $this->apiResponseService->created($data, 'Application submitted successfully');
     }
 
-    public function check(Request $_request)
+    public function check()
     {
-        $application_id = $_request->query('application_id');
+        $authentication_code = $this->entryService->generateAuthenticationCode();
 
-        $isValid = $this->entryService->checkApplicationId($application_id);
+        $data = [
+            "authentication_code" => $authentication_code,
+        ];
 
-        if($isValid)
-        {
-            return $this->apiResponseService->success("nice");
-        }
-        
-        return $this->apiResponseService->success("no nice");
-        
+        return $this->apiResponseService->ok($data, "New authentication code generated");
     }
 }

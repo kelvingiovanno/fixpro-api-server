@@ -7,50 +7,142 @@ use Illuminate\Http\JsonResponse;
 class ApiResponseService
 {
     /**
-     * Success Response
+     * Success Response (200 OK)
+     *
+     * @param mixed $data The data to return (optional)
+     * @param string $message The success message
+     * @return JsonResponse
      */
-    public function success(mixed $data = null, string $message = 'Success', int $statusCode = 200): JsonResponse
+    public function ok(mixed $data = null, string $message = 'Success'): JsonResponse
     {
-        return $this->customResponse(true, $message, $statusCode, $data);
+        return $this->customResponse(true, $message, JsonResponse::HTTP_OK, $data);
     }
 
     /**
-     * Error Response
+     * Created Response (201 Created)
+     *
+     * @param mixed $data The data to return (optional)
+     * @param string $message The success message
+     * @return JsonResponse
      */
-    public function error(string $message = 'Error', int $status = 400, mixed $errors = null): JsonResponse
+    public function created(mixed $data = null, string $message = 'Resource created successfully'): JsonResponse
     {
-        return $this->customResponse(false, $message, $status, null, $errors);
+        return $this->customResponse(true, $message, JsonResponse::HTTP_CREATED, $data);
     }
 
     /**
-     * Paginated Response (for lists)
+     * No Content Response (204 No Content)
+     *
+     * @param string $message The success message
+     * @return JsonResponse
      */
-    public function paginated($data, string $message = 'Success', int $status = 200): JsonResponse
+    public function noContent(string $message = 'No content to return'): JsonResponse
     {
-        return response()->json([
-            'status'  => true,
-            'message' => $message,
-            'code'    => $status,
-            'data'    => $data->items(),
-            'meta'    => [
-                'current_page' => $data->currentPage(),
-                'per_page'     => $data->perPage(),
-                'total'        => $data->total(),
-                'last_page'    => $data->lastPage()
-            ]
-        ], $status);
+        return $this->customResponse(true, $message, JsonResponse::HTTP_NO_CONTENT);
+    }
+
+    /**
+     * Bad Request Response (400 Bad Request)
+     *
+     * @param string $message The error message
+     * @param mixed $errors The error details (optional)
+     * @return JsonResponse
+     */
+    public function badRequest(string $message = 'Bad Request', mixed $errors = null): JsonResponse
+    {
+        return $this->customResponse(false, $message, JsonResponse::HTTP_BAD_REQUEST, null, $errors);
+    }
+
+    /**
+     * Unauthorized Response (401 Unauthorized)
+     *
+     * @param string $message The error message
+     * @param mixed $errors The error details (optional)
+     * @return JsonResponse
+     */
+    public function unauthorized(string $message = 'Unauthorized', mixed $errors = null): JsonResponse
+    {
+        return $this->customResponse(false, $message, JsonResponse::HTTP_UNAUTHORIZED, null, $errors);
+    }
+
+    /**
+     * Forbidden Response (403 Forbidden)
+     *
+     * @param string $message The error message
+     * @param mixed $errors The error details (optional)
+     * @return JsonResponse
+     */
+    public function forbidden(string $message = 'Forbidden', mixed $errors = null): JsonResponse
+    {
+        return $this->customResponse(false, $message, JsonResponse::HTTP_FORBIDDEN, null, $errors);
+    }
+
+    /**
+     * Not Found Response (404 Not Found)
+     *
+     * @param string $message The error message
+     * @param mixed $errors The error details (optional)
+     * @return JsonResponse
+     */
+    public function notFound(string $message = 'Not Found', mixed $errors = null): JsonResponse
+    {
+        return $this->customResponse(false, $message, JsonResponse::HTTP_NOT_FOUND, null, $errors);
+    }
+
+    /**
+     * Method Not Allowed Response (405 Method Not Allowed)
+     *
+     * @param string $message The error message
+     * @param mixed $errors The error details (optional)
+     * @return JsonResponse
+     */
+    public function methodNotAllowed(string $message = 'Method Not Allowed', mixed $errors = null): JsonResponse
+    {
+        return $this->customResponse(false, $message, JsonResponse::HTTP_METHOD_NOT_ALLOWED, null, $errors);
+    }
+
+    /**
+     * Unprocessable Entity Response (422 Unprocessable Entity)
+     *
+     * @param string $message The error message
+     * @param mixed $errors The error details (optional)
+     * @return JsonResponse
+     */
+    public function unprocessableEntity(string $message = 'Unprocessable Entity', mixed $errors = null): JsonResponse
+    {
+        return $this->customResponse(false, $message, JsonResponse::HTTP_UNPROCESSABLE_ENTITY, null, $errors);
+    }
+
+    /**
+     * Internal Server Error Response (500 Internal Server Error)
+     *
+     * @param string $message The error message
+     * @param mixed $errors The error details (optional)
+     * @return JsonResponse
+     */
+    public function internalServerError(string $message = 'Internal Server Error', mixed $errors = null): JsonResponse
+    {
+        return $this->customResponse(false, $message, JsonResponse::HTTP_INTERNAL_SERVER_ERROR, null, $errors);
     }
 
     /**
      * Custom Response - Can be used for any HTTP status
+     *
+     * @param bool $status Whether the request was successful
+     * @param string $message The message to send
+     * @param int $code The HTTP status code
+     * @param mixed $data The data to return (optional)
+     * @param mixed $errors The errors to return (optional)
+     * @return JsonResponse
      */
-    public function customResponse(bool $status, string $message, int $code, mixed $data = null, mixed $errors = null): JsonResponse
+    private function customResponse(bool $status, string $message, int $code, mixed $data = null, mixed $errors = null): JsonResponse
     {
+        // Returning response with standardized structure
         return response()->json([
             'status'  => $status,
             'message' => $message,
-            'data'    => $data ?? (object)[],
-            'errors'  => $errors ?? (object)[]
+            'data'    => $data ?? new \stdClass(), // Default to an empty object if no data
+            'errors'  => $errors ?? new \stdClass(), // Default to an empty object if no errors
         ], $code);
     }
 }

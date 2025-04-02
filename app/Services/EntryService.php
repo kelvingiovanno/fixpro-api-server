@@ -2,10 +2,14 @@
 
 namespace App\Services;
 
-
-use App\Models\PendingApplication;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use Carbon\Carbon;
+
+use App\Models\PendingApplication;
+use App\Models\AuthenticationCode;
+use App\Models\RefreshToken;
 
 
 class EntryService
@@ -55,18 +59,58 @@ class EntryService
         return 'APP-' . Str::uuid();
     }
 
-    public function checkId($_id): bool 
+    public function checkApplicationId($_id): bool 
     {
         return PendingApplication::where('application_id', $_id)->exists();
     }
 
-    // public function generateAuntenticationCode() : string
-    // {
+    public function isApplicationAccepted(string $_id): bool
+    {
+        return PendingApplication::where('application_id', $_id)->where('is_accepted', true)->exists();
+    }
 
-    // }
+    public function generateAuthenticationCode(): string
+    {
+        $newAuthenticationCode = 'AUTH-' . Str::uuid();
 
-    // public function checkAuthenticationCode() : bool 
-    // {
+        AuthenticationCode::create([
+            'code' => $newAuthenticationCode,
+            'expires_at' => now()->addMinutes(10), 
+        ]);
+
+
+        return $newAuthenticationCode;
+    }
+    
+    public function exchangeToken($_authentication_code, $_userId) : array
+    {
+
+        if(!AuthenticationCode::where('code', $_authentication_code)->exists())
+        {   
+            return [];
+        }
+
+        $customClaims = [
+            'sub' => 'profix_api_service', 
+            'iat' => Carbon::now()->timestamp, 
+            'exp' => Carbon::now()->day(1)->timestamp, 
+        ];
+
+        $payload = JWTAuth::factory()->customClaims($customClaims)->make();
+
+        $access_token = JWTAuth::encode($payload)->get();
+        $refresh_token = Str::random(64);
         
-    // }
-}
+        
+        RefreshToken::create([
+            'user_id' => $_userId,
+            'token' => $refresh_token,
+            'expires_at' => now()->months(3),
+        ]);
+
+        return [
+            "refresh_token" => $refresh_token,
+            "access_token" => $access_token,
+        ];
+    }
+}   

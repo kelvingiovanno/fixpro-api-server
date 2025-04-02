@@ -67,6 +67,7 @@ class UserFormPageController extends Controller
                 
                 $table->id();
                 $table->string('application_id')->unique();
+                $table->boolean('is_accepted')->default(false);
 
                 if (!empty($data['email'])) {
                     $table->string('email')->nullable();

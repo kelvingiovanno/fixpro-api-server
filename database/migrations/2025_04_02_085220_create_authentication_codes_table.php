@@ -11,12 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('refresh_tokens', function (Blueprint $table) {
+        Schema::create('authentication_codes', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); 
-            $table->string('token')->unique(); 
-            $table->timestamp('expires_at'); 
-            $table->boolean('revoked')->default(false); 
+            $table->string('code');
+            $table->timestamp('expires_at');  
             $table->timestamps();
         });
     }
@@ -26,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('refresh_token');
+        Schema::dropIfExists('authentication_codes');
     }
 };
