@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\FormController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\TicketController;
 
 use App\Http\Middleware\ApiAuthMiddleware;
 use App\Http\Middleware\EntryMiddleware;
@@ -27,14 +28,19 @@ Route::middleware(EntryMiddleware::class)->prefix('entry')->group(function(){
 
 Route::middleware(ApiAuthMiddleware::class)->group(function () {
 
-    
-    Route::prefix('user')->group(function () {
-
-        Route::get('/', [UserController::class], 'index');
-        Route::get('/{id}/is-accapeted', [UserController::class, 'isUserStatusAccepted']);
-        
+    Route::prefix('/tickets')->group(function() {
+        Route::get('/', [TicketController::class, 'getAll']);
+        Route::post('/', [TicketController::class], 'create');
     });
 
+    Route::prefix('/ticket')->group(function ()  {
+        
+        Route::prefix('/{ticket_id}')->group(function () {
+            Route::get('/', [TicketController::class, '']);
+            Route::delete('/', [TicketController::class, '']);
+            Route::patch('/', [TicketController::class, '']);
+        });
+    });
 
     Route::get('/secure-endpoint', function () {
         return response()->json(['message' => 'Access granted']);
