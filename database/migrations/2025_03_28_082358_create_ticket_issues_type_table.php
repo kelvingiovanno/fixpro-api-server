@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users_role', function (Blueprint $table) {
+        Schema::create('ticket_issue_types', function (Blueprint $table) {
             $table->unsignedBigInteger('id')->primary();
-            $table->string('label');
+            $table->string('label')->unique();
             $table->timestamps();
         });
     }
@@ -23,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users_role');
+        Schema::dropIfExists('issues_types');
     }
 };

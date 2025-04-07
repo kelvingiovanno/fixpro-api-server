@@ -5,9 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 use App\Enums\UserRoleEnum;
+use App\Models\Enums\UserRole;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'application_id'
     ];

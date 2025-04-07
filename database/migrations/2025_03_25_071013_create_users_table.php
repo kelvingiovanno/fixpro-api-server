@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('role_id')->constrained('users_role')->cascadeOnDelete('set null');
             $table->boolean('is_actived')->default(true);
-            $table->string('application_id')->unique();
             $table->timestamps();
         });
     }

@@ -3,13 +3,11 @@
 namespace Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Location>
  */
-class UserFactory extends Factory
+class LocationFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -19,8 +17,8 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'role_id' => rand(1, 3), 
-            'is_actived' => $this->faker->boolean(90), 
+            'latitude' => $this->faker->latitude(),
+            'longtitude' => $this->faker->longitude(), 
         ];
     }
 }

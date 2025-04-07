@@ -5,11 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class UserRole extends Model
+class Location extends Model
 {
     use HasFactory;
 
-    protected $table = 'users_role';
-    protected $fillable = ['role']; 
-
+    protected $table = 'locations';
+    
+    protected $fillable = [
+        'latitude',
+        'longtitude',
+    ];
 }
