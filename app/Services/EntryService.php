@@ -10,7 +10,9 @@ use Carbon\Carbon;
 use App\Models\PendingApplication;
 use App\Models\AuthenticationCode;
 use App\Models\RefreshToken;
-
+use App\Models\User;
+use App\Models\UserData;
+use Illuminate\Http\Request;
 
 class EntryService
 {
@@ -59,58 +61,51 @@ class EntryService
         return 'APP-' . Str::uuid();
     }
 
-    public function checkApplicationId($_id): bool 
+    public function checkApplicationId($_applicationId): bool 
     {
-        return PendingApplication::where('application_id', $_id)->exists();
+        return PendingApplication::where('application_id', $_applicationId)->exists();
     }
 
-    public function isApplicationAccepted(string $_id): bool
+    public function isApplicationAccepted(Request $request, string $applicationId): bool
     {
-        return PendingApplication::where('application_id', $_id)->where('is_accepted', true)->exists();
+        $pendingApplication = PendingApplication::where('application_id', $applicationId)
+            ->where('is_accepted', true)
+            ->first();
+
+        if (!$pendingApplication) {
+            return false;
+        }
+
+        $user = User::create([]);
+
+        $applicationData = $pendingApplication->toArray();
+        unset($applicationData['application_id'], $applicationData['is_accepted']);
+
+        $applicationData['user_id'] = $user->id;
+
+        UserData::create($applicationData);
+
+        $pendingApplication->delete();
+
+        $request->merge(['user_id' => $user->id]);
+
+        return true;
     }
 
-    public function generateAuthenticationCode(): string
+
+
+    public function generateAuthenticationCode($_userId): string
     {
         $newAuthenticationCode = 'AUTH-' . Str::uuid();
 
         AuthenticationCode::create([
             'code' => $newAuthenticationCode,
+            'user_id' => $_userId,
             'expires_at' => now()->addMinutes(10), 
         ]);
 
 
         return $newAuthenticationCode;
     }
-    
-    public function exchangeToken($_authentication_code, $_userId) : array
-    {
 
-        if(!AuthenticationCode::where('code', $_authentication_code)->exists())
-        {   
-            return [];
-        }
-
-        $customClaims = [
-            'sub' => 'profix_api_service', 
-            'iat' => Carbon::now()->timestamp, 
-            'exp' => Carbon::now()->day(1)->timestamp, 
-        ];
-
-        $payload = JWTAuth::factory()->customClaims($customClaims)->make();
-
-        $access_token = JWTAuth::encode($payload)->get();
-        $refresh_token = Str::random(64);
-        
-        
-        RefreshToken::create([
-            'user_id' => $_userId,
-            'token' => $refresh_token,
-            'expires_at' => now()->months(3),
-        ]);
-
-        return [
-            "refresh_token" => $refresh_token,
-            "access_token" => $access_token,
-        ];
-    }
 }   

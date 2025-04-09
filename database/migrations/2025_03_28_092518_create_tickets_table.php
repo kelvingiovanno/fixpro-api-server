@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreignId('ticket_status_type_id')->constrained();
             $table->foreignId('response_level_type_id')->constrained();
             $table->foreignId('location_id')->constrained();
-            $table->string('description');
+            $table->string('stated_issue');
             $table->dateTime('raised_on');
             $table->dateTime('closed_on')->nullable();
         });

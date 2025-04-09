@@ -5,6 +5,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 
 use App\Models\Ticket;
+use App\Models\Location;
+
+use App\Enums\IssueTypeEnum;
+use App\Enums\TikectStatusEnum;
 
 use App\Services\ApiResponseService;
 use Illuminate\Http\Request;
@@ -38,7 +42,41 @@ class TicketController extends Controller
 
     public function create(Request $request)
     {
+        // 1. Store Location
+        $locationData = $request->input('location');
 
+        $location = Location::create([
+            'stated_location' => $locationData['stated_location'],
+            'latitude' => $locationData['gps_location']['latitude'],
+            'longitude' => $locationData['gps_location']['longitude'],
+        ]);
+    
+        // 3. Create the Ticket
+        $ticket = Ticket::create([
+            'user_id' => , 
+            'ticket_issue_type_id' => ,
+            'response_level_type_id' => ,
+            'location_id' => $location->id,
+            'stated_issue' => $request->input('stated_issue'),
+            'raised_on' => now(),
+        ]);
+    
+        // 4. Store Supportive Documents
+        $documents = $request->input('supportive_documents', []);
+        foreach ($documents as $doc) {
+            SupportiveDocument::create([
+                'ticket_id' => $ticket->id,
+                'resource_type' => $doc['resource_type'],
+                'resource_name' => $doc['resource_name'],
+                'resource_size' => $doc['resource_size'],
+                'resource_content' => $doc['resource_content'],
+            ]);
+        }
+    
+        return response()->json([
+            'message' => 'Ticket created successfully',
+            'ticket_id' => $ticket->id
+        ], 201);
     }
 
     public function get($ticket_id)

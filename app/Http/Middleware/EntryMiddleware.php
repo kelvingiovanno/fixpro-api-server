@@ -9,6 +9,9 @@ use Symfony\Component\HttpFoundation\Response;
 use App\Services\EntryService;
 use App\Services\ApiResponseService;
 
+use App\Models\User;
+use App\Models\UserData;
+
 class EntryMiddleware
 {
     private EntryService $entryService;
@@ -55,7 +58,7 @@ class EntryMiddleware
                 return $this->apiResponseService->unprocessableEntity('Invalid application ID');
             }
 
-            if (!$this->entryService->isApplicationAccepted($application_id)) {
+            if (!$this->entryService->isApplicationAccepted($request, $application_id)) {
                 return $this->apiResponseService->forbidden('The application has not been accepted');
             }
         }

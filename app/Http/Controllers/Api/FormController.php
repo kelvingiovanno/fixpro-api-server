@@ -53,9 +53,12 @@ class FormController extends Controller
         return $this->apiResponseService->created($data, 'Application submitted successfully');
     }
 
-    public function check()
+    public function check(Request $_request)
     {
-        $authentication_code = $this->entryService->generateAuthenticationCode();
+
+        $user_id = $_request->user_id;
+
+        $authentication_code = $this->entryService->generateAuthenticationCode($user_id);
 
         $data = [
             "authentication_code" => $authentication_code,

@@ -25,13 +25,13 @@ class ApiAuthMiddleware
             $payload = JWTAuth::parseToken()->getPayload();
             $request->merge(['jwt_payload' => $payload]);
         } catch (TokenExpiredException $e) {
-            return $this->apiResponse->error('Token has expired', 401, $e->getMessage());
+            return $this->apiResponse->unauthorized('Token has expired', $e->getMessage());
         } catch (TokenInvalidException $e) {
-            return $this->apiResponse->error('Token is invalid', 401, $e->getMessage());
+            return $this->apiResponse->unauthorized('Token is invalid', $e->getMessage());
         } catch (JWTException $e) {
-            return $this->apiResponse->error('Token is missing', 401, $e->getMessage());
+            return $this->apiResponse->unauthorized('Token is missing', $e->getMessage());
         } catch (Exception $e) {
-            return $this->apiResponse->error('Unauthorized access', 401, $e->getMessage());
+            return $this->apiResponse->unauthorized('Unauthorized access', $e->getMessage());
         }
 
         return $next($request);

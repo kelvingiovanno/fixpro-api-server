@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\FormController;
 use App\Http\Controllers\Api\TicketController;
-
+use App\Http\Controllers\Api\AuthController;
 
 use App\Http\Middleware\ApiAuthMiddleware;
 use App\Http\Middleware\EntryMiddleware;
@@ -18,6 +18,11 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/hello', function () {
     return response('hello world');
+});
+
+Route::prefix('/auth')->group(function() {
+    Route::post('exchange',[AuthController::class, 'exchange']);
+    Route::post('refresh', [AuthController::class], 'refresh');
 });
 
 Route::middleware(EntryMiddleware::class)->prefix('entry')->group(function(){

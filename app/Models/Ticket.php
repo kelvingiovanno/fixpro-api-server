@@ -10,6 +10,8 @@ use App\Models\Enums\TicketIssueType;
 use App\Models\Enums\TicketStatusType;
 use App\Models\Enums\ResponseLevelType;
 
+use App\Enums\TikectStatusEnum;
+
 class Ticket extends Model
 {   
     use HasFactory;
@@ -22,11 +24,21 @@ class Ticket extends Model
         'ticket_status_type_id',
         'response_level_type_id',
         'location_id',
-        'description',
+        'stated_issue',
         'closed_on',
     ];
 
     public $timestamps = false;
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($ticket) {
+            $ticket->raised_on = now();
+            $ticket->statusType = TikectStatusEnum::OPEN;
+        });
+    }
 
     public function user()
     {
