@@ -16,4 +16,15 @@ enum UserStatusEnum: int
             self::REJECTED => 'Rejected',
         };
     }
+
+    public static function id(string $label): ?int
+    {
+        foreach (self::cases() as $case) {
+            if (strcasecmp($case->label(), $label) === 0) {
+                return $case->value;
+            }
+        }
+
+        return null; 
+    }
 }

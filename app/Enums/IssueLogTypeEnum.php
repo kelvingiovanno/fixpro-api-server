@@ -20,4 +20,15 @@ enum IssueLogTypeEnum : int
             self::ACTIVITY_LOG => 'Activity Log',
         };
     }
+
+    public static function id(string $label): ?int
+    {
+        foreach (self::cases() as $case) {
+            if (strcasecmp($case->label(), $label) === 0) {
+                return $case->value;
+            }
+        }
+
+        return null; 
+    }
 }

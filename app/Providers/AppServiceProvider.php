@@ -6,6 +6,7 @@ use App\Services\EncryptionService;
 use App\Services\QrCodeService;
 use App\Services\WebAuthTokenService;
 use App\Services\EntryService;
+use App\Services\StorageService;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\URL;
@@ -28,17 +29,17 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(EntryService::class, function () {
             return new EntryService();
         });
+
+        $this->app->singleton(StorageService::class, function () {
+            return new StorageService();
+        });
     }
 
     /**
      * Bootstrap any application services.
      */
     public function boot(): void
-    {
-        if (env('APP_ENV') !== 'local') {
-            URL::forceScheme('https');
-        }
-
+    {   
         if (app()->runningInConsole() && php_sapi_name() === 'cli') {
             if (in_array($_SERVER['argv'][1] ?? '', ['serve'])) {
                 

@@ -6,9 +6,12 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\FormController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\TestApiController;
 
 use App\Http\Middleware\ApiAuthMiddleware;
 use App\Http\Middleware\EntryMiddleware;
+
+Route::post('/upload-base64', [TestApiController::class, 'upload']);
 
 Route::get('/user', function (Request $request) {
     return $request->user();

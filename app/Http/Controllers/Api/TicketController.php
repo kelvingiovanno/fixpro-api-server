@@ -6,20 +6,26 @@ use App\Http\Controllers\Controller;
 
 use App\Models\Ticket;
 use App\Models\Location;
+use App\Models\SupportiveTicketDocument;
 
 use App\Enums\IssueTypeEnum;
 use App\Enums\TikectStatusEnum;
 
+
 use App\Services\ApiResponseService;
+use App\Services\StorageService;
+
 use Illuminate\Http\Request;
 
 class TicketController extends Controller
 {
     private ApiResponseService $apiResponseService;
+    private StorageService $storageService;
 
-    public function __construct(ApiResponseService $_apiResponseService)
+    public function __construct(ApiResponseService $_apiResponseService, StorageService $_storageService)
     {
         $this->apiResponseService = $_apiResponseService; 
+        $this->storageService = $_storageService;
     }
 
     public function getAll()
@@ -42,8 +48,12 @@ class TicketController extends Controller
 
     public function create(Request $request)
     {
-        // 1. Store Location
         $locationData = $request->input('location');
+
+        $user_id = $request->input('jwt_payload')['user_id'];
+
+        $ticket_issue_type = IssueTypeEnum::id($request->input('issue_type'));
+        $ticket_response_level = TikectStatusEnum::id($request->input('response_level'));
 
         $location = Location::create([
             'stated_location' => $locationData['stated_location'],
@@ -51,25 +61,30 @@ class TicketController extends Controller
             'longitude' => $locationData['gps_location']['longitude'],
         ]);
     
-        // 3. Create the Ticket
         $ticket = Ticket::create([
-            'user_id' => , 
-            'ticket_issue_type_id' => ,
-            'response_level_type_id' => ,
+            'user_id' => $user_id, 
+            'ticket_issue_type_id' => $ticket_issue_type,
+            'response_level_type_id' => $ticket_response_level,
             'location_id' => $location->id,
             'stated_issue' => $request->input('stated_issue'),
             'raised_on' => now(),
         ]);
     
-        // 4. Store Supportive Documents
         $documents = $request->input('supportive_documents', []);
         foreach ($documents as $doc) {
-            SupportiveDocument::create([
+            
+            $filePath = $this->storageService->storeLogTicketDocument(
+                $doc['resource_content'],
+                $doc['resource_name'],
+                $ticket->id
+            );
+
+            SupportiveTicketDocument::create([
                 'ticket_id' => $ticket->id,
                 'resource_type' => $doc['resource_type'],
                 'resource_name' => $doc['resource_name'],
                 'resource_size' => $doc['resource_size'],
-                'resource_content' => $doc['resource_content'],
+                'resource_path' => $filePath, 
             ]);
         }
     

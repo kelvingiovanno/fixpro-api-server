@@ -16,4 +16,15 @@ enum ResponLevelEnum : int
             self::NORMAL => 'Normal',
         };
     }
+
+    public static function id(string $label): ?int
+    {
+        foreach (self::cases() as $case) {
+            if (strcasecmp($case->label(), $label) === 0) {
+                return $case->value;
+            }
+        }
+
+        return null; 
+    }
 }
