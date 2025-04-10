@@ -37,33 +37,36 @@ class FormController extends Controller
         return $this->apiResponseService->ok($data, 'Form fields and nonce token successfully retrieved');
     }
 
-    public function submit(Request $_request)
+    public function submit(Request $request)
     {
-        $userData = $_request->input('form_data');
+        $fieldData = $request->input('data');
+        $encryption_key = $request->input('encryption_key');
+    
+        $userData = collect($fieldData)->mapWithKeys(function ($item) {
+            return [$item['field_label'] => $item['field_value']];
+        })->toArray();
+    
         $application_id = $this->entryService->generateApplicationId();
-
-        $newUserData = array_merge($userData, ['application_id' => $application_id]);
-
+        $newUserData = array_merge($userData, ['application_id' => $application_id, 'encryption_key' => $encryption_key]);
+    
         PendingApplication::create($newUserData);
-        
-        $data = [
-            "application_id" => $application_id
-        ];
-
-        return $this->apiResponseService->created($data, 'Application submitted successfully');
+    
+        return $this->apiResponseService->created([
+            'application_id' => $application_id,
+        ], 'Application submitted successfully');
     }
+    
 
-    public function check(Request $_request)
+    public function check(Request $request)
     {
-
-        $user_id = $_request->user_id;
-
+        $user_id = $request->input('user_id');
+    
         $authentication_code = $this->entryService->generateAuthenticationCode($user_id);
-
+    
         $data = [
             "authentication_code" => $authentication_code,
         ];
-
+    
         return $this->apiResponseService->ok($data, "New authentication code generated");
     }
 }

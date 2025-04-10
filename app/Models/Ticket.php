@@ -36,7 +36,7 @@ class Ticket extends Model
 
         static::creating(function ($ticket) {
             $ticket->raised_on = now();
-            $ticket->statusType = TikectStatusEnum::OPEN;
+            $ticket->ticket_status_type_id = TikectStatusEnum::OPEN;
         });
     }
 

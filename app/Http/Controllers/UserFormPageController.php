@@ -15,7 +15,6 @@ class UserFormPageController extends Controller
             return redirect('/');
         }
 
-
         return view('user-setting');
     }
 
@@ -68,6 +67,7 @@ class UserFormPageController extends Controller
                 $table->id();
                 $table->string('application_id')->unique();
                 $table->boolean('is_accepted')->default(false);
+                $table->string('encryption_key')->unique();
 
                 if (!empty($data['email'])) {
                     $table->string('email')->nullable();

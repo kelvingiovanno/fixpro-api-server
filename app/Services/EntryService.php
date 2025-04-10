@@ -4,12 +4,9 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Carbon\Carbon;
 
 use App\Models\PendingApplication;
 use App\Models\AuthenticationCode;
-use App\Models\RefreshToken;
 use App\Models\User;
 use App\Models\UserData;
 use Illuminate\Http\Request;

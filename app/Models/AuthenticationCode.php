@@ -7,5 +7,5 @@ use Illuminate\Database\Eloquent\Model;
 class AuthenticationCode extends Model
 {
     protected $table = 'authentication_codes';
-    protected $fillable = ['code', 'expires_at'];
+    protected $fillable = ['code', 'user_id', 'expires_at'];
 }

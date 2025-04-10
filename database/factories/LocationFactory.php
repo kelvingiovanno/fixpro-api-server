@@ -17,6 +17,7 @@ class LocationFactory extends Factory
     public function definition(): array
     {
         return [
+            'stated_location' => $this->faker->address(),
             'latitude' => $this->faker->latitude(),
             'longtitude' => $this->faker->longitude(), 
         ];

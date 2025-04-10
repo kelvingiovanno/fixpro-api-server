@@ -68,6 +68,34 @@ class AuthController extends Controller
 
     public function refresh(Request $request)
     {
+        $refreshToken = $request->input('refresh_token');
+        $refreshTokenRecord = RefreshToken::where('token', $refreshToken)->first();
 
-    }
+        if (!$refreshTokenRecord) {
+            return $this->apiResponseService->forbidden('Invalid or expired refresh token');
+        }
+
+        if($refreshTokenRecord->expires_at < now()) {
+            return $this->apiResponseService->forbidden('Invalid or expired refresh token');
+        }
+
+        $userId = $refreshTokenRecord->user_id;
+
+        $customClaims = [
+            'sub'     => 'profix_api_service',
+            'user_id' => $userId,
+            'iat'     => Carbon::now()->timestamp,
+            'exp'     => Carbon::now()->addDay()->timestamp,
+        ];
+
+        $payload = JWTAuth::factory()->customClaims($customClaims)->make();
+
+        $accessToken = JWTAuth::encode($payload)->get();
+
+        $data = [
+            "access_token" => $accessToken,
+        ];
+
+        return $this->apiResponseService->ok($data, 'ok');
+    }   
 }

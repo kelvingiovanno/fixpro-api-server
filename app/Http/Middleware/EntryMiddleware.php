@@ -9,9 +9,6 @@ use Symfony\Component\HttpFoundation\Response;
 use App\Services\EntryService;
 use App\Services\ApiResponseService;
 
-use App\Models\User;
-use App\Models\UserData;
-
 class EntryMiddleware
 {
     private EntryService $entryService;
@@ -27,7 +24,7 @@ class EntryMiddleware
      * Handle an incoming request.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
+     */     
     public function handle(Request $request, Closure $next): Response
     {
         $referral = $request->query('ref');

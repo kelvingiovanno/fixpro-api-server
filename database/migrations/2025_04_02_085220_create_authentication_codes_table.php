@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('authentication_codes', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained();
             $table->string('code');
             $table->timestamp('expires_at');  
             $table->timestamps();
