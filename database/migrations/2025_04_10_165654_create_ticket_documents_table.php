@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('supportive_ticket_documents', function (Blueprint $table) {
+        Schema::create('ticket_documents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('ticket_id')->constrained();
+            $table->uuid('ticket_id');
+            $table->foreign('ticket_id')->references('id')->on('tickets');
             $table->string('resource_type');
             $table->string('resource_name');
             $table->string('resource_size');
-            $table->string('resource_content')->unique();
+            $table->string('resource_path')->unique();
             $table->timestamps();
         });
     }

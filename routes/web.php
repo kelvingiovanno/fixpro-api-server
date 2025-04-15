@@ -8,10 +8,6 @@ use App\Http\Controllers\WebAuthPageController;
 
 use App\Http\Middleware\WebAuthMiddleware;
 
-// Homepage
-Route::get('/', function () {
-    return view('welcome');
-});
 
 // Authentication Routes
 Route::prefix('auth')->name('auth.')->group(function () {
@@ -22,8 +18,13 @@ Route::prefix('auth')->name('auth.')->group(function () {
 
 // Protected Routes (Require Authentication)
 Route::middleware(WebAuthMiddleware::class)->group(function () {
-    
-    // User Settings Routes
+
+    // Homepage
+    Route::get('/', function () {
+        return view('welcome');
+    });
+
+    // User Form Routes
     Route::prefix('user-form')->name('user-setting.')->group(function () {
         Route::get('/', [UserFormPageController::class, 'index']);
         Route::post('/submit', [UserFormPageController::class, 'handleSubmit'])->name('submit');

@@ -10,11 +10,16 @@ use App\Models\Enums\TicketIssueType;
 use App\Models\Enums\TicketStatusType;
 use App\Models\Enums\ResponseLevelType;
 
+use Illuminate\Support\Str;
+
 use App\Enums\TikectStatusEnum;
 
 class Ticket extends Model
 {   
     use HasFactory;
+
+    public $incrementing = false; 
+    protected $keyType = 'string'; 
 
     protected $table = 'tickets';
 
@@ -37,6 +42,10 @@ class Ticket extends Model
         static::creating(function ($ticket) {
             $ticket->raised_on = now();
             $ticket->ticket_status_type_id = TikectStatusEnum::OPEN;
+
+            if(! $ticket->getKey()) {
+                $ticket->{$ticket->getKeyName()} = (string) Str::uuid();
+            }
         });
     }
 

@@ -72,11 +72,11 @@ class AuthController extends Controller
         $refreshTokenRecord = RefreshToken::where('token', $refreshToken)->first();
 
         if (!$refreshTokenRecord) {
-            return $this->apiResponseService->forbidden('Invalid or expired refresh token');
+            return $this->apiResponseService->forbidden('Invalid refresh token');
         }
 
         if($refreshTokenRecord->expires_at < now()) {
-            return $this->apiResponseService->forbidden('Invalid or expired refresh token');
+            return $this->apiResponseService->forbidden('expired refresh token');
         }
 
         $userId = $refreshTokenRecord->user_id;

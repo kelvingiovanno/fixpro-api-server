@@ -122,7 +122,7 @@ class ApiResponseService
      */
     public function internalServerError(string $message = 'Internal Server Error', mixed $errors = null): JsonResponse
     {
-        return $this->customResponse(false, $message, JsonResponse::HTTP_INTERNAL_SERVER_ERROR, null, $errors);
+        return $this->customResponse(false, $message, JsonResponse::HTTP_INTERNAL_SERVER_ERROR, null, app()->environment('production') ? null : $errors);
     }
 
     /**

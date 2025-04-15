@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\UserData;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
@@ -40,14 +42,19 @@ class UserFormPageController extends Controller
             Schema::create('users_data', function (Blueprint $table) use ($data) {
                 
                 $table->id();
-                $table->foreignId('user_id')->constrained('users')->cascadeOnDelete('set to null');
+                
+                $table->uuid('user_id');
+                $table->foreign('user_id')->references('id')->on('users');
+
+                $table->string('full_name');
+                $table->string('title');
 
                 if (!empty($data['email'])) {
                     $table->string('email')->nullable();
                 }
 
                 if (!empty($data['phone'])) {
-                    $table->string('phone')->nullable();
+                    $table->string('phone_number')->nullable();
                 }
 
                 if (!empty($data['custom']) && is_array($data['custom'])) {
@@ -58,8 +65,6 @@ class UserFormPageController extends Controller
                         }
                     }
                 }
-
-                $table->timestamps();
             });
 
             Schema::create('pending_applications', function (Blueprint $table) use ($data) {
@@ -67,14 +72,16 @@ class UserFormPageController extends Controller
                 $table->id();
                 $table->string('application_id')->unique();
                 $table->boolean('is_accepted')->default(false);
-                $table->string('encryption_key')->unique();
+    
+                $table->string('full_name');
+                $table->string('title');
 
                 if (!empty($data['email'])) {
                     $table->string('email')->nullable();
                 }
 
                 if (!empty($data['phone'])) {
-                    $table->string('phone')->nullable();
+                    $table->string('phone_number')->nullable();
                 }
 
                 if (!empty($data['custom']) && is_array($data['custom'])) {
@@ -85,8 +92,6 @@ class UserFormPageController extends Controller
                         }
                     }
                 }
-
-                $table->timestamps();
             });
 
             return true; 

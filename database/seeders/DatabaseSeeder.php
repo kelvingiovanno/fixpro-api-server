@@ -4,18 +4,20 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
-use App\Models\Enums\UserRole;
-use App\Models\Enums\ResponseLevelType;
-use App\Models\Enums\TicketStatusType;
-use App\Models\Enums\TicketIssueType;
 
 use App\Enums\UserRoleEnum;
+use App\Enums\UserSpeciallityEnum;
 use App\Enums\IssueTypeEnum;
 use App\Enums\TikectStatusEnum;
 use App\Enums\ResponLevelEnum;
 
+use App\Models\Enums\UserRole;
+use App\Models\Enums\Speciality;
+use App\Models\Enums\ResponseLevelType;
+use App\Models\Enums\TicketStatusType;
+use App\Models\Enums\TicketIssueType;
+
 use App\Models\User;
-use App\Models\Ticket;
 use App\Models\Location;
 
 class DatabaseSeeder extends Seeder
@@ -28,6 +30,13 @@ class DatabaseSeeder extends Seeder
         UserRole::create(['id' => UserRoleEnum::MEMBER, 'label' => UserRoleEnum::MEMBER->label()]);
         UserRole::create(['id' => UserRoleEnum::CREW, 'label' => UserRoleEnum::CREW->label()]);
         UserRole::create(['id' => UserRoleEnum::MANAGEMENT,'label' => UserRoleEnum::MANAGEMENT->label()]);
+
+        Speciality::create(['id' => UserSpeciallityEnum::PLUMBING, 'label' => UserSpeciallityEnum::PLUMBING->label()]);
+        Speciality::create(['id' => UserSpeciallityEnum::HOUSEKEEPING, 'label' => UserSpeciallityEnum::HOUSEKEEPING->label()]);
+        Speciality::create(['id' => UserSpeciallityEnum::SOCIAL, 'label' => UserSpeciallityEnum::SOCIAL->label()]);
+        Speciality::create(['id' => UserSpeciallityEnum::FACILITY, 'label' => UserSpeciallityEnum::FACILITY->label()]);
+        Speciality::create(['id' => UserSpeciallityEnum::ENGINEERING, 'label' => UserSpeciallityEnum::ENGINEERING->label()]);
+        Speciality::create(['id' => UserSpeciallityEnum::SECURITY, 'label' => UserSpeciallityEnum::SECURITY->label()]);
 
         ResponseLevelType::create(['id' => ResponLevelEnum::URGENT, 'label' => ResponLevelEnum::URGENT->label()]);
         ResponseLevelType::create(['id' => ResponLevelEnum::URGENT_EMERGENCY, 'label' => ResponLevelEnum::URGENT_EMERGENCY->label()]);
@@ -47,15 +56,5 @@ class DatabaseSeeder extends Seeder
         TicketIssueType::create(['id' => IssueTypeEnum::FACILITY, 'label' => IssueTypeEnum::FACILITY->label()]);
         TicketIssueType::create(['id' => IssueTypeEnum::ENGINEERING, 'label' => IssueTypeEnum::ENGINEERING->label()]);
         TicketIssueType::create(['id' => IssueTypeEnum::SECURITY, 'label' => IssueTypeEnum::SECURITY->label()]);      
-        
-        Location::factory()->count(10)->create();
-
-        User::factory(10)->create()->each(function ($user) {
-            Ticket::factory(rand(3, 5))->create([
-                'user_id' => $user->id,
-                'location_id' => Location::inRandomOrder()->first()->id,
-            ]);
-        });
-        
     }
 }

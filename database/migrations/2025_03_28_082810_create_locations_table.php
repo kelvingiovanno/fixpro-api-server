@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('stated_location');
             $table->string('latitude');
-            $table->string('longtitude');
+            $table->string('longitude');
             $table->timestamps();
         });
     }

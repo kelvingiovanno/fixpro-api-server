@@ -27,6 +27,23 @@ class EntryService
         return $new_referral;
     }
 
+    public function getReferral() : string
+    {
+
+        if(Cache::has('referral'))
+        {
+            return Cache::get('referral', '');    
+        }
+
+        return $this->generateReferral();
+    }
+
+    public function deleteReferral() : void
+    {
+        Cache::forget('referral');
+    }
+
+
     public function checkReferral($_referral) : bool
     {
         return Cache::get('referral') === $_referral;

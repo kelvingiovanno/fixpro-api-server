@@ -11,14 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('refresh_tokens', function (Blueprint $table) {
-            $table->id();
+        Schema::create('speciality_user', function (Blueprint $table) {
             $table->uuid('user_id');
+            $table->integer('speciality_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->string('token')->unique();
-            $table->timestamp('expires_at');
-            $table->boolean('revoked')->default(false);
-            $table->timestamps();
+            $table->foreign('speciality_id')->references('id')->on('specialities')->onDelete('cascade');
+            $table->primary(['user_id', 'speciality_id']);
         });
     }
 
@@ -27,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('refresh_token');
+        Schema::dropIfExists('specialty_mapping');
     }
 };

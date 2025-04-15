@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ticket_documents', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::create('specialities', function (Blueprint $table) {
+            $table->unsignedBigInteger('id')->primary();
+            $table->string('label');
         });
     }
 
@@ -22,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ticket_documents');
+        Schema::dropIfExists('table_speciallity');
     }
 };

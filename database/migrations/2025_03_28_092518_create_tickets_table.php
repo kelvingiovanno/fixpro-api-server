@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('tickets', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained();
+            $table->uuid('id')->primary();
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users');
             $table->foreignId('ticket_issue_type_id')->constrained();
             $table->foreignId('ticket_status_type_id')->constrained();
             $table->foreignId('response_level_type_id')->constrained();

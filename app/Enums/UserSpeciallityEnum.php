@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum IssueTypeEnum : int
+enum UserSpeciallityEnum : int 
 {
     case PLUMBING = 1;
     case HOUSEKEEPING = 2;
@@ -11,6 +11,7 @@ enum IssueTypeEnum : int
     case ENGINEERING = 5;
     case SECURITY = 6;
 
+    
     public function label() : string
     {
         return match($this) {
