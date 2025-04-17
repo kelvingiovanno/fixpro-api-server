@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 
 use App\Models\User;
+use App\Models\Applicant;
 
 use App\Services\EntryService;
 use App\Services\ApiResponseService;
 
+use GuzzleHttp\Psr7\Request;
+use Illuminate\Support\Str;
 
 class AreaController extends Controller
 {
@@ -69,33 +72,93 @@ class AreaController extends Controller
         return $this->apiResponseService->ok($data);
     }
 
-    public function postMembers()
-    {
-
-    }
-
-    public function getMember(int $member_id)
-    {
-
-    }
-
-    public function delMember(int $member_id)
-    {
-
-    }
-
-    public function getPendingMembers()
-    {
-
-    }
-
-    public function getApplicant(string $application_id)
+    public function postMembers(Request $request)
     {
         
     }
 
+    public function getMember(string $member_id)
+    {
+        if (!Str::isUuid($member_id)) {
+            return $this->apiResponseService->badRequest('Member not found.');
+        }
+        
+        $member = User::with(['userData', 'role', 'specialities'])->find($member_id);
+    
+        if (!$member) {
+            return $this->apiResponseService->notFound('Member not found.');
+        }
+        
+        $userData = $member->userData;
+
+        unset($userData['id'], $userData['user_id']);
+
+        $data = [
+            'id' => $member->id,
+            'role' => $member->role->label ?? null,
+            'speciality' => $member->specialities->pluck('label')->toArray(),
+            'member_since' => $member->member_since,
+            'member_until' => $member->member_until,
+            'user_data' => $userData,
+        ];
+    
+        return $this->apiResponseService->ok($data);
+    }
+
+    public function delMember(string $member_id)
+    {
+        if (!Str::isUuid($member_id)) {
+            return $this->apiResponseService->badRequest('Member not found.');
+        }
+
+        $member = User::find($member_id);
+
+        if (!$member) {
+            return $this->apiResponseService->notFound('Member not found.');
+        }
+
+        $member->delete();
+
+        return $this->apiResponseService->ok('Member deleted successfully.');
+    }
+
+    public function getPendingMembers()
+    {
+        $pendingMembers = Applicant::all();
+
+        return $this->apiResponseService->ok($pendingMembers);
+    }
+
+    public function getApplicant(string $application_id)
+    {
+        if (!Str::isUuid($application_id)) {
+            return $this->apiResponseService->badRequest('Aplicant not found.');
+        }
+
+        $applicant = Applicant::find($application_id);
+
+        if (!$applicant) {
+            return $this->apiResponseService->notFound('Applicant not found.');
+        }
+
+        return $this->apiResponseService->ok($applicant);
+    }
+
     public function delApplicant(string $application_id)
     {
+        if (!Str::isUuid($application_id)) {
+            return $this->apiResponseService->badRequest('Applicant not found.');
+        }
 
+        $applicant = Applicant::find($application_id);
+
+        if (!$applicant) {
+            return $this->apiResponseService->notFound('Applicant not found.');
+        }
+
+        $applicant->delete();
+
+        return $this->apiResponseService->ok('Applicant deleted successfully.');
     }
+
 }

@@ -41,24 +41,26 @@ Route::prefix('/ticket')->group(function ()  {
     }); 
 });
 
-Route::prefix('area')->group(function() {
+Route::prefix('/area')->group(function() {
 
     Route::get('/', [AreaController::class, 'index']);
     Route::get('/join-code', [AreaController::class, 'getJoinCode']);
     Route::delete('/join-code', [AreaController::class, 'delJoinCode']);
 
-    Route::prefix('members')->group(function() {
-        
+    Route::prefix('members')->group(function() {        
         Route::get('/', [AreaController::class, 'getMembers']);
         Route::post('/', [AreaController::class, 'postMembers']);
-        Route::get('/{$member_id}', [AreaController::class, 'getMember']);
-        Route::delete('/{$member_id}', [AreaController::class, 'delMember']);
-        
+
         Route::prefix('pending')->group(function() {
             Route::get('/', [AreaController::class, 'getPendingMembers']);
             Route::get('/{application_id}', [AreaController::class, 'getApplicant']);
             Route::delete('/{application_id}', [AreaController::class, 'delApplicant']);
         });
+    });
+
+    Route::prefix('/member')->group(function () {
+        Route::get('/{member_id}', [AreaController::class, 'getMember']);
+        Route::delete('/{member_id}', [AreaController::class, 'delMember']);
     });
     
 });
@@ -68,8 +70,6 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
     Route::prefix('/tickets')->group(function() {
         Route::get('/', [TicketController::class, 'getAll']);
         Route::post('/', [TicketController::class, 'create']);
-    });
-
-    
+    });    
 
 });

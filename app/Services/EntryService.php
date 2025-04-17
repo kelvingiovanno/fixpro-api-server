@@ -5,7 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
-use App\Models\PendingApplication;
+use App\Models\Applicant;
 use App\Models\AuthenticationCode;
 use App\Models\User;
 use App\Models\UserData;
@@ -70,36 +70,31 @@ class EntryService
         return false;
     }
 
-    public function generateApplicationId() : string
-    {
-        return 'APP-' . Str::uuid();
-    }
-
     public function checkApplicationId($_applicationId): bool 
     {
-        return PendingApplication::where('application_id', $_applicationId)->exists();
+        return Applicant::where('id', $_applicationId)->exists();
     }
 
     public function isApplicationAccepted(Request $request, string $applicationId): bool
     {
-        $pendingApplication = PendingApplication::where('application_id', $applicationId)
+        $applicant = Applicant::where('id', $applicationId)
             ->where('is_accepted', true)
             ->first();
 
-        if (!$pendingApplication) {
+        if (!$applicant) {
             return false;
         }
 
         $user = User::create([]);
 
-        $applicationData = $pendingApplication->toArray();
-        unset($applicationData['application_id'], $applicationData['is_accepted']);
+        $applicationData = $applicant->toArray();
+        unset($applicationData['id'], $applicationData['is_accepted']);
 
         $applicationData['user_id'] = $user->id;
 
         UserData::create($applicationData);
 
-        $pendingApplication->delete();
+        $applicant->delete();
 
         $request->merge(['user_id' => $user->id]);
 

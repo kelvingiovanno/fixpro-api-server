@@ -8,7 +8,7 @@ use App\Services\ApiResponseService;
 use App\Services\EntryService;
 
 use App\Models\UserData;
-use App\Models\PendingApplication;
+use App\Models\Applicant;
 
 use Illuminate\Http\Request;
 
@@ -40,19 +40,15 @@ class FormController extends Controller
     public function submit(Request $request)
     {
         $fieldData = $request->input('data');
-        $encryption_key = $request->input('encryption_key');
     
         $userData = collect($fieldData)->mapWithKeys(function ($item) {
             return [$item['field_label'] => $item['field_value']];
         })->toArray();
     
-        $application_id = $this->entryService->generateApplicationId();
-        $newUserData = array_merge($userData, ['application_id' => $application_id, 'encryption_key' => $encryption_key]);
-    
-        PendingApplication::create($newUserData);
+        $new_applicant = Applicant::create($userData);
     
         return $this->apiResponseService->created([
-            'application_id' => $application_id,
+            'application_id' => $new_applicant->id,
         ], 'Application submitted successfully');
     }
     

@@ -39,12 +39,13 @@ class UserFormPageController extends Controller
     private function createUsersTable($data)
     {
         if (!Schema::hasTable('users_data') && !Schema::hasTable('users_pending')) {
+            
             Schema::create('users_data', function (Blueprint $table) use ($data) {
                 
                 $table->id();
                 
-                $table->uuid('user_id');
-                $table->foreign('user_id')->references('id')->on('users');
+                $table->uuid('user_id')->nullable();
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
 
                 $table->string('full_name');
                 $table->string('title');
@@ -67,10 +68,9 @@ class UserFormPageController extends Controller
                 }
             });
 
-            Schema::create('pending_applications', function (Blueprint $table) use ($data) {
+            Schema::create('applicants', function (Blueprint $table) use ($data) {
                 
-                $table->id();
-                $table->string('application_id')->unique();
+                $table->uuid('id')->primary();
                 $table->boolean('is_accepted')->default(false);
     
                 $table->string('full_name');
