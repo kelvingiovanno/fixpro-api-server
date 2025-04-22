@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\UserRoleEnum;
-
 use App\Models\Enums\UserRole;
 use App\Models\Enums\Speciality;
 
@@ -18,6 +16,12 @@ class User extends Model
     public $incrementing = false; 
     protected $keyType = 'string'; 
 
+    protected $fillable = [
+        'role_id',
+        'name',
+        'title',
+    ];
+
     public $timestamps = false;
 
     protected static function boot()
@@ -25,18 +29,11 @@ class User extends Model
         parent::boot();
 
         static::creating(function ($user) 
-        {
-
-            // Set default role for the user
-            $user->role_id = UserRoleEnum::MEMBER;
-            
-            // Set the 'member_since' field to the current date and time
+        {            
             $user->member_since = now();
             
-            // Set 'member_until' field to a year from now
             $user->member_until = now()->addYear();
         
-            // Generate and assign a UUID if it's not already set
             if (!$user->getKey()) {
                 $user->{$user->getKeyName()} = (string) Str::uuid();
             }
@@ -56,6 +53,6 @@ class User extends Model
 
     public function specialities()
     {
-        return $this->belongsToMany(Speciality::class);
+        return $this->belongsToMany(Speciality::class, 'speciality_user', 'user_id', 'speciality_id');
     }
 }

@@ -6,13 +6,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\FormController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\TestApiController;
 use App\Http\Controllers\Api\AreaController;
 
 use App\Http\Middleware\ApiAuthMiddleware;
 use App\Http\Middleware\EntryMiddleware;
-
-Route::post('/upload-base64', [TestApiController::class, 'upload']);
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -28,8 +25,8 @@ Route::prefix('/auth')->group(function() {
 });
 
 Route::middleware(EntryMiddleware::class)->prefix('entry')->group(function(){
-    Route::get('/check', [FormController::class, 'check']);
-    Route::get('/form', [FormController::class, 'request']);
+    Route::post('/check', [FormController::class, 'check']);
+    Route::get('/form', [FormController::class, 'getForm']);
     Route::post('/form',[FormController::class, 'submit']);
 });
 

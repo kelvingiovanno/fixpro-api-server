@@ -12,12 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('authentication_codes', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('user_id');
-            $table->foreign('user_id')->references('id')->on('users');
-            $table->string('code');
-            $table->timestamp('expires_at');  
+            $table->uuid('id')->primary();
+            $table->uuid('applicant_id')->nullable();
+            $table->uuid('user_id')->nullable();
+            $table->timestamp('expires_at');
             $table->timestamps();
+
+            $table->foreign('applicant_id')->references('id')->on('applicants')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

@@ -7,9 +7,10 @@ use App\Services\QrCodeService;
 use App\Services\WebAuthTokenService;
 use App\Services\EntryService;
 use App\Services\StorageService;
+use App\Services\AreaConfigService;
+
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +33,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(StorageService::class, function () {
             return new StorageService();
+        });
+
+        $this->app->singleton(AreaConfigService::class , function () {
+            return new AreaConfigService();
         });
     }
 

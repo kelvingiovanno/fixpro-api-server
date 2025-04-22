@@ -4,65 +4,134 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 
+use App\Models\Applicant;
+use App\Models\AuthenticationCode;
+
 use App\Services\ApiResponseService;
+use App\Services\AreaConfigService;
 use App\Services\EntryService;
 
-use App\Models\UserData;
-use App\Models\Applicant;
-
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+
+use Throwable;
 
 class FormController extends Controller
 {
-
     private ApiResponseService $apiResponseService;
     private EntryService $entryService;
+    private AreaConfigService $areaConfigService;
 
-    public function __construct(ApiResponseService $_apiResponseService, EntryService $_entryService)
-    {
+    public function __construct (
+        ApiResponseService $_apiResponseService, 
+        EntryService $_entryService, 
+        AreaConfigService $_areaConfigService
+    ) {
         $this->apiResponseService = $_apiResponseService;
         $this->entryService = $_entryService;
+        $this->areaConfigService = $_areaConfigService;
     }
 
-    public function request() 
+    public function getForm()
     {
-        $form = UserData::getColumnNames();
-        $nonceToken = $this->entryService->generateNonce();
+        try 
+        {
+            $form = $this->areaConfigService->getJoinForm();
+            $nonceToken = $this->entryService->generateNonce();
 
-        $data = [
-            'form_fields' => $form,
-            'nonce' => $nonceToken,
-        ];
+            return $this->apiResponseService->ok([
+                'form_fields' => $form,
+                'nonce' => $nonceToken,
+            ], 'Form fields and nonce token successfully retrieved');
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Error occurred while retrieving form data', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(), 
+            ]);
+
+            return $this->apiResponseService->internalServerError('Failed to get form data', 500);
+        }
+    }
+
+
+    public function submit(Request $_request)
+    {
+        $form = $this->areaConfigService->getJoinForm();
+
+        $userData = collect($_request->input('data'))
+            ->pluck('field_value', 'field_label')
+            ->toArray();
+
+        $rules = [];
+
+        foreach ($form as $field) {
+            $rules[$field] = ['required'];
+        }
+
+        $validator = Validator::make($userData, $rules);
+
+        if ($validator->fails()) {
+            
+            return $this->apiResponseService->unprocessableEntity(
+                'Validation failed',
+                $validator->errors()
+            );
+        }
         
-        return $this->apiResponseService->ok($data, 'Form fields and nonce token successfully retrieved');
+        try 
+        {
+            $new_applicant = Applicant::create($userData);
+
+            $this->areaConfigService->incrementPendingMemberCount();
+
+            return $this->apiResponseService->created([
+                'application_id' => $new_applicant->id,
+            ], 'Application submitted successfully');
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Error occurred while submitting the application', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('Failed to submit application', 500);
+        }
     }
 
-    public function submit(Request $request)
+    public function check(Request $_request)
     {
-        $fieldData = $request->input('data');
+        try 
+        {
+            $application_id = $_request->input('application_id');
     
-        $userData = collect($fieldData)->mapWithKeys(function ($item) {
-            return [$item['field_label'] => $item['field_value']];
-        })->toArray();
+            $authCode = AuthenticationCode::where('applicant_id', $application_id)->first();
     
-        $new_applicant = Applicant::create($userData);
+            if (!$authCode) {
+                return $this->apiResponseService->internalServerError('Authentication code not found');
+            }
     
-        return $this->apiResponseService->created([
-            'application_id' => $new_applicant->id,
-        ], 'Application submitted successfully');
-    }
-    
+            return $this->apiResponseService->ok([
+                "authentication_code" => $authCode->id,
+            ], "Authentication code retrieved");
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Error occurred while retrieving authentication code', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
 
-    public function check(Request $request)
-    {
-        $user_id = $request->input('user_id');
-    
-        $authentication_code = $this->entryService->generateAuthenticationCode($user_id);
-    
-        $data = [
-            "authentication_code" => $authentication_code,
-        ];
-    
-        return $this->apiResponseService->ok($data, "New authentication code generated");
+            return $this->apiResponseService->internalServerError('Failed to retrieve authentication code', 500);
+        }
     }
 }

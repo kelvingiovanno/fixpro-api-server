@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Schema;
 
 class UserData extends Model
 {
@@ -16,12 +15,6 @@ class UserData extends Model
 
     public $timestamps = false;
     
-    public static function getColumnNames()
-    {
-        $columns = Schema::getColumnListing((new self)->getTable());
-        return array_values(array_diff($columns, ['id', 'user_id']));
-    }
-
     public function User()
     {
         return $this->belongsTo(User::class);

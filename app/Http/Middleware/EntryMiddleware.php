@@ -29,7 +29,7 @@ class EntryMiddleware
     {
         $referral = $request->query('ref');
         $nonce = $request->query('nonce');
-        $application_id = $request->query('application_id');
+        $application_id = $request->input('application_id');
 
         $paramCount = ($referral ? 1 : 0) + ($nonce ? 1 : 0) + ($application_id ? 1 : 0);
 
@@ -55,7 +55,7 @@ class EntryMiddleware
                 return $this->apiResponseService->unprocessableEntity('Invalid application ID');
             }
 
-            if (!$this->entryService->isApplicationAccepted($request, $application_id)) {
+            if (!$this->entryService->isApplicationAccepted($application_id)) {
                 return $this->apiResponseService->forbidden('The application has not been accepted');
             }
         }

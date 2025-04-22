@@ -4,63 +4,70 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 
-use App\Models\Ticket;
-use App\Models\Location;
-use App\Models\SupportiveTicketDocument;
-
 use App\Enums\IssueTypeEnum;
 use App\Enums\ResponLevelEnum;
 
+use App\Models\Ticket;
+use App\Models\Location;
+use App\Models\SupportiveTicketDocument;
 
 use App\Services\ApiResponseService;
 use App\Services\StorageService;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
-use Exception;
 use Throwable;
-use \Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class TicketController extends Controller
 {
     private ApiResponseService $apiResponseService;
     private StorageService $storageService;
 
-    public function __construct(ApiResponseService $_apiResponseService, StorageService $_storageService)
-    {
+    public function __construct (
+        ApiResponseService $_apiResponseService, 
+        StorageService $_storageService
+    ) {
         $this->apiResponseService = $_apiResponseService; 
         $this->storageService = $_storageService;
     }
 
     public function getAll()
     {
-        try {
+        try 
+        {
             $tickets = Ticket::with(['issueType', 'statusType', 'responseLevelType'])->get();
-    
+            
             $data = $tickets->map(function ($ticket) {
                 return [
-                    'id' => $ticket->id,
-                    'issue_type' => $ticket->issueType->label ?? null,
-                    'response_level' => $ticket->responseLevelType->label ?? null,
+                    'ticket_id' => $ticket->id,
+                    'issue_type' => optional($ticket->issueType)->label ?? 'N/A',
+                    'response_level' => optional($ticket->responseLevelType)->label ?? 'N/A', 
                     'raised_on' => $ticket->raised_on,
-                    'status' => $ticket->statusType->label ?? null,
-                    'closed_on' => $ticket->closed_on,
+                    'status' => optional($ticket->statusType)->label ?? 'N/A',  
+                    'closed_on' => $ticket->closed_on ?? 'Not closed yet',  
                 ];
             });
     
             return $this->apiResponseService->ok($data, 'Tickets retrieved successfully');
-    
         } 
         catch (Throwable $e) 
         {
-            $this->apiResponseService->internalServerError('Something went wrong', $e->getMessage());
+            Log::error('Error retrieving tickets: ', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+    
+            return $this->apiResponseService->internalServerError('An error occurred while retrieving area data');
         }
     }
-    
-    public function create(Request $request)
+
+    public function create(Request $_request)
     {
-        $validator = Validator::make($request->all(), [
+        $validator = Validator::make($_request->all(), [
             'issue_type' => 'required|string',
             'response_level' => 'required|string',
             'stated_issue' => 'required|string',
@@ -74,18 +81,17 @@ class TicketController extends Controller
             'supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
         ]);
     
-        if ($validator->fails()) 
-        {
+        if ($validator->fails()) {
             return $this->apiResponseService->unprocessableEntity('Validation failed', $validator->errors());
         }
-
+    
         try 
         {
-            $locationData = $request->input('location');
-    
-            $user_id = $request->input('jwt_payload')['user_id'];
-            $ticket_issue_type = IssueTypeEnum::id($request->input('issue_type'));
-            $ticket_response_level = ResponLevelEnum::id($request->input('response_level'));
+            $locationData = $_request->input('location');
+            $user_id = $_request->input('jwt_payload')['user_id'];
+            
+            $ticket_issue_type = IssueTypeEnum::id($_request->input('issue_type'));
+            $ticket_response_level = ResponLevelEnum::id($_request->input('response_level'));
     
             $location = Location::create([
                 'stated_location' => $locationData['stated_location'],
@@ -94,15 +100,16 @@ class TicketController extends Controller
             ]);
     
             $ticket = Ticket::create([
-                'user_id' => $user_id, 
+                'user_id' => $user_id,
                 'ticket_issue_type_id' => $ticket_issue_type,
                 'response_level_type_id' => $ticket_response_level,
                 'location_id' => $location->id,
-                'stated_issue' => $request->input('stated_issue'),
+                'stated_issue' => $_request->input('stated_issue'),
                 'raised_on' => now(),
             ]);
     
-            $documents = $request->input('supportive_documents', []);
+            $documents = $_request->input('supportive_documents', []);
+           
             foreach ($documents as $doc) {
                 $filePath = $this->storageService->storeLogTicketDocument(
                     $doc['resource_content'],
@@ -115,24 +122,35 @@ class TicketController extends Controller
                     'resource_type' => $doc['resource_type'],
                     'resource_name' => $doc['resource_name'],
                     'resource_size' => $doc['resource_size'],
-                    'resource_path' => $filePath, 
+                    'resource_path' => $filePath,
                 ]);
             }
-
+    
             return $this->apiResponseService->created('Ticket created successfully');
     
         } 
-        catch (Exception $e) 
+        catch (Throwable $e) 
         {
-            $this->apiResponseService->internalServerError('Something went wrong', $e->getMessage());
+            Log::error('Error creating ticket', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+    
+            return $this->apiResponseService->internalServerError('An error occurred while creating the ticket. Please try again later.');
         }
     }
 
-    public function get(int $ticket_id)
+    public function get(int $_ticketId)
     {
         try 
         {
-            $ticket = Ticket::with(['issueType', 'statusType', 'responseLevelType'])->findOrFail($ticket_id);
+            $ticket = Ticket::with(['issueType', 'statusType', 'responseLevelType'])->find($_ticketId);
+
+            if (!$ticket) {
+                return $this->apiResponseService->notFound('Ticket not found');
+            }
 
             $data = [
                 'id' => $ticket->id,
@@ -144,35 +162,44 @@ class TicketController extends Controller
             ];
 
             return $this->apiResponseService->ok($data, 'Ticket retrieved successfully');
-
-        } 
-        catch (ModelNotFoundException $e) 
-        {
-            return $this->apiResponseService->notFound('Ticket not found');
         } 
         catch (Throwable $e) 
         {
-            $this->apiResponseService->internalServerError('Something went wrong', $e->getMessage());
+            Log::error('Error retrieving ticket', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('An error occurred while retrieving the ticket. Please try again later.');
         }
     }
 
-    public function delete(int $ticket_id)
+    public function delete(int $_ticketId)
     {
         try 
         {
-            $ticket = Ticket::findOrFail($ticket_id);
+            $ticket = Ticket::find($_ticketId);
+
+            if (!$ticket) {
+                return $this->apiResponseService->notFound('Ticket not found');
+            }
+
             $ticket->delete();
 
             return $this->apiResponseService->ok(null, 'Ticket deleted successfully');
-
-        } 
-        catch (ModelNotFoundException $e) 
-        {
-            return $this->apiResponseService->notFound('Ticket not found');
         } 
         catch (Throwable $e) 
         {
-            $this->apiResponseService->internalServerError('Something went wrong', $e->getMessage());
+            Log::error('Error deleting ticket',  [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('An error occurred while deleting the ticket. Please try again later.');
         }
     }
 }

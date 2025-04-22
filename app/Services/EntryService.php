@@ -7,8 +7,6 @@ use Illuminate\Support\Str;
 
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
-use App\Models\User;
-use App\Models\UserData;
 use Illuminate\Http\Request;
 
 class EntryService
@@ -55,7 +53,7 @@ class EntryService
             $nonce = Str::random(64); 
         } while (Cache::has("nonce:$nonce")); 
 
-        Cache::store('redis')->put("nonce:$nonce", true, now()->addMinute());
+        Cache::store('redis')->put("nonce:$nonce", true, now()->addHour());
 
         return $nonce;
     }
@@ -72,49 +70,28 @@ class EntryService
 
     public function checkApplicationId($_applicationId): bool 
     {
+        if (!Str::isUuid($_applicationId)) {
+            return false; 
+        }
+
         return Applicant::where('id', $_applicationId)->exists();
     }
 
-    public function isApplicationAccepted(Request $request, string $applicationId): bool
+    public function isApplicationAccepted(string $_applicationId): bool
     {
-        $applicant = Applicant::where('id', $applicationId)
+
+        if (!Str::isUuid($_applicationId)) {
+            return false;
+        }
+
+        $applicant = Applicant::where('id', $_applicationId)
             ->where('is_accepted', true)
             ->first();
 
         if (!$applicant) {
             return false;
         }
-
-        $user = User::create([]);
-
-        $applicationData = $applicant->toArray();
-        unset($applicationData['id'], $applicationData['is_accepted']);
-
-        $applicationData['user_id'] = $user->id;
-
-        UserData::create($applicationData);
-
-        $applicant->delete();
-
-        $request->merge(['user_id' => $user->id]);
-
+        
         return true;
     }
-
-
-
-    public function generateAuthenticationCode($_userId): string
-    {
-        $newAuthenticationCode = 'AUTH-' . Str::uuid();
-
-        AuthenticationCode::create([
-            'code' => $newAuthenticationCode,
-            'user_id' => $_userId,
-            'expires_at' => now()->addMinutes(10), 
-        ]);
-
-
-        return $newAuthenticationCode;
-    }
-
 }   

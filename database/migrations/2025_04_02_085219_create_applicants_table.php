@@ -11,21 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('applicants', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('role_id')->constrained('users_role')->cascadeOnDelete('set null');
+            $table->boolean('is_accepted')->default(false);
+
             $table->string('name');
-            $table->string('title');
-            $table->dateTime('member_since');
-            $table->dateTime('member_until');
+            
         });
     }
 
     /**
-     * Reverse the migrations.Us 
+     * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('applicants');
     }
 };

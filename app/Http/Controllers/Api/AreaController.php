@@ -4,161 +4,397 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 
+use App\Enums\UserRoleEnum;
+use App\Enums\UserSpeciallityEnum;
+
 use App\Models\User;
+use App\Models\UserData;
 use App\Models\Applicant;
+use App\Models\AuthenticationCode;
 
 use App\Services\EntryService;
 use App\Services\ApiResponseService;
+use App\Services\AreaConfigService;
 
-use GuzzleHttp\Psr7\Request;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+
+use Throwable;
 
 class AreaController extends Controller
 {
-
     private EntryService $entryService;
     private ApiResponseService $apiResponseService;
+    private AreaConfigService $areaConfigService;
 
-    public function __construct(EntryService $_entryService, ApiResponseService $_apiResponseService)
-    {
+    public function __construct (
+        EntryService $_entryService, 
+        ApiResponseService $_apiResponseService, 
+        AreaConfigService $_areaConfigService
+    ) {
         $this->entryService = $_entryService;
         $this->apiResponseService = $_apiResponseService;
+        $this->areaConfigService = $_areaConfigService;
     }
     
     public function index()
     {
+        try 
+        {
+            $data = $this->areaConfigService->getAreaData();
 
+            return $this->apiResponseService->ok($data);
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Failed to retrieve area data', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('Failed to retrieve area data');
+        }
     }
 
     public function getJoinCode()
     {
-        $endpoint = env('APP_URL');
-        $refferal = $this->entryService->getReferral();
+        try 
+        {
+            $endpoint = env('APP_URL');
+            $refferal = $this->entryService->getReferral();
 
-        $data = [
-            "endpoint" => $endpoint,
-            "referral_tracking_identifier" => $refferal,
-        ];
+            $data = [
+                "endpoint" => $endpoint,
+                "referral_tracking_identifier" => $refferal,
+            ];
 
-        
-        return $this->apiResponseService->ok($data);
+            return $this->apiResponseService->ok($data);
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Failed to retrieve join code', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('Failed to retrieve join code');
+        }
     }
 
     public function delJoinCode()
-    {  
-        $this->entryService->deleteReferral();
-        return $this->apiResponseService->ok();
+    {
+        try 
+        {
+            $this->entryService->deleteReferral();
+            return $this->apiResponseService->ok();
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Failed to delete join code', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+           
+            return $this->apiResponseService->internalServerError('Failed to delete join code');
+        }
     }
 
     public function getMembers()
     {
-        $members = User::with(['userData', 'role'])->get();
+        try 
+        {
+            $users = User::with(['userData', 'role'])->get();
 
-        $data = $members->map(function ($member) {
+            $data = $users->map(function ($user) {
 
-            $user_data = $member->userData;
-            unset($user_data['id'], $user_data['user_id']);
+                $userData = $user->userData;
+                unset($user_data['id'], $user_data['user_id']);
 
-            return [
+                return [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'role' => $user->role->label,
+                    'speciality' => $user->specialities->pluck('label')->toArray(),
+                    'member_since' => $user->member_since,
+                    'member_until' => $user->member_until,
+                    'more_information' => $userData,
+                ];
+            });
+
+            return $this->apiResponseService->ok($data);
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Failed to retrieve members', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        
+            return $this->apiResponseService->internalServerError('Failed to retrieve members');
+        }
+    }
+
+    public function postMembers(Request $_request)
+    {
+        $validator = Validator::make($_request->all(), [
+            'application_id' => 'required|uuid|exists:applicants,id',
+            'role' => 'required|string',
+            'specialization' => 'required|array',
+            'specialization.*' => 'required|string',
+            'title' => 'required|string|max:255',
+        ]);
+        
+        if ($validator->fails()) {
+            return $this->apiResponseService->unprocessableEntity("There was an issue with your input", $validator->errors());
+        }
+        
+        try 
+        {
+            $applicationId = $_request->input('application_id');
+            $role = UserRoleEnum::id($_request->input('role'));
+            $specializationLabels = $_request->input('specialization');
+            $title = $_request->input('title');
+
+            if (!$role) {
+                return $this->apiResponseService->unprocessableEntity('Invalid role provided.');
+            }
+
+            $specializationIds = array_map(function ($label) {
+                $id = UserSpeciallityEnum::id($label);
+                if (!$id) {
+                    return null; 
+                }
+                return $id;
+            }, $specializationLabels);
+
+            if (in_array(null, $specializationIds, true)) {
+                return $this->apiResponseService->unprocessableEntity('One or more specializations are invalid.');
+            }
+
+            $applicant = Applicant::find($applicationId);
+            if (!$applicant) {
+                return $this->apiResponseService->notFound('Applicant not found');
+            }
+
+            $user = User::create([
+                'role_id' => $role,
+                'name' => $applicant->name,
+                'title' => $title,
+            ]);
+
+            $user->specialities()->attach($specializationIds);
+
+            $applicantData = $applicant->toArray();
+            unset($applicantData['name'], $applicantData['is_accepted']);
+
+            $userData = UserData::create(array_merge($applicantData, [
+                'user_id' => $user->id,
+                'title' => $title,
+            ]));
+            
+            $applicant->update(['is_accepted' => true]);
+
+            AuthenticationCode::create([
+                'applicant_id' => $applicant->id,
+                'user_id' => $user->id,
+            ]);
+
+            $this->areaConfigService->incrementMemberCount();
+            $this->areaConfigService->decrementPendingMemberCount();
+
+            unset($userData['id'], $userData['user_id']);
+
+            
+            $data = [
+                'id' => $user->id,
+                'name' => $user->name,
+                'role' => $user->role->label,
+                'speciality' => $user->specialities->pluck('label')->toArray(),
+                'title' => $user->title,
+                'member_since' => $user->member_since,
+                'member_until' => $user->member_until,
+                'more_information' => $userData
+            ];
+
+            return $this->apiResponseService->created($data, 'User created');
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Failed to create member', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('An error occurred while creating the user.');
+        }
+    }
+
+    public function getMember(string $_memberId)
+    {
+        try 
+        {
+            if (!Str::isUuid($_memberId)) {
+                return $this->apiResponseService->badRequest('Member not found.');
+            }
+    
+            $member = User::with(['userData', 'role', 'specialities'])->find($_memberId);
+    
+            if (!$member) {
+                return $this->apiResponseService->notFound('Member not found.');
+            }
+    
+            $userData = $member->userData;
+            unset($userData['id'], $userData['user_id']);
+    
+            $data = [
                 'id' => $member->id,
-                'role' => optional($member->role)->label,
+                'role' => $member->role->label ?? null,
                 'speciality' => $member->specialities->pluck('label')->toArray(),
                 'member_since' => $member->member_since,
                 'member_until' => $member->member_until,
-                'user_data' => $user_data,
+                'user_data' => $userData,
             ];
-        });
-        
-        return $this->apiResponseService->ok($data);
-    }
-
-    public function postMembers(Request $request)
-    {
-        
-    }
-
-    public function getMember(string $member_id)
-    {
-        if (!Str::isUuid($member_id)) {
-            return $this->apiResponseService->badRequest('Member not found.');
-        }
-        
-        $member = User::with(['userData', 'role', 'specialities'])->find($member_id);
     
-        if (!$member) {
-            return $this->apiResponseService->notFound('Member not found.');
-        }
+            return $this->apiResponseService->ok($data);
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Failed to retrieve member', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
         
-        $userData = $member->userData;
-
-        unset($userData['id'], $userData['user_id']);
-
-        $data = [
-            'id' => $member->id,
-            'role' => $member->role->label ?? null,
-            'speciality' => $member->specialities->pluck('label')->toArray(),
-            'member_since' => $member->member_since,
-            'member_until' => $member->member_until,
-            'user_data' => $userData,
-        ];
+            return $this->apiResponseService->internalServerError('Failed to retrieve member.');
+        }
+    }
     
-        return $this->apiResponseService->ok($data);
-    }
-
-    public function delMember(string $member_id)
+    public function delMember(string $_memberId)
     {
-        if (!Str::isUuid($member_id)) {
-            return $this->apiResponseService->badRequest('Member not found.');
+        try 
+        {
+            if (!Str::isUuid($_memberId)) {
+                return $this->apiResponseService->badRequest('Member not found.');
+            }
+    
+            $member = User::find($_memberId);
+    
+            if (!$member) {
+                return $this->apiResponseService->notFound('Member not found.');
+            }
+    
+            $member->delete();
+            $this->areaConfigService->decrementMemberCount();
+    
+            return $this->apiResponseService->ok('Member deleted successfully.');
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Failed to delete member', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        
+            return $this->apiResponseService->internalServerError('Failed to delete member.');
         }
-
-        $member = User::find($member_id);
-
-        if (!$member) {
-            return $this->apiResponseService->notFound('Member not found.');
-        }
-
-        $member->delete();
-
-        return $this->apiResponseService->ok('Member deleted successfully.');
     }
-
+    
     public function getPendingMembers()
     {
-        $pendingMembers = Applicant::all();
-
-        return $this->apiResponseService->ok($pendingMembers);
+        try 
+        {
+            $pendingMembers = Applicant::all();
+    
+            return $this->apiResponseService->ok($pendingMembers);
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Failed to retrieve pending members', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        
+            return $this->apiResponseService->internalServerError('Failed to retrieve pending members.');
+        }
     }
-
-    public function getApplicant(string $application_id)
+    
+    public function getApplicant(string $_applicationId)
     {
-        if (!Str::isUuid($application_id)) {
-            return $this->apiResponseService->badRequest('Aplicant not found.');
+        try 
+        {
+            if (!Str::isUuid($_applicationId)) {
+                return $this->apiResponseService->badRequest('Applicant not found.');
+            }
+    
+            $applicant = Applicant::find($_applicationId);
+    
+            if (!$applicant) {
+                return $this->apiResponseService->notFound('Applicant not found.');
+            }
+    
+            return $this->apiResponseService->ok($applicant);
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Failed to retrieve applicant', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        
+            return $this->apiResponseService->internalServerError('Failed to retrieve applicant.');
         }
-
-        $applicant = Applicant::find($application_id);
-
-        if (!$applicant) {
-            return $this->apiResponseService->notFound('Applicant not found.');
-        }
-
-        return $this->apiResponseService->ok($applicant);
     }
-
-    public function delApplicant(string $application_id)
+    
+    public function delApplicant(string $_applicationId)
     {
-        if (!Str::isUuid($application_id)) {
-            return $this->apiResponseService->badRequest('Applicant not found.');
+        try 
+        {
+            if (!Str::isUuid($_applicationId)) {
+                return $this->apiResponseService->badRequest('Applicant not found.');
+            }
+    
+            $applicant = Applicant::find($_applicationId);
+    
+            if (!$applicant) {
+                return $this->apiResponseService->notFound('Applicant not found.');
+            }
+    
+            $applicant->delete();
+            $this->areaConfigService->decrementPendingMemberCount();
+    
+            return $this->apiResponseService->ok('Applicant deleted successfully.');
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Failed to delete applicant', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        
+            return $this->apiResponseService->internalServerError('Failed to delete applicant.');
         }
-
-        $applicant = Applicant::find($application_id);
-
-        if (!$applicant) {
-            return $this->apiResponseService->notFound('Applicant not found.');
-        }
-
-        $applicant->delete();
-
-        return $this->apiResponseService->ok('Applicant deleted successfully.');
     }
+    
 
 }
