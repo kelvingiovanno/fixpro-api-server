@@ -9,7 +9,7 @@ use App\Enums\ResponLevelEnum;
 
 use App\Models\Ticket;
 use App\Models\Location;
-use App\Models\SupportiveTicketDocument;
+use App\Models\TicketDocument;
 
 use App\Services\ApiResponseService;
 use App\Services\StorageService;
@@ -17,6 +17,7 @@ use App\Services\StorageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 use Throwable;
 
@@ -46,6 +47,7 @@ class TicketController extends Controller
                     'response_level' => optional($ticket->responseLevelType)->label ?? 'N/A', 
                     'raised_on' => $ticket->raised_on,
                     'status' => optional($ticket->statusType)->label ?? 'N/A',  
+                    'executive_summary' => $ticket->executive_summary,   
                     'closed_on' => $ticket->closed_on ?? 'Not closed yet',  
                 ];
             });
@@ -117,7 +119,7 @@ class TicketController extends Controller
                     $ticket->id
                 );
     
-                SupportiveTicketDocument::create([
+                TicketDocument::create([
                     'ticket_id' => $ticket->id,
                     'resource_type' => $doc['resource_type'],
                     'resource_name' => $doc['resource_name'],
@@ -142,22 +144,36 @@ class TicketController extends Controller
         }
     }
 
-    public function get(int $_ticketId)
+    public function get(string $_ticketId)
     {
+        if (!Str::isUuid($_ticketId)) {
+            return $this->apiResponseService->notFound('Ticket not found'); 
+        }
+
         try 
         {
-            $ticket = Ticket::with(['issueType', 'statusType', 'responseLevelType'])->find($_ticketId);
+            $ticket = Ticket::with(['user', 'location', 'documents', 'issueType', 'statusType', 'responseLevelType'])->find($_ticketId);
 
             if (!$ticket) {
                 return $this->apiResponseService->notFound('Ticket not found');
             }
 
             $data = [
-                'id' => $ticket->id,
+                'ticket_id' => $ticket->id,
                 'issue_type' => optional($ticket->issueType)->label,
                 'response_level' => optional($ticket->responseLevelType)->label,
                 'raised_on' => $ticket->raised_on,
                 'status' => optional($ticket->statusType)->label,
+                'executive_summary' => $ticket->executive_summary,
+                'stated_issue' => $ticket->stated_issue,
+                'locations' => $ticket->location,
+                'supportive_documents' => $ticket->documents,
+                'issuer' => [
+                    'name' => $ticket->user->name,
+                    'more_information' => $ticket->user->userData
+                ],
+                // 'logs' => $ticket->logs,
+                // 'handlers' => ,
                 'closed_on' => $ticket->closed_on,
             ];
 
@@ -178,6 +194,10 @@ class TicketController extends Controller
 
     public function delete(int $_ticketId)
     {
+        if (!Str::isUuid($_ticketId)) {
+            return $this->apiResponseService->notFound('Ticket not found'); 
+        }
+
         try 
         {
             $ticket = Ticket::find($_ticketId);

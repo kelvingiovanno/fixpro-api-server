@@ -12,9 +12,9 @@ use App\Models\UserData;
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
 
-use App\Services\EntryService;
 use App\Services\ApiResponseService;
 use App\Services\AreaConfigService;
+use App\Services\ReferralCodeService;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -25,16 +25,16 @@ use Throwable;
 
 class AreaController extends Controller
 {
-    private EntryService $entryService;
+    private ReferralCodeService $referralCodeService;
     private ApiResponseService $apiResponseService;
     private AreaConfigService $areaConfigService;
 
     public function __construct (
-        EntryService $_entryService, 
+        ReferralCodeService $_referralCodeService, 
         ApiResponseService $_apiResponseService, 
         AreaConfigService $_areaConfigService
     ) {
-        $this->entryService = $_entryService;
+        $this->referralCodeService = $_referralCodeService;
         $this->apiResponseService = $_apiResponseService;
         $this->areaConfigService = $_areaConfigService;
     }
@@ -65,14 +65,14 @@ class AreaController extends Controller
         try 
         {
             $endpoint = env('APP_URL');
-            $refferal = $this->entryService->getReferral();
+            $refferal = $this->referralCodeService->getReferral();
 
             $data = [
                 "endpoint" => $endpoint,
                 "referral_tracking_identifier" => $refferal,
             ];
 
-            return $this->apiResponseService->ok($data);
+            return $this->apiResponseService->ok($data, "The string representation of the Area Join Code, which then can be transformed into a qr-code form.");
         } 
         catch (Throwable $e) 
         {
@@ -91,7 +91,7 @@ class AreaController extends Controller
     {
         try 
         {
-            $this->entryService->deleteReferral();
+            $this->referralCodeService->deleteReferral();
             return $this->apiResponseService->ok();
         } 
         catch (Throwable $e) 
@@ -115,7 +115,7 @@ class AreaController extends Controller
 
             $data = $users->map(function ($user) {
 
-                $userData = $user->userData;
+                $user_data = $user->userData;
                 unset($user_data['id'], $user_data['user_id']);
 
                 return [
@@ -123,9 +123,10 @@ class AreaController extends Controller
                     'name' => $user->name,
                     'role' => $user->role->label,
                     'speciality' => $user->specialities->pluck('label')->toArray(),
+                    'title' => $user->title,
                     'member_since' => $user->member_since,
                     'member_until' => $user->member_until,
-                    'more_information' => $userData,
+                    'more_information' => $user_data,
                 ];
             });
 
@@ -229,7 +230,7 @@ class AreaController extends Controller
             return $this->apiResponseService->created($data, 'User created');
         } 
         catch (Throwable $e) 
-        {
+        { 
             Log::error('Failed to create member', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
@@ -243,12 +244,12 @@ class AreaController extends Controller
 
     public function getMember(string $_memberId)
     {
+        if (!Str::isUuid($_memberId)) {
+            return $this->apiResponseService->badRequest('Member not found.');
+        }
+
         try 
         {
-            if (!Str::isUuid($_memberId)) {
-                return $this->apiResponseService->badRequest('Member not found.');
-            }
-    
             $member = User::with(['userData', 'role', 'specialities'])->find($_memberId);
     
             if (!$member) {
@@ -284,12 +285,12 @@ class AreaController extends Controller
     
     public function delMember(string $_memberId)
     {
+        if (!Str::isUuid($_memberId)) {
+            return $this->apiResponseService->badRequest('Member not found.');
+        }
+
         try 
         {
-            if (!Str::isUuid($_memberId)) {
-                return $this->apiResponseService->badRequest('Member not found.');
-            }
-    
             $member = User::find($_memberId);
     
             if (!$member) {
@@ -337,12 +338,12 @@ class AreaController extends Controller
     
     public function getApplicant(string $_applicationId)
     {
+        if (!Str::isUuid($_applicationId)) {
+            return $this->apiResponseService->badRequest('Applicant not found.');
+        }
+
         try 
         {
-            if (!Str::isUuid($_applicationId)) {
-                return $this->apiResponseService->badRequest('Applicant not found.');
-            }
-    
             $applicant = Applicant::find($_applicationId);
     
             if (!$applicant) {
@@ -366,12 +367,12 @@ class AreaController extends Controller
     
     public function delApplicant(string $_applicationId)
     {
+        if (!Str::isUuid($_applicationId)) {
+            return $this->apiResponseService->badRequest('Applicant not found.');
+        }
+
         try 
         {
-            if (!Str::isUuid($_applicationId)) {
-                return $this->apiResponseService->badRequest('Applicant not found.');
-            }
-    
             $applicant = Applicant::find($_applicationId);
     
             if (!$applicant) {

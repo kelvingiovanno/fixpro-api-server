@@ -7,8 +7,7 @@ use Illuminate\Support\Str;
 
 class Area extends Model
 {
-    public $incrementing = false; 
-    protected $keyType = 'string';
+    protected $table = 'areas';
 
     protected $fillable = [
         'name',
@@ -18,14 +17,22 @@ class Area extends Model
         'pending_member',
     ];
 
+    protected $hidden = [
+        'id',
+    ];
+
+    public $incrementing = false; 
+    public $timestamps = false;
+    protected $keyType = 'string';
+
     protected static function boot()
     {
         parent::boot();
 
-        static::creating(function ($area) 
+        static::creating(function ($model) 
         {            
-            if (!$area->getKey()) {
-                $area->{$area->getKeyName()} = (string) Str::uuid();
+            if (!$model->getKey()) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
             } 
         });
     }

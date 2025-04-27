@@ -9,7 +9,6 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AreaController;
 
 use App\Http\Middleware\ApiAuthMiddleware;
-use App\Http\Middleware\EntryMiddleware;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -24,7 +23,7 @@ Route::prefix('/auth')->group(function() {
     Route::post('refresh', [AuthController::class, 'refresh']);
 });
 
-Route::middleware(EntryMiddleware::class)->prefix('entry')->group(function(){
+Route::prefix('entry')->group(function(){
     Route::post('/check', [FormController::class, 'check']);
     Route::get('/form', [FormController::class, 'getForm']);
     Route::post('/form',[FormController::class, 'submit']);
@@ -32,7 +31,7 @@ Route::middleware(EntryMiddleware::class)->prefix('entry')->group(function(){
 
 Route::prefix('/ticket')->group(function ()  {
         
-    Route::prefix('/{ticket_id}')->group(function () {
+    Route::prefix('/{_ticketId}')->group(function () {
         Route::get('/', [TicketController::class, 'get']);
         Route::delete('/', [TicketController::class, 'delete']);
     }); 
@@ -62,11 +61,13 @@ Route::prefix('/area')->group(function() {
     
 });
 
+Route::prefix('/tickets')->group(function() {
+    Route::get('/', [TicketController::class, 'getAll']);
+    Route::post('/', [TicketController::class, 'create']);
+});    
+
+
 Route::middleware(ApiAuthMiddleware::class)->group(function () {
 
-    Route::prefix('/tickets')->group(function() {
-        Route::get('/', [TicketController::class, 'getAll']);
-        Route::post('/', [TicketController::class, 'create']);
-    });    
 
 });

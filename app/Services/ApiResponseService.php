@@ -15,7 +15,7 @@ class ApiResponseService
      */
     public function ok(mixed $data = null, string $message = 'Success'): JsonResponse
     {
-        return $this->customResponse(true, $message, JsonResponse::HTTP_OK, $data);
+        return $this->customResponse($message, JsonResponse::HTTP_OK, $data);
     }
 
     /**
@@ -27,7 +27,7 @@ class ApiResponseService
      */
     public function created(mixed $data = null, string $message = 'Resource created successfully'): JsonResponse
     {
-        return $this->customResponse(true, $message, JsonResponse::HTTP_CREATED, $data);
+        return $this->customResponse($message, JsonResponse::HTTP_CREATED, $data);
     }
 
     /**
@@ -38,7 +38,7 @@ class ApiResponseService
      */
     public function noContent(string $message = 'No content to return'): JsonResponse
     {
-        return $this->customResponse(true, $message, JsonResponse::HTTP_NO_CONTENT);
+        return $this->customResponse($message, JsonResponse::HTTP_NO_CONTENT);
     }
 
     /**
@@ -50,7 +50,7 @@ class ApiResponseService
      */
     public function badRequest(string $message = 'Bad Request', mixed $errors = null): JsonResponse
     {
-        return $this->customResponse(false, $message, JsonResponse::HTTP_BAD_REQUEST, null, $errors);
+        return $this->customResponse($message, JsonResponse::HTTP_BAD_REQUEST, null, $errors);
     }
 
     /**
@@ -62,7 +62,7 @@ class ApiResponseService
      */
     public function unauthorized(string $message = 'Unauthorized', mixed $errors = null): JsonResponse
     {
-        return $this->customResponse(false, $message, JsonResponse::HTTP_UNAUTHORIZED, null, $errors);
+        return $this->customResponse($message, JsonResponse::HTTP_UNAUTHORIZED, null, $errors);
     }
 
     /**
@@ -74,7 +74,7 @@ class ApiResponseService
      */
     public function forbidden(string $message = 'Forbidden', mixed $errors = null): JsonResponse
     {
-        return $this->customResponse(false, $message, JsonResponse::HTTP_FORBIDDEN, null, $errors);
+        return $this->customResponse($message, JsonResponse::HTTP_FORBIDDEN, null, $errors);
     }
 
     /**
@@ -86,7 +86,7 @@ class ApiResponseService
      */
     public function notFound(string $message = 'Not Found', mixed $errors = null): JsonResponse
     {
-        return $this->customResponse(false, $message, JsonResponse::HTTP_NOT_FOUND, null, $errors);
+        return $this->customResponse($message, JsonResponse::HTTP_NOT_FOUND, null, $errors);
     }
 
     /**
@@ -98,7 +98,7 @@ class ApiResponseService
      */
     public function methodNotAllowed(string $message = 'Method Not Allowed', mixed $errors = null): JsonResponse
     {
-        return $this->customResponse(false, $message, JsonResponse::HTTP_METHOD_NOT_ALLOWED, null, $errors);
+        return $this->customResponse($message, JsonResponse::HTTP_METHOD_NOT_ALLOWED, null, $errors);
     }
 
     /**
@@ -110,7 +110,7 @@ class ApiResponseService
      */
     public function unprocessableEntity(string $message = 'Unprocessable Entity', mixed $errors = null): JsonResponse
     {
-        return $this->customResponse(false, $message, JsonResponse::HTTP_UNPROCESSABLE_ENTITY, null, $errors);
+        return $this->customResponse($message, JsonResponse::HTTP_UNPROCESSABLE_ENTITY, null, $errors);
     }
 
     /**
@@ -122,24 +122,21 @@ class ApiResponseService
      */
     public function internalServerError(string $message = 'Internal Server Error', mixed $errors = null): JsonResponse
     {
-        return $this->customResponse(false, $message, JsonResponse::HTTP_INTERNAL_SERVER_ERROR, null, app()->environment('production') ? null : $errors);
+        return $this->customResponse($message, JsonResponse::HTTP_INTERNAL_SERVER_ERROR, null, app()->environment('production') ? null : $errors);
     }
 
     /**
      * Custom Response - Can be used for any HTTP status
      *
-     * @param bool $status Whether the request was successful
      * @param string $message The message to send
      * @param int $code The HTTP status code
      * @param mixed $data The data to return (optional)
      * @param mixed $errors The errors to return (optional)
      * @return JsonResponse
      */
-    private function customResponse(bool $status, string $message, int $code, mixed $data = null, mixed $errors = null): JsonResponse
+    private function customResponse(string $message, int $code, mixed $data = null, mixed $errors = null): JsonResponse
     {
-        // Returning response with standardized structure
         return response()->json([
-            'status'  => $status,
             'message' => $message,
             'data'    => $data ?? new \stdClass(), // Default to an empty object if no data
             'errors'  => $errors ?? new \stdClass(), // Default to an empty object if no errors

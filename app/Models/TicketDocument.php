@@ -2,23 +2,25 @@
 
 namespace App\Models;
 
-use App\Models\User;
+use App\Models\Ticket;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class RefreshToken extends Model
+class TicketDocument extends Model
 {
     use HasFactory;
     use SoftDeletes;
     
-    protected $table = 'refresh_tokens';
+    protected $table = 'ticket_documents';
 
     protected $fillable = [
-        'user_id',
-        'token',
-        'expires_at',
+        'ticket_id',
+        'resource_type',
+        'resource_name',
+        'resource_size',
+        'resource_path',
     ];
 
     protected $hidden = [
@@ -26,9 +28,9 @@ class RefreshToken extends Model
     ];
 
     public $timestamps = false;
-
-    public function user()
+    
+    public function tickets()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(Ticket::class);
     }
 }

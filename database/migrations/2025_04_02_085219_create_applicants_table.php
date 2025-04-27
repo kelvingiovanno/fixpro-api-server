@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('applicants', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->boolean('is_accepted')->default(false);
-
+            $table->foreignId('status_id')->constrained('applicant_statuses');
             $table->string('name');
-            
+            $table->dateTime('expires_at');
+            $table->softDeletes();
         });
     }
 

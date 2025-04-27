@@ -3,13 +3,12 @@
 namespace Database\Factories;
 
 use App\Models\User;
-
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\UserData>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\RefreshToken>
  */
-class UserDataFactory extends Factory
+class RefreshTokenFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -20,9 +19,8 @@ class UserDataFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'email' => $this->faker->unique()->safeEmail(),
-            'phone_number' => $this->faker->phoneNumber(),
-            'whatsapp_registered_number' => $this->faker->e164PhoneNumber(),
+            'token' => $this->faker-> uuid(),
+            'expires_at' => now()->addYear(),
         ];
     }
 }

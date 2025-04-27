@@ -13,7 +13,14 @@ return new class extends Migration
     {
         Schema::create('ticket_log_documents', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
+            $table->uuid('ticket_log_id');
+            $table->string('resource_type');
+            $table->string('resource_name');
+            $table->string('resource_size');
+            $table->string('resource_path')->unique();
+            $table->softDeletes();
+            
+            $table->foreign('ticket_log_id')->references('id')->on('ticket_logs');
         });
     }
 

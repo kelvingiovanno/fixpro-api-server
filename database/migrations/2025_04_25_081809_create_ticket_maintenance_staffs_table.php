@@ -11,16 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ticket_documents', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('ticket_id');
-            $table->string('resource_type');
-            $table->string('resource_name');
-            $table->string('resource_size');
-            $table->string('resource_path')->unique();
-            $table->softDeletes();
+        Schema::create('ticket_maintenance_staffs', function (Blueprint $table) {
             
+            $table->uuid('ticket_id');
+            $table->uuid('user_id');
+            $table->softDeletes();
+
             $table->foreign('ticket_id')->references('id')->on('tickets');
+            $table->foreign('user_id')->references('id')->on('users');
+            $table->primary(['ticket_id', 'user_id']);
         });
     }
 
@@ -29,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('supportive_ticket_documents');
+        Schema::dropIfExists('ticket_maintenance_staffs');
     }
 };

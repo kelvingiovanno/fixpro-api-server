@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('response_level_types', function (Blueprint $table) {
             $table->unsignedBigInteger('id')->primary();
             $table->string('label')->unique();
-            $table->timestamps();
+            $table->softDeletes();
         });
     }
 

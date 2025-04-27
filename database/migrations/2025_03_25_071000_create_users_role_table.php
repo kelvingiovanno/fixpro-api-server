@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('users_role', function (Blueprint $table) {
             $table->unsignedBigInteger('id')->primary();
-            $table->string('label');
-            $table->timestamps();
+            $table->string('label')->unique();
+            $table->softDeletes();
         });
     }
 

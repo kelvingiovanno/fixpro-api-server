@@ -14,11 +14,12 @@ return new class extends Migration
         Schema::create('refresh_tokens', function (Blueprint $table) {
             $table->id();
             $table->uuid('user_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->string('token')->unique();
             $table->timestamp('expires_at');
             $table->boolean('revoked')->default(false);
-            $table->timestamps();
+            $table->softDeletes();
+        
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

@@ -36,7 +36,7 @@ class UserFormPageController extends Controller
         return response()->json([
             'success' => $tableCreated,
             'email' => isset($data['email']), 
-            'phone' => isset($data['phone']),
+            'phone_number' => isset($data['phone_number']),
             'custom' => $data['custom'] ?? []
         ]);
     }
@@ -50,13 +50,12 @@ class UserFormPageController extends Controller
                 $table->id();
                 
                 $table->uuid('user_id')->nullable();
-                $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
-
+            
                 if (!empty($data['email'])) {
                     $table->string('email')->nullable();
                 }
 
-                if (!empty($data['phone'])) {
+                if (!empty($data['phone_number'])) {
                     $table->string('phone_number')->nullable();
                 }
 
@@ -68,6 +67,9 @@ class UserFormPageController extends Controller
                         }
                     }
                 }
+
+                $table->softDeletes();
+                $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
             });
 
   
@@ -77,7 +79,7 @@ class UserFormPageController extends Controller
                     $table->string('email')->nullable();
                 }
 
-                if (!empty($data['phone'])) {
+                if (!empty($data['phone_number'])) {
                     $table->string('phone_number')->nullable();
                 }
                 
@@ -92,6 +94,8 @@ class UserFormPageController extends Controller
                         }
                     }
                 }
+
+                $table->softDeletes();
             });
 
             

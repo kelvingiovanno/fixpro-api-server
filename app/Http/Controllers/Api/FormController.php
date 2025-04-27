@@ -4,46 +4,68 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 
+use App\Enums\ApplicantStatusEnum;
+
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
-
 use App\Services\ApiResponseService;
 use App\Services\AreaConfigService;
-use App\Services\EntryService;
+use App\Services\ReferralCodeService;
+use App\Services\NonceCodeService;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 use Throwable;
 
 class FormController extends Controller
 {
     private ApiResponseService $apiResponseService;
-    private EntryService $entryService;
+    private ReferralCodeService $referralCodeService;
+    private NonceCodeService $nonceCodeService;
     private AreaConfigService $areaConfigService;
 
     public function __construct (
         ApiResponseService $_apiResponseService, 
-        EntryService $_entryService, 
+        ReferralCodeService $_referralCodeService,
+        NonceCodeService $_nonceCodeService, 
         AreaConfigService $_areaConfigService
     ) {
         $this->apiResponseService = $_apiResponseService;
-        $this->entryService = $_entryService;
+        $this->referralCodeService = $_referralCodeService;
+        $this->nonceCodeService = $_nonceCodeService;
         $this->areaConfigService = $_areaConfigService;
     }
 
-    public function getForm()
+    public function getForm(Request $_request)
     {
+        $referralCode = $_request->query('ref');
+
+        if (!$referralCode) {
+            return $this->apiResponseService->badRequest('Referral code is required.');
+        }
+
+        if (!$this->referralCodeService->checkReferral($referralCode)) {
+            return $this->apiResponseService->forbidden('The provided referral code is invalid or has expired.');
+        }
+
         try 
         {
+            $nonceToken = $this->nonceCodeService->generateNonce();
+            $area = $this->areaConfigService->getAreaData();
+    
             $form = $this->areaConfigService->getJoinForm();
-            $nonceToken = $this->entryService->generateNonce();
+            $form_fields = collect($form)->map(function ($field) {
+                return ['field_label' => ucfirst(str_replace('_', ' ', $field))];
+            })->values();
 
             return $this->apiResponseService->ok([
-                'form_fields' => $form,
+                'area_name' => $area->name,
+                'form_fields' => $form_fields,
                 'nonce' => $nonceToken,
-            ], 'Form fields and nonce token successfully retrieved');
+            ], 'All the required fields and a nonce to be used for submission.');
         } 
         catch (Throwable $e) 
         {
@@ -58,40 +80,63 @@ class FormController extends Controller
         }
     }
 
-
     public function submit(Request $_request)
     {
-        $form = $this->areaConfigService->getJoinForm();
+        $nonce_code = $_request->query('nonce');
 
-        $userData = collect($_request->input('data'))
+        if (!$nonce_code) {
+            return $this->apiResponseService->badRequest('Nonce code is required.');
+        }
+
+        if (!$this->nonceCodeService->checkNonce($nonce_code)) {
+            return $this->apiResponseService->forbidden('The provided referral code is invalid or has expired.');
+        }
+
+        $form_labels = $this->areaConfigService->getJoinForm();
+
+        $formattedFormLabels = array_map(function ($form_label) {
+            return ucwords(str_replace('_', ' ', $form_label));
+        }, $form_labels);
+
+        $form_data = collect($_request->input('data'))
             ->pluck('field_value', 'field_label')
             ->toArray();
 
         $rules = [];
-
-        foreach ($form as $field) {
-            $rules[$field] = ['required'];
+        foreach ($formattedFormLabels as $label) {
+            $rules[$label] = ['required'];
         }
 
-        $validator = Validator::make($userData, $rules);
+        $validator = Validator::make($form_data, $rules);
 
         if ($validator->fails()) {
-            
-            return $this->apiResponseService->unprocessableEntity(
+            return $this->apiResponseService->badRequest(
                 'Validation failed',
                 $validator->errors()
             );
         }
-        
+
+        $normalizedData = [];
+        foreach ($form_data as $label => $value) {
+            $normalizedKey = strtolower(str_replace(' ', '_', $label));
+            $normalizedData[$normalizedKey] = $value;
+        }
+
         try 
         {
-            $new_applicant = Applicant::create($userData);
+            $new_applicant = Applicant::create($normalizedData);
 
             $this->areaConfigService->incrementPendingMemberCount();
 
-            return $this->apiResponseService->created([
+            $response_data = [
                 'application_id' => $new_applicant->id,
-            ], 'Application submitted successfully');
+                'application_expiry_date' => $new_applicant->expires_at,
+            ];
+
+            return $this->apiResponseService->ok(
+                $response_data, 
+                'Successfully submitted an application. Use the following string to check periodically of your application status.'
+            );
         } 
         catch (Throwable $e) 
         {
@@ -102,25 +147,66 @@ class FormController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('Failed to submit application', 500);
+            return $this->apiResponseService->internalServerError('Failed to submit application');
         }
     }
 
-    public function check(Request $_request)
+  
+
+    public function check(Request $request)
     {
+        $applicationId = $request->input('application_id');
+    
+        if (!$applicationId) {
+            return $this->apiResponseService->badRequest('Application ID is required.');
+        }
+    
+        if (!Str::isUuid($applicationId)) {
+            return $this->apiResponseService->badRequest('Application not found');
+        }
+    
         try 
-        {
-            $application_id = $_request->input('application_id');
-    
-            $authCode = AuthenticationCode::where('applicant_id', $application_id)->first();
-    
-            if (!$authCode) {
-                return $this->apiResponseService->internalServerError('Authentication code not found');
+        {    
+            $applicant = Applicant::with('status')->find($applicationId);
+        
+            if (!$applicant) {
+                return $this->apiResponseService->badRequest('Application not found.');
             }
+            
+            if ($applicant->expires_at < now()) {
+                return $this->apiResponseService->forbidden('Your application has expired.');
+            }
+            
+            switch ($applicant->status->id) {
+        
+                case ApplicantStatusEnum::PENDING->value:
+                    return $this->apiResponseService->noContent('Your application is still pending.');
+                    break;
     
-            return $this->apiResponseService->ok([
-                "authentication_code" => $authCode->id,
-            ], "Authentication code retrieved");
+                case ApplicantStatusEnum::REJECTED->value:
+                    
+                    return $this->apiResponseService->forbidden('Your application has been rejected.');
+                    break;
+    
+                case ApplicantStatusEnum::ACCEPTED->value:
+                    
+                    $authCode = AuthenticationCode::where('applicant_id', $applicationId)->first();
+    
+                    if (!$authCode) {
+                        return $this->apiResponseService->notFound('Authentication code not found for this applicant.');
+                    }
+    
+                    return $this->apiResponseService->ok(
+                        ['authentication_code' => $authCode->id],
+                        'Your application has been approved. Use the authentication code to proceed.'
+                    );
+                    break;
+    
+                default:
+        
+                    return $this->apiResponseService->internalServerError('Unknown application status.');
+                    break;
+            }
         } 
         catch (Throwable $e) 
         {
@@ -130,8 +216,8 @@ class FormController extends Controller
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-
-            return $this->apiResponseService->internalServerError('Failed to retrieve authentication code', 500);
+    
+            return $this->apiResponseService->internalServerError('Failed to process your application status.');
         }
     }
 }

@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Ticket;
+
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Location extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $table = 'locations';
     
@@ -16,4 +20,15 @@ class Location extends Model
         'latitude',
         'longitude',
     ];
+
+    protected $hidden = [
+        'id',
+    ];
+
+    public $timestamps = false;
+
+    public function ticket()
+    {
+        return $this->hasOne(Ticket::class,  'location_id', 'id');
+    }
 }

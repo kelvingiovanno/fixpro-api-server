@@ -2,24 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use App\Enums\TikectStatusEnum;
 
-use App\Models\User;
 use App\Models\Enums\TicketIssueType;
 use App\Models\Enums\TicketStatusType;
 use App\Models\Enums\ResponseLevelType;
 
-use Illuminate\Support\Str;
+use App\Models\User;
+use App\Models\TicketDocument;
+use App\Models\TicketLog;
 
-use App\Enums\TikectStatusEnum;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Ticket extends Model
 {   
     use HasFactory;
-
-    public $incrementing = false; 
-    protected $keyType = 'string'; 
+    use SoftDeletes;
 
     protected $table = 'tickets';
 
@@ -30,10 +31,12 @@ class Ticket extends Model
         'response_level_type_id',
         'location_id',
         'stated_issue',
-        'closed_on',
+        'closed_at',
     ];
 
     public $timestamps = false;
+    public $incrementing = false; 
+    protected $keyType = 'string'; 
 
     protected static function boot()
     {
@@ -49,19 +52,24 @@ class Ticket extends Model
         });
     }
 
-    public function user()
+    public function issuer()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
-    public function issueType()
+    public function maintainers()
     {
-        return $this->belongsTo(TicketIssueType::class, 'ticket_issue_type_id');
+        return $this->belongsToMany(User::class, 'ticket_maintenance_staffs', 'ticket_id', 'user_id');
     }
 
     public function statusType()
     {
         return $this->belongsTo(TicketStatusType::class, 'ticket_status_type_id');
+    }
+
+    public function issueType()
+    {
+        return $this->belongsTo(TicketIssueType::class, 'ticket_issue_type_id');
     }
 
     public function responseLevelType()
@@ -71,6 +79,16 @@ class Ticket extends Model
 
     public function location()
     {
-        return $this->belongsTo(Location::class);
+        return $this->belongsTo(Location::class, 'location_id', 'id');
+    }
+    
+    public function documents() 
+    {
+        return $this->hasMany(TicketDocument::class, 'ticket_id', 'id');
+    }
+
+    public function ticketLogs()
+    {
+        return $this->hasMany(TicketLog::class, 'ticket_id', 'id');
     }
 }

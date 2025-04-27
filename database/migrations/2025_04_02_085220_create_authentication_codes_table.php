@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('applicant_id')->nullable();
             $table->uuid('user_id')->nullable();
             $table->timestamp('expires_at');
-            $table->timestamps();
+            $table->softDeletes();
 
             $table->foreign('applicant_id')->references('id')->on('applicants')->onDelete('cascade');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');

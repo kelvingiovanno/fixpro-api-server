@@ -18,7 +18,7 @@
                         <span>Email</span>
                     </label>
                     <label class="flex items-center space-x-2">
-                        <input type="checkbox" name="phone" value="1" class="w-5 h-5 text-blue-600 border-gray-300 rounded">
+                        <input type="checkbox" name="phone_number" value="1" class="w-5 h-5 text-blue-600 border-gray-300 rounded">
                         <span>Phone Number</span>
                     </label>
                 </div>

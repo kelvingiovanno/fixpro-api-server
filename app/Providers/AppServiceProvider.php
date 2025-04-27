@@ -5,7 +5,8 @@ namespace App\Providers;
 use App\Services\EncryptionService;
 use App\Services\QrCodeService;
 use App\Services\WebAuthTokenService;
-use App\Services\EntryService;
+use App\Services\ReferralCodeService;
+use App\Services\NonceCodeService;
 use App\Services\StorageService;
 use App\Services\AreaConfigService;
 
@@ -27,8 +28,8 @@ class AppServiceProvider extends ServiceProvider
             return new QrCodeService();
         });
 
-        $this->app->singleton(EntryService::class, function () {
-            return new EntryService();
+        $this->app->singleton(ReferralCodeService::class, function () {
+            return new ReferralCodeService();
         });
 
         $this->app->singleton(StorageService::class, function () {
@@ -37,6 +38,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(AreaConfigService::class , function () {
             return new AreaConfigService();
+        });
+
+        $this->app->singleton(NonceCodeService::class, function () {
+            return new NonceCodeService();
         });
     }
 

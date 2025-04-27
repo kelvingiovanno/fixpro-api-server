@@ -2,16 +2,16 @@
 
 namespace App\Models\Enums;
 
-use App\Models\Ticket;
+use App\Models\Applicant;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class TicketIssueType extends Model
+class ApplicantStatus extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'ticket_issue_types';
+    protected $table = 'applicant_statuses';
 
     protected $fillable = [
         'id',
@@ -24,8 +24,8 @@ class TicketIssueType extends Model
 
     public $timestamps = false;
 
-    public function tickets()
+    public function applicants()
     {
-        return $this->hasMany(Ticket::class, 'ticket_issue_type_id', 'id');
+        return $this->hasMany(Applicant::class, 'status_id', 'id');
     }
 }

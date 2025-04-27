@@ -7,12 +7,12 @@ use App\Models\Ticket;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class TicketIssueType extends Model
+class TicketLogType extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'ticket_issue_types';
-
+    protected $table = 'ticket_log_types';
+    
     protected $fillable = [
         'id',
         'label',
@@ -26,6 +26,6 @@ class TicketIssueType extends Model
 
     public function tickets()
     {
-        return $this->hasMany(Ticket::class, 'ticket_issue_type_id', 'id');
+        return $this->hasMany(Ticket::class, 'ticket_log_type_id', 'id');
     }
 }

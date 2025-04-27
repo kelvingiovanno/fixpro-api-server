@@ -14,9 +14,10 @@ return new class extends Migration
         Schema::create('speciality_user', function (Blueprint $table) {
             $table->uuid('user_id');
             $table->integer('speciality_id');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            $table->foreign('speciality_id')->references('id')->on('specialities')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete('set null');
+            $table->foreign('speciality_id')->references('id')->on('specialities')->cascadeOnDelete('set null');
             $table->primary(['user_id', 'speciality_id']);
+            $table->softDeletes();
         });
     }
 

@@ -2,10 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\AuthenticationCode;
 use App\Models\Ticket;
 use App\Models\Location;
 use App\Models\Enums\Speciality;
-
+use App\Models\RefreshToken;
+use App\Models\User;
+use App\Models\UserData;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -21,20 +24,36 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            
+            'name' => $this->faker->name(),
+            'role_id' => 1,
+            'title' => $this->faker->jobTitle(),
         ];
     }
 
     public function configure()
     {
-        return $this->afterCreating(function ($user) {
-            Ticket::factory(rand(3, 5))->create([
+        return $this->afterCreating(function (User $user) {
+
+            Ticket::factory(rand(3, 4))->create([
                 'user_id' => $user->id,
-                'location_id' => Location::factory(),
             ]);
-            
+
+            UserData::factory()->create([
+                'user_id' => $user->id,
+            ]);
+
+            RefreshToken::factory()->create([
+                'user_id' => $user->id,
+            ]);
+
+            AuthenticationCode::factory()->create([
+                'user_id' => $user->id,
+            ]);
+
             $specialityIds = Speciality::inRandomOrder()->take(rand(1, 3))->pluck('id');
             $user->specialities()->attach($specialityIds);
+
+            
         });
     }
 }

@@ -29,14 +29,18 @@ class AuthController extends Controller
 
     public function exchange(Request $_request)
     {
+        $authenticationCode = $_request->input('authentication_code');
+        
+        if (!$authenticationCode) {
+            return $this->apiResponseService->forbidden('Authentication code is required');
+        }
+
+        if (!Str::isUuid($authenticationCode)) {
+            return $this->apiResponseService->forbidden('Invalid authentication code'); 
+        }
+
         try 
         {
-            $authenticationCode = $_request->input('authentication_code');
-    
-            if (!$authenticationCode) {
-                return $this->apiResponseService->forbidden('Authentication code is required');
-            }
-    
             $authCodeRecord = AuthenticationCode::find($authenticationCode);
     
             if (!$authCodeRecord) {
@@ -53,7 +57,7 @@ class AuthController extends Controller
             $payload = JWTAuth::factory()->customClaims($customClaims)->make();
             $accessToken = JWTAuth::encode($payload)->get();
     
-            $refreshToken = Str::random(64);
+            $refreshToken = Str::random(302);
             RefreshToken::create([
                 'user_id'    => $authCodeRecord->user_id,
                 'token'      => $refreshToken,

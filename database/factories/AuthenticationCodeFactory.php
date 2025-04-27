@@ -2,14 +2,15 @@
 
 namespace Database\Factories;
 
+use App\Models\Applicant;
 use App\Models\User;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\UserData>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\AuthenticationCode>
  */
-class UserDataFactory extends Factory
+class AuthenticationCodeFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -19,10 +20,9 @@ class UserDataFactory extends Factory
     public function definition(): array
     {
         return [
+            'applicant_id' => Applicant::factory(),
             'user_id' => User::factory(),
-            'email' => $this->faker->unique()->safeEmail(),
-            'phone_number' => $this->faker->phoneNumber(),
-            'whatsapp_registered_number' => $this->faker->e164PhoneNumber(),
+            'expires_at' => now()->addMonth(),
         ];
     }
 }

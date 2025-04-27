@@ -5,14 +5,21 @@ namespace App\Models\Enums;
 use App\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Speciality extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'specialities';
 
     protected $fillable = [
         'id',
         'label',
+    ];
+
+    protected $hidden = [
+        'id',
     ];
 
     public $timestamps = false;

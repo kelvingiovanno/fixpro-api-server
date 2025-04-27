@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('specialities', function (Blueprint $table) {
+        Schema::create('ticket_log_types', function (Blueprint $table) {
             $table->unsignedBigInteger('id')->primary();
             $table->string('label')->unique();
-            $table->softDeletes();  
+            $table->softDeletes();
         });
     }
 
@@ -23,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('table_speciallity');
+        Schema::dropIfExists('ticket_log_types');
     }
 };

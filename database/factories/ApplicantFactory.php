@@ -17,10 +17,10 @@ class ApplicantFactory extends Factory
     public function definition(): array
     {
         return [
-            'full_name' => $this->faker->name(),
-            'title' => $this->faker->jobTitle(),
+            'name' => $this->faker->name(),
             'email' => $this->faker->unique()->safeEmail(),
             'phone_number' => $this->faker->phoneNumber(),
+            'status_id' => 2,
             'whatsapp_registered_number' => $this->faker->e164PhoneNumber(),
         ];
     }

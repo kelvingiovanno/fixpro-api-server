@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('referral_codes', function (Blueprint $table) {
-            $table->id();
-            $table->string('code')->unique();
-            $table->timestamps();
+        Schema::create('applicant_statuses', function (Blueprint $table) {
+            $table->unsignedBigInteger('id')->primary();
+            $table->string('label')->unique();
+            $table->softDeletes();
         });
     }
 
@@ -23,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('refferal_codes');
+        Schema::dropIfExists('applicant_statuses');
     }
 };

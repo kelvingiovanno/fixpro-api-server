@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('stated_location');
             $table->string('latitude');
             $table->string('longitude');
-            $table->timestamps();
+            $table->softDeletes();
         });
     }
 
