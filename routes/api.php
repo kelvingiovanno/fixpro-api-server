@@ -29,13 +29,7 @@ Route::prefix('entry')->group(function(){
     Route::post('/form',[FormController::class, 'submit']);
 });
 
-Route::prefix('/ticket')->group(function ()  {
-        
-    Route::prefix('/{_ticketId}')->group(function () {
-        Route::get('/', [TicketController::class, 'get']);
-        Route::delete('/', [TicketController::class, 'delete']);
-    }); 
-});
+
 
 Route::prefix('/area')->group(function() {
 
@@ -58,16 +52,35 @@ Route::prefix('/area')->group(function() {
         Route::get('/{member_id}', [AreaController::class, 'getMember']);
         Route::delete('/{member_id}', [AreaController::class, 'delMember']);
     });
-    
 });
 
-Route::prefix('/tickets')->group(function() {
-    Route::get('/', [TicketController::class, 'getAll']);
-    Route::post('/', [TicketController::class, 'create']);
-});    
 
 
 Route::middleware(ApiAuthMiddleware::class)->group(function () {
 
+    Route::prefix('/ticket')->group(function ()  {
+        
+        Route::prefix('/{_ticketId}')->group(function () {
+
+            Route::get('/', [TicketController::class, 'getTicket']);
+            Route::delete('/', [TicketController::class, 'delTicket']);
+
+            Route::prefix('handlers')->group(function () {
+                Route::get('/', [TicketController::class, 'getHandlers']);
+                Route::post('/', [TicketController::class, 'postHandlers']);
+            });
+
+            Route::prefix('logs')->group(function () {
+                Route::get('/', [TicketController::class, 'getLogs']);
+                Route::post('/', [TicketController::class, 'postLog']);
+            });
+
+        }); 
+    });
+        
+    Route::prefix('/tickets')->group(function() {
+        Route::get('/', [TicketController::class, 'getAllTickets']);
+        Route::post('/', [TicketController::class, 'postTicket']);
+    });    
 
 });

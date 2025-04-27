@@ -21,7 +21,8 @@ class Applicant extends Model
     protected $table = 'applicants';
     
     protected $guarded = [
-        'id'
+        'id',
+        'deleted_at',
     ];
 
     public $incrementing = false; 

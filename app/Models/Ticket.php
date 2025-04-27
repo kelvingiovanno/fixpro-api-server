@@ -34,6 +34,10 @@ class Ticket extends Model
         'closed_at',
     ];
 
+    protected $hidden = [
+        'deleted_at',
+    ];
+
     public $timestamps = false;
     public $incrementing = false; 
     protected $keyType = 'string'; 
@@ -87,7 +91,7 @@ class Ticket extends Model
         return $this->hasMany(TicketDocument::class, 'ticket_id', 'id');
     }
 
-    public function ticketLogs()
+    public function logs()
     {
         return $this->hasMany(TicketLog::class, 'ticket_id', 'id');
     }

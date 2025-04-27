@@ -19,6 +19,7 @@ class Location extends Model
         'stated_location',
         'latitude',
         'longitude',
+        'deleted_at',
     ];
 
     protected $hidden = [

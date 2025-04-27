@@ -6,7 +6,7 @@ use App\Models\Enums\TicketLogType;
 
 use App\Models\Ticket;
 use App\Models\User;
-use App\Models\TicketLogDocuments;
+use App\Models\TicketLogDocument;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,9 +23,13 @@ class TicketLog extends Model
     protected $fillable = [
         'ticket_id',
         'user_id',
-        'log_type_id',
+        'ticket_log_type_id',
         'recorded_at',
         'news',
+    ];
+
+    protected $hidden = [
+        'deleted_at',
     ];
 
     public $timestamps = false;
@@ -57,11 +61,11 @@ class TicketLog extends Model
 
     public function logType()
     {
-        return $this->belongsTo(TicketLogType::class, 'log_type_id', 'id');
+        return $this->belongsTo(TicketLogType::class, 'ticket_log_type_id', 'id');
     }
 
     public function documents()
     {
-        return $this->hasMany(TicketLogDocuments::class, 'ticket_log_id', 'id');
+        return $this->hasMany(TicketLogDocument::class, 'ticket_log_id', 'id');
     }
 }

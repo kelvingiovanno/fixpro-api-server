@@ -19,6 +19,7 @@ class RefreshToken extends Model
         'user_id',
         'token',
         'expires_at',
+        'deleted_at',
     ];
 
     protected $hidden = [

@@ -27,6 +27,10 @@ class User extends Model
         'title',
     ];
 
+    protected $hidden = [
+        'deleted_at',
+    ];
+
     public $timestamps = false;
     public $incrementing = false; 
     protected $keyType = 'string'; 

@@ -20,6 +20,7 @@ class ApplicantStatus extends Model
 
     protected $hidden = [
         'id',
+        'deleted_at',
     ];
 
     public $timestamps = false;

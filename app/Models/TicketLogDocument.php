@@ -23,6 +23,11 @@ class TicketLogDocument extends Model
         'resource_path',
     ];
 
+    protected $hidden = [
+        'id',
+        'deleted_at',
+    ];
+
     public $timestamps = false;
 
     public function tickets()

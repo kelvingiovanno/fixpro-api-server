@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 
 use App\Enums\IssueTypeEnum;
 use App\Enums\ResponLevelEnum;
+use App\Enums\TicketLogTypeEnum;
 
 use App\Models\Ticket;
 use App\Models\Location;
 use App\Models\TicketDocument;
+use App\Models\TicketLog;
+use App\Models\User;
 
 use App\Services\ApiResponseService;
 use App\Services\StorageService;
@@ -34,13 +37,13 @@ class TicketController extends Controller
         $this->storageService = $_storageService;
     }
 
-    public function getAll()
+    public function getAllTickets()
     {
         try 
         {
             $tickets = Ticket::with(['issueType', 'statusType', 'responseLevelType'])->get();
             
-            $data = $tickets->map(function ($ticket) {
+            $response_data = $tickets->map(function ($ticket) {
                 return [
                     'ticket_id' => $ticket->id,
                     'issue_type' => optional($ticket->issueType)->label ?? 'N/A',
@@ -52,7 +55,7 @@ class TicketController extends Controller
                 ];
             });
     
-            return $this->apiResponseService->ok($data, 'Tickets retrieved successfully');
+            return $this->apiResponseService->ok($response_data, 'Tickets retrieved successfully');
         } 
         catch (Throwable $e) 
         {
@@ -67,7 +70,7 @@ class TicketController extends Controller
         }
     }
 
-    public function create(Request $_request)
+    public function postTicket(Request $_request)
     {
         $validator = Validator::make($_request->all(), [
             'issue_type' => 'required|string',
@@ -144,7 +147,7 @@ class TicketController extends Controller
         }
     }
 
-    public function get(string $_ticketId)
+    public function getTicket(string $_ticketId)
     {
         if (!Str::isUuid($_ticketId)) {
             return $this->apiResponseService->notFound('Ticket not found'); 
@@ -152,32 +155,57 @@ class TicketController extends Controller
 
         try 
         {
-            $ticket = Ticket::with(['user', 'location', 'documents', 'issueType', 'statusType', 'responseLevelType'])->find($_ticketId);
+            $ticket = Ticket::with(['issuer', 'location', 'documents', 'issueType', 'statusType', 'responseLevelType', 'logs'])->find($_ticketId);
 
             if (!$ticket) {
                 return $this->apiResponseService->notFound('Ticket not found');
             }
 
-            $data = [
+            $response_data = [
                 'ticket_id' => $ticket->id,
-                'issue_type' => optional($ticket->issueType)->label,
-                'response_level' => optional($ticket->responseLevelType)->label,
+                'issue_type' => $ticket->issueType->label,
+                'response_level' => $ticket->responseLevelType->label,
                 'raised_on' => $ticket->raised_on,
-                'status' => optional($ticket->statusType)->label,
+                'status' => $ticket->statusType->label,
                 'executive_summary' => $ticket->executive_summary,
                 'stated_issue' => $ticket->stated_issue,
-                'locations' => $ticket->location,
+                'locations' => [
+                    'stated_location' => $ticket->location->stated_location,
+                    'gps_location' => [
+                        'latitude' => $ticket->location->latitude,
+                        'longitude' => $ticket->location->longitude
+                    ],
+                ],
                 'supportive_documents' => $ticket->documents,
                 'issuer' => [
-                    'name' => $ticket->user->name,
-                    'more_information' => $ticket->user->userData
+                    'name' => $ticket->issuer->name,
+                    'more_information' => $ticket->issuer->userData,
                 ],
-                // 'logs' => $ticket->logs,
-                // 'handlers' => ,
+                'logs' => $ticket->logs->map(function ($log) {
+                    return [
+                        'id' => $log->id,
+                        'owning_ticket_id' => $log->ticket_id,
+                        'log_type' => $log->logType->label,
+                        'issuer' => [
+                            'name' => $log->issuer->name,
+                            'more_information' => $log->issuer->userData,
+                        ],
+                        'recorded_on' => $log->recorded_at,
+                        'news' => $log->news,
+                        'attachment' => $log->documents,
+                    ];
+                }),
+                'handlers' => $ticket->maintainers->map(function ($maintainer) {
+                    return [
+                        'name' => $maintainer->name,
+                        'more_information' => $maintainer->userData, 
+                    ];
+                }),
                 'closed_on' => $ticket->closed_on,
             ];
+            
 
-            return $this->apiResponseService->ok($data, 'Ticket retrieved successfully');
+            return $this->apiResponseService->ok($response_data, 'Ticket retrieved successfully');
         } 
         catch (Throwable $e) 
         {
@@ -192,7 +220,7 @@ class TicketController extends Controller
         }
     }
 
-    public function delete(int $_ticketId)
+    public function delTicket(string $_ticketId)
     {
         if (!Str::isUuid($_ticketId)) {
             return $this->apiResponseService->notFound('Ticket not found'); 
@@ -220,6 +248,204 @@ class TicketController extends Controller
             ]);
 
             return $this->apiResponseService->internalServerError('An error occurred while deleting the ticket. Please try again later.');
+        }
+    }
+
+    public function getLogs(string $_ticketId)
+    {
+        if (!Str::isUuid($_ticketId)) {
+            return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID'); 
+        }
+
+        try
+        {
+            $ticket = Ticket::find($_ticketId);
+
+            if(!$ticket)
+            {
+                return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
+            }
+            
+            $response_data = $ticket->logs->map(function ($log) {
+                return [
+                    'id' => $log->id,
+                    'owning_ticket_id' => $log->ticket_id,
+                    'log_type' => $log->logType->label,
+                    'issuer' => [
+                        'name' => $log->issuer->name,
+                        'more_information' => $log->issuer->userData,
+                    ],
+                    'recorded_on' => $log->recorded_at,
+                    'news' => $log->news,
+                    'attachment' => $log->documents,
+                ];
+            })->toArray();
+
+
+            return $this->apiResponseService->ok($response_data, 'Ticket logs retrieved successfully');
+        }
+        catch (Throwable $e)
+        {
+            Log::error('Error retrieving ticket logs',  [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('An unexpected error occurred while retrieving ticket logs. Please try again later.');
+        }   
+    }
+
+    public function postLog(Request $_request, string $_ticketId)
+    {
+        if (!Str::isUuid($_ticketId)) {
+            return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID'); 
+        }
+        
+        $validator = Validator::make($_request->all(), [
+            'log_type' => 'required|string',
+            'recorded_at' => 'required|string',
+            'news' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->apiResponseService->unprocessableEntity('Validation failed, please check the provided data', $validator->errors());
+        }
+
+        $log_type = TicketLogTypeEnum::id($_request->input('log_type'));
+        
+        if(!$log_type)
+        {
+            return $this->apiResponseService->unprocessableEntity('Validation failed, please check the provided data', ['log_type' => 'Invalid log type']);
+        }
+
+        try
+        {
+            $ticket = Ticket::find($_ticketId);
+            
+            if(!$ticket)
+            {
+                return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
+            }
+
+            $user_id = $_request->input('jwt_payload')['user_id'];
+
+            $ticket_log = TicketLog::create([
+                'ticket_id' => $_ticketId,
+                'user_id' => $user_id,
+                'ticket_log_type_id' => $log_type,
+                'news' => $_request->input('news'),
+            ]);
+
+            $reponse_data = $ticket_log;
+
+            return $this->apiResponseService->created($reponse_data, '');
+        }
+        catch (Throwable $e)
+        {
+            Log::error('Error creating ticket log',  [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            
+            return $this->apiResponseService->internalServerError('An error occurred while processing the request, please try again later');
+        }
+    }
+
+    public function getHandlers(string $_ticketId)
+    {
+        if (!Str::isUuid($_ticketId)) {
+            return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID'); 
+        }
+
+        try
+        {
+            $ticket = Ticket::find($_ticketId);
+
+            if(!$ticket)
+            {
+                return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
+            }
+
+            $response_data = $ticket->maintainers->map(function ($maintainer) {
+                return [
+                    'name' => $maintainer->name,
+                    'more_information' => $maintainer->userData,
+                ];
+            });
+
+            return $this->apiResponseService->ok($response_data, 'Ticket handlers retrieved successfully');
+        }
+        catch (Throwable $e)
+        {
+            Log::error('Error retrieving ticket handlers',  [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('An error occurred while retrieving ticket handlers');
+        }
+    }
+
+    public function postHandlers(Request $_request, string $_ticketId)
+    {
+        if (!Str::isUuid($_ticketId)) {
+            return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID'); 
+        } 
+
+        $validator = Validator::make($_request->all(), [
+            'target_member_id' => 'required|uuid|exists:users,id',
+        ]);
+
+        if($validator->fails())
+        {
+            return $this->apiResponseService->unprocessableEntity('Validation failed, please check the provided data', $validator->errors());
+        }
+
+        try
+        {
+            $ticket = Ticket::find($_ticketId);
+
+            if(!$ticket)
+            {
+                return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
+            }
+
+            $user_id = $_request->input('target_member_id');
+
+            $alreadyMaintainer = $ticket->maintainers()->where('user_id', $user_id)->exists();
+
+            if ($alreadyMaintainer) {
+                return $this->apiResponseService->unprocessableEntity('Handler is already assigned to this ticket');
+            }
+
+            $ticket->maintainers()->attach($user_id);
+
+            $user = User::find($user_id);
+
+            $response_data = [
+                'name' => $user->name,
+                'more_information' => $user->userData,
+            ];
+
+            return $this->apiResponseService->created($response_data, 'Successfully added handler to the ticket');
+
+        }
+        catch (Throwable $e)
+        {
+            Log::error('Error deleting ticket',  [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('');
         }
     }
 }

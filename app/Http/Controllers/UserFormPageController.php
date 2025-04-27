@@ -94,8 +94,6 @@ class UserFormPageController extends Controller
                         }
                     }
                 }
-
-                $table->softDeletes();
             });
 
             

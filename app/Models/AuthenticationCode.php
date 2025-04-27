@@ -19,7 +19,8 @@ class AuthenticationCode extends Model
     
     protected $fillable = [
         'applicant_id', 
-        'user_id'
+        'user_id',
+        'deleted_at',
     ];
 
     public $timestamps = false;

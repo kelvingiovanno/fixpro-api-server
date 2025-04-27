@@ -19,6 +19,7 @@ class Area extends Model
 
     protected $hidden = [
         'id',
+        'deleted_at',
     ];
 
     public $incrementing = false; 

@@ -20,6 +20,7 @@ class TicketStatusType extends Model
 
     protected $hidden = [
         'id',
+        'deleted_at',
     ];
 
     public $timestamps = false;
