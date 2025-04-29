@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('refresh_tokens', function (Blueprint $table) {
             $table->id();
             $table->uuid('user_id');
-            $table->string('token')->unique();
+            $table->text('token')->unique();
             $table->timestamp('expires_at');
             $table->boolean('revoked')->default(false);
             $table->softDeletes();

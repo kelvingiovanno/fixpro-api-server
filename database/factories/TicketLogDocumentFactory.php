@@ -22,7 +22,7 @@ class TicketLogDocumentFactory extends Factory
             'resource_type' => $this->faker->randomElement(['image', 'document', 'video', 'audio']),
             'resource_name' => $this->faker->word() . '.' . $this->faker->fileExtension(),
             'resource_size' => $this->faker->numberBetween(1000, 5000000),
-            'resource_path' => $this->faker->filePath(), 
+            'previewable_on' => $this->faker->filePath(), 
         ];
     }
 }

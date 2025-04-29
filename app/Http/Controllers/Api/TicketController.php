@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\Location;
 use App\Models\TicketDocument;
 use App\Models\TicketLog;
+use App\Models\TicketLogDocument;
 use App\Models\User;
 
 use App\Services\ApiResponseService;
@@ -37,7 +38,7 @@ class TicketController extends Controller
         $this->storageService = $_storageService;
     }
 
-    public function getAllTickets()
+    public function getTickets()
     {
         try 
         {
@@ -46,10 +47,10 @@ class TicketController extends Controller
             $response_data = $tickets->map(function ($ticket) {
                 return [
                     'ticket_id' => $ticket->id,
-                    'issue_type' => optional($ticket->issueType)->label ?? 'N/A',
-                    'response_level' => optional($ticket->responseLevelType)->label ?? 'N/A', 
+                    'issue_type' => $ticket->issueType->label,
+                    'response_level' => $ticket->responseLevelType->label, 
                     'raised_on' => $ticket->raised_on,
-                    'status' => optional($ticket->statusType)->label ?? 'N/A',  
+                    'status' => $ticket->statusType->label,  
                     'executive_summary' => $ticket->executive_summary,   
                     'closed_on' => $ticket->closed_on ?? 'Not closed yet',  
                 ];
@@ -110,13 +111,13 @@ class TicketController extends Controller
                 'response_level_type_id' => $ticket_response_level,
                 'location_id' => $location->id,
                 'stated_issue' => $_request->input('stated_issue'),
-                'raised_on' => now(),
             ]);
     
             $documents = $_request->input('supportive_documents', []);
            
             foreach ($documents as $doc) {
-                $filePath = $this->storageService->storeLogTicketDocument(
+
+                $filePath = $this->storageService->storeTicketDocument(
                     $doc['resource_content'],
                     $doc['resource_name'],
                     $ticket->id
@@ -127,7 +128,7 @@ class TicketController extends Controller
                     'resource_type' => $doc['resource_type'],
                     'resource_name' => $doc['resource_name'],
                     'resource_size' => $doc['resource_size'],
-                    'resource_path' => $filePath,
+                    'previewable_on' => $filePath,
                 ]);
             }
     
@@ -190,7 +191,7 @@ class TicketController extends Controller
                             'name' => $log->issuer->name,
                             'more_information' => $log->issuer->userData,
                         ],
-                        'recorded_on' => $log->recorded_at,
+                        'recorded_on' => $log->recorded_on,
                         'news' => $log->news,
                         'attachment' => $log->documents,
                     ];
@@ -275,7 +276,7 @@ class TicketController extends Controller
                         'name' => $log->issuer->name,
                         'more_information' => $log->issuer->userData,
                     ],
-                    'recorded_on' => $log->recorded_at,
+                    'recorded_on' => $log->recorded_on,
                     'news' => $log->news,
                     'attachment' => $log->documents,
                 ];
@@ -305,8 +306,12 @@ class TicketController extends Controller
         
         $validator = Validator::make($_request->all(), [
             'log_type' => 'required|string',
-            'recorded_at' => 'required|string',
             'news' => 'required|string',
+            'supportive_documents' => 'nullable|array',
+            'supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
+            'supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
         ]);
 
         if ($validator->fails()) {
@@ -338,9 +343,46 @@ class TicketController extends Controller
                 'news' => $_request->input('news'),
             ]);
 
-            $reponse_data = $ticket_log;
+            $documents = $_request->input('supportive_documents', []);
+           
+            foreach ($documents as $document) {
+                
+                $filePath = $this->storageService->storeLogTicketDocument(
+                    $document['resource_content'],
+                    $document['resource_name'],
+                    $ticket->id
+                );
+    
+                TicketLogDocument::create([
+                    'ticket_log_id' => $ticket_log->id,
+                    'resource_type' => $document['resource_type'],
+                    'resource_name' => $document['resource_name'],
+                    'resource_size' => $document['resource_size'],
+                    'previewable_on' => $filePath,
+                ]);
+            }
 
-            return $this->apiResponseService->created($reponse_data, '');
+            $reponse_data = [
+                'id' => $ticket_log->id,
+                'owning_ticket_id' => $ticket_log->ticket_id,
+                'log_type' => $ticket_log->logType->label,
+                'issuer' => [
+                    'name' => $ticket_log->issuer->name,
+                    'more_information' => $ticket_log->issuer->userData,
+                ],
+                'recorded_on' => $ticket_log->recorded_on,
+                'news' => $ticket_log->news,
+                'attachment' => $ticket_log->documents->map(function ($document) {
+                    return [
+                        'resource_type' => $document->resource_type,
+                        'resource_name' => $document->resource_name,
+                        'resource_size' => $document->resource_size,
+                        'previewable_on' => $document->previewable_on,
+                    ];
+                }),
+            ];
+
+            return $this->apiResponseService->created($reponse_data, 'Ticket log created successfully');
         }
         catch (Throwable $e)
         {
@@ -399,7 +441,9 @@ class TicketController extends Controller
         } 
 
         $validator = Validator::make($_request->all(), [
-            'target_member_id' => 'required|uuid|exists:users,id',
+            'target_member_ids' => 'required|array', 
+            'target_member_ids.*' => 'uuid|exists:users,id',
+            'executive_summary' => 'required|string|max:126', 
         ]);
 
         if($validator->fails())
@@ -416,21 +460,23 @@ class TicketController extends Controller
                 return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
             }
 
-            $user_id = $_request->input('target_member_id');
+            $executive_summary = $_request->input('executive_summary');
+            $maintainers = $_request->input('target_member_ids');
 
-            $alreadyMaintainer = $ticket->maintainers()->where('user_id', $user_id)->exists();
+            $ticket->maintainers()->detach();
+            $ticket->maintainers()->attach($maintainers);
+            $ticket->update(['executive_summary' => $executive_summary]);
 
-            if ($alreadyMaintainer) {
-                return $this->apiResponseService->unprocessableEntity('Handler is already assigned to this ticket');
-            }
-
-            $ticket->maintainers()->attach($user_id);
-
-            $user = User::find($user_id);
+            $updated_ticket = Ticket::find($_ticketId);
 
             $response_data = [
-                'name' => $user->name,
-                'more_information' => $user->userData,
+                'handlers' => $updated_ticket->maintainers->map(function ($maintainer) {
+                    return [
+                        'name' => $maintainer->name,
+                        'more_information' => $maintainer->userData,
+                    ];
+                }),
+                'executive_summary' => $updated_ticket->executive_summary,
             ];
 
             return $this->apiResponseService->created($response_data, 'Successfully added handler to the ticket');

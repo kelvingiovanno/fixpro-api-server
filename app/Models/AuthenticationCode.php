@@ -20,6 +20,13 @@ class AuthenticationCode extends Model
     protected $fillable = [
         'applicant_id', 
         'user_id',
+    ];
+
+    protected $casts = [
+        'expires_at' => 'datetime',
+    ];
+
+    protected $hidden = [
         'deleted_at',
     ];
 

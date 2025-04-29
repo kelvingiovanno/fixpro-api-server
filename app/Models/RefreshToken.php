@@ -22,8 +22,13 @@ class RefreshToken extends Model
         'deleted_at',
     ];
 
+    protected $casts = [
+        'expires_at' => 'datetime',
+    ];
+
     protected $hidden = [
         'id',
+        'delete_at',
     ];
 
     public $timestamps = false;

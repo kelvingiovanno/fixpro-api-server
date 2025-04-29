@@ -22,6 +22,13 @@ class Applicant extends Model
     
     protected $guarded = [
         'id',
+    ];
+
+    protected $casts = [
+        'expires_at' => 'datetime',
+    ];
+
+    protected $hidden = [
         'deleted_at',
     ];
 
@@ -39,7 +46,7 @@ class Applicant extends Model
             }
 
             $model->status_id = ApplicantStatusEnum::PENDING->value;
-            $model->expires_at = now()->days(2);
+            $model->expires_at = now()->addDays(2);
         });
     }
 

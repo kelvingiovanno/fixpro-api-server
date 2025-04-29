@@ -24,8 +24,11 @@ class TicketLog extends Model
         'ticket_id',
         'user_id',
         'ticket_log_type_id',
-        'recorded_at',
         'news',
+    ];
+
+    protected $casts = [
+        'recorded_on' => 'datetime',
     ];
 
     protected $hidden = [
@@ -45,7 +48,7 @@ class TicketLog extends Model
                 $model->id = Str::uuid();
             }
             
-            $model->recorded_at = now();
+            $model->recorded_on = now();
         });
     }
 

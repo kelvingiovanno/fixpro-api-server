@@ -24,7 +24,7 @@ class TicketLogFactory extends Factory
             'ticket_id' => Ticket::factory(),
             'user_id' => User::factory(),
             'ticket_log_type_id' => $this->faker->numberBetween(1, 5),
-            'recorded_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
+            'recorded_on' => $this->faker->dateTimeBetween('-1 year', 'now'),
             'news' =>  $this->faker->sentence(),
         ];
     }

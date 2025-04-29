@@ -27,6 +27,11 @@ class User extends Model
         'title',
     ];
 
+    protected $casts = [
+        'member_since' => 'datetime',
+        'member_until' => 'datetime',
+    ];
+
     protected $hidden = [
         'deleted_at',
     ];

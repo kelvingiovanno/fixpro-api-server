@@ -15,7 +15,7 @@ class StorageService
      * @param int $ticketId
      * @return string Relative path to the stored file
      */
-    public function storeTicketDocument(string $base64Content, string $originalName, int $ticketId): string
+    public function storeTicketDocument(string $base64Content, string $originalName, string $ticketId): string
     {
         $fileContent = base64_decode($base64Content);
 
@@ -37,7 +37,7 @@ class StorageService
      * @param int $logTicketId
      * @return string Relative path to the stored file
      */
-    public function storeLogTicketDocument(string $base64Content, string $originalName, int $logTicketId): string
+    public function storeLogTicketDocument(string $base64Content, string $originalName, string $logTicketId): string
     {
         $fileContent = base64_decode($base64Content);
 
@@ -59,7 +59,7 @@ class StorageService
      * @param int $userId
      * @return string Relative path to the stored file
      */
-    public function storeUserProfileImage(string $base64Content, string $originalName, int $userId): string
+    public function storeUserProfileImage(string $base64Content, string $originalName, string $userId): string
     {
         $fileContent = base64_decode($base64Content);
 

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('ticket_id')->nullable();
             $table->uuid('user_id')->nullable();
             $table->foreignId('ticket_log_type_id')->constrained();
-            $table->dateTime('recorded_at');
+            $table->dateTime('recorded_on');
             $table->string('news');
             $table->softDeletes();
 

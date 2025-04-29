@@ -20,11 +20,12 @@ class TicketLogDocument extends Model
         'resource_type',
         'resource_name',
         'resource_size',
-        'resource_path',
+        'previewable_on',
     ];
 
     protected $hidden = [
         'id',
+        'ticket_log_id',
         'deleted_at',
     ];
 

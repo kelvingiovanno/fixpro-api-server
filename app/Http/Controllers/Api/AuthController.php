@@ -42,37 +42,46 @@ class AuthController extends Controller
         try 
         {
             $authCodeRecord = AuthenticationCode::find($authenticationCode);
-    
+
             if (!$authCodeRecord) {
                 return $this->apiResponseService->forbidden('Invalid authentication code');
             }
-    
+        
+            $now = Carbon::now();
+            $accessExpiry = $now->copy()->addDay();
+            $refreshExpiry = $now->copy()->addMonths(3);
+        
             $customClaims = [
                 'sub' => 'profix_api_service',
                 'user_id' => $authCodeRecord->user_id,
-                'iat' => Carbon::now()->timestamp,
-                'exp' => Carbon::now()->addDay()->timestamp,
+                'iat' => $now->timestamp,
+                'exp' => $accessExpiry->timestamp,
             ];
-    
+        
             $payload = JWTAuth::factory()->customClaims($customClaims)->make();
             $accessToken = JWTAuth::encode($payload)->get();
-    
+        
             $refreshToken = Str::random(302);
+ 
             RefreshToken::create([
                 'user_id'    => $authCodeRecord->user_id,
                 'token'      => $refreshToken,
-                'expires_at' => now()->addMonths(3),
+                'expires_at' => $refreshExpiry,
             ]);
-    
-            $data = [
-                "refresh_token" => $refreshToken,
+        
+            $response_data = [
                 "access_token"  => $accessToken,
+                "access_expiry_interval" => $accessExpiry->diffInMilliseconds($now),
+                "refresh_token" => $refreshToken,
+                "refresh_expiry_interval" => $refreshExpiry->diffInMilliseconds($now),
+                "token_type" => "Bearer",
+                "role_scope" => $authCodeRecord->user->role->label,
             ];
     
             $authCodeRecord->delete();
             Applicant::find($authCodeRecord->applicant_id)->delete();
     
-            return $this->apiResponseService->ok($data, 'Authentication successful');
+            return $this->apiResponseService->ok($response_data, 'Authentication successful');
             
         } 
         catch (Throwable $e) 
@@ -107,23 +116,40 @@ class AuthController extends Controller
             if ($refreshTokenRecord->expires_at < now()) {
                 return $this->apiResponseService->forbidden('Expired refresh token');
             }
+
+            $refreshTokenRecord->delete();
+
+            $now = Carbon::now();
+            $accessExpiry = $now->copy()->addDay();
+            $refreshExpiry = $now->copy()->addMonths(3);
+
+            $new_refresh_token = RefreshToken::create([
+                'user_id'    => $refreshTokenRecord->user_id,
+                'token'      => Str::random(302),
+                'expires_at' => $refreshExpiry,
+            ]);
     
             $userId = $refreshTokenRecord->user_id;
             $customClaims = [
                 'sub' => 'profix_api_service',
                 'user_id' => $userId,
-                'iat' => Carbon::now()->timestamp,
-                'exp' => Carbon::now()->addDay()->timestamp,
+                'iat' => $now->timestamp,
+                'exp' => $accessExpiry->timestamp,
             ];
     
             $payload = JWTAuth::factory()->customClaims($customClaims)->make();
             $accessToken = JWTAuth::encode($payload)->get();
     
-            $data = [
-                "access_token" => $accessToken,
+            $response_data = [
+                "access_token"  => $accessToken,
+                "access_expiry_interval" => $accessExpiry->diffInMilliseconds($now),
+                "refresh_token" => $new_refresh_token->token,
+                "refresh_expiry_interval" => $refreshExpiry->diffInMilliseconds($now),
+                "token_type" => "Bearer",
+                "role_scope" => $new_refresh_token->user->role->label,
             ];
     
-            return $this->apiResponseService->ok($data, 'Access token successfully refreshed');
+            return $this->apiResponseService->ok($response_data, 'Access token successfully refreshed');
             
         } 
         catch (Throwable $e) 

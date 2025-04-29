@@ -79,7 +79,7 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
     });
         
     Route::prefix('/tickets')->group(function() {
-        Route::get('/', [TicketController::class, 'getAllTickets']);
+        Route::get('/', [TicketController::class, 'getTickets']);
         Route::post('/', [TicketController::class, 'postTicket']);
     });    
 

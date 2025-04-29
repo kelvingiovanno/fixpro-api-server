@@ -151,8 +151,6 @@ class FormController extends Controller
         }
     }
 
-  
-
     public function check(Request $request)
     {
         $applicationId = $request->input('application_id');
@@ -177,35 +175,27 @@ class FormController extends Controller
                 return $this->apiResponseService->forbidden('Your application has expired.');
             }
             
-            switch ($applicant->status->id) {
-        
+            $statusId = $applicant->status->id;
+
+            switch ($statusId) {
                 case ApplicantStatusEnum::PENDING->value:
-                    return $this->apiResponseService->noContent('Your application is still pending.');
-                    break;
-    
+                    return $this->apiResponseService->ok(null, 'Your application is still pending.');
+                
                 case ApplicantStatusEnum::REJECTED->value:
-                    
                     return $this->apiResponseService->forbidden('Your application has been rejected.');
-                    break;
-    
+                
                 case ApplicantStatusEnum::ACCEPTED->value:
-                    
                     $authCode = AuthenticationCode::where('applicant_id', $applicationId)->first();
-    
                     if (!$authCode) {
                         return $this->apiResponseService->notFound('Authentication code not found for this applicant.');
                     }
-    
                     return $this->apiResponseService->ok(
                         ['authentication_code' => $authCode->id],
                         'Your application has been approved. Use the authentication code to proceed.'
                     );
-                    break;
-    
+            
                 default:
-        
                     return $this->apiResponseService->internalServerError('Unknown application status.');
-                    break;
             }
         } 
         catch (Throwable $e) 

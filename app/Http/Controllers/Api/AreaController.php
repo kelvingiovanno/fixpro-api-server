@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\ApplicantStatusEnum;
 use App\Http\Controllers\Controller;
 
 use App\Enums\UserRoleEnum;
@@ -187,6 +188,8 @@ class AreaController extends Controller
                 return $this->apiResponseService->notFound('Applicant not found');
             }
 
+            $applicant->update(['status_id' => ApplicantStatusEnum::ACCEPTED->value]);
+
             $user = User::create([
                 'role_id' => $role,
                 'name' => $applicant->name,
@@ -196,11 +199,10 @@ class AreaController extends Controller
             $user->specialities()->attach($specializationIds);
 
             $applicantData = $applicant->toArray();
-            unset($applicantData['name'], $applicantData['is_accepted']);
+            unset($applicantData['name'], $applicantData['status_id'], $applicantData['id'], $applicantData['expires_at']);
 
             $userData = UserData::create(array_merge($applicantData, [
                 'user_id' => $user->id,
-                'title' => $title,
             ]));
             
             $applicant->update(['is_accepted' => true]);
@@ -215,7 +217,6 @@ class AreaController extends Controller
 
             unset($userData['id'], $userData['user_id']);
 
-            
             $data = [
                 'id' => $user->id,
                 'name' => $user->name,

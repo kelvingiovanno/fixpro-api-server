@@ -30,8 +30,14 @@ class Ticket extends Model
         'ticket_status_type_id',
         'response_level_type_id',
         'location_id',
+        'executive_summary',
         'stated_issue',
         'closed_at',
+    ];
+
+    protected $casts = [
+        'raised_on' => 'datetime',
+        'closed_on' => 'datetime',
     ];
 
     protected $hidden = [
@@ -46,12 +52,13 @@ class Ticket extends Model
     {
         parent::boot();
 
-        static::creating(function ($ticket) {
-            $ticket->raised_on = now();
-            $ticket->ticket_status_type_id = TikectStatusEnum::OPEN;
+        static::creating(function ($model) {
 
-            if(! $ticket->getKey()) {
-                $ticket->{$ticket->getKeyName()} = (string) Str::uuid();
+            $model->raised_on = now();
+            $model->ticket_status_type_id = TikectStatusEnum::OPEN;
+
+            if(! $model->getKey()) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
             }
         });
     }
