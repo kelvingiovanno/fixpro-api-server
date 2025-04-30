@@ -132,7 +132,9 @@ class FormController extends Controller
                 'application_id' => $new_applicant->id,
                 'application_expiry_date' => $new_applicant->expires_at,
             ];
-
+            
+            $this->nonceCodeService->deleteNonce($nonce_code);
+            
             return $this->apiResponseService->ok(
                 $response_data, 
                 'Successfully submitted an application. Use the following string to check periodically of your application status.'

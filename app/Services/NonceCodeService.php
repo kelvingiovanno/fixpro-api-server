@@ -18,9 +18,19 @@ class NonceCodeService
         return $nonce;
     }
 
-    public function checkNonce(string $nonce): bool
+    public function checkNonce(string $nonce) : bool
     {
         if (Cache::store('redis')->has("nonce:$nonce")) {
+            return true;
+        }
+
+        return false;
+    }
+
+    public function deleteNonce(string $nonce) : bool
+    {
+        if (Cache::store('redis')->has("nonce:$nonce")) {
+            Cache::store('redis')->forget("nonce:$nonce");
             return true;
         }
 

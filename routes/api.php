@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\FormController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AreaController;
+use App\Http\Controllers\Api\GoogleCalenderController;
 
 use App\Http\Middleware\ApiAuthMiddleware;
 
@@ -28,8 +29,6 @@ Route::prefix('entry')->group(function(){
     Route::get('/form', [FormController::class, 'getForm']);
     Route::post('/form',[FormController::class, 'submit']);
 });
-
-
 
 Route::prefix('/area')->group(function() {
 
@@ -53,7 +52,6 @@ Route::prefix('/area')->group(function() {
         Route::delete('/{member_id}', [AreaController::class, 'delMember']);
     });
 });
-
 
 
 Route::middleware(ApiAuthMiddleware::class)->group(function () {

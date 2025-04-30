@@ -13,7 +13,6 @@ use App\Models\Location;
 use App\Models\TicketDocument;
 use App\Models\TicketLog;
 use App\Models\TicketLogDocument;
-use App\Models\User;
 
 use App\Services\ApiResponseService;
 use App\Services\StorageService;
@@ -464,6 +463,7 @@ class TicketController extends Controller
             $maintainers = $_request->input('target_member_ids');
 
             $ticket->maintainers()->detach();
+            
             $ticket->maintainers()->attach($maintainers);
             $ticket->update(['executive_summary' => $executive_summary]);
 

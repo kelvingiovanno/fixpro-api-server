@@ -9,6 +9,7 @@ use App\Services\ReferralCodeService;
 use App\Services\NonceCodeService;
 use App\Services\StorageService;
 use App\Services\AreaConfigService;
+use App\Services\GoogleCalendarService;
 
 
 use Illuminate\Support\ServiceProvider;
@@ -42,6 +43,10 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(NonceCodeService::class, function () {
             return new NonceCodeService();
+        });
+
+        $this->app->singleton(GoogleCalendarService::class, function () {
+            return new GoogleCalendarService();
         });
     }
 

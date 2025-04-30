@@ -12,7 +12,7 @@ use App\Models\User;
 use App\Models\UserData;
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
-
+use App\Models\Enums\ApplicantStatus;
 use App\Services\ApiResponseService;
 use App\Services\AreaConfigService;
 use App\Services\ReferralCodeService;
@@ -320,9 +320,21 @@ class AreaController extends Controller
     {
         try 
         {
-            $pendingMembers = Applicant::all();
+            $pendingMembers = ApplicantStatus::find(ApplicantStatusEnum::PENDING->value)->applicants;
     
-            return $this->apiResponseService->ok($pendingMembers);
+            $response_data = $pendingMembers->map(function ($pendingMember) {
+                return [
+                    'id' => $pendingMember->id,
+                    'status' => $pendingMember->status->label,
+                    'name' => $pendingMember->name,
+                    'expires_at' => $pendingMember->expires_at,
+                    'email' => $pendingMember->email,
+                    'phone_number' => $pendingMember->phone_number,
+                    'whatsapp_registered_number' => $pendingMember->whatsapp_registered_number,
+                ];
+            });    
+
+            return $this->apiResponseService->ok($response_data);
         } 
         catch (Throwable $e) 
         {
@@ -380,10 +392,10 @@ class AreaController extends Controller
                 return $this->apiResponseService->notFound('Applicant not found.');
             }
     
-            $applicant->delete();
+            $applicant->update(['status_id' => ApplicantStatusEnum::REJECTED->value]);
             $this->areaConfigService->decrementPendingMemberCount();
     
-            return $this->apiResponseService->ok('Applicant deleted successfully.');
+            return $this->apiResponseService->ok('Applicant rejected successfully.');
         } 
         catch (Throwable $e) 
         {
