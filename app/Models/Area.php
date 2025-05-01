@@ -15,6 +15,11 @@ class Area extends Model
         'join_form',
         'member_count',
         'pending_member',
+        'is_set_up',
+    ];
+
+    protected $casts = [
+        'is_set_up' => 'integer',  
     ];
 
     protected $hidden = [

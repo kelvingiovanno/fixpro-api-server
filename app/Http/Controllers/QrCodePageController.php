@@ -3,29 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Services\QrCodeService;
-use App\Services\EntryService;
+use App\Services\ReferralCodeService;
 
 class QrCodePageController extends Controller
 {
 
-    protected $qrCodeService;
-    protected $entryService;
+    protected QrCodeService $qrCodeService;
+    protected ReferralCodeService $referralCodeService;
 
-    public function __construct(QrCodeService $_qrCodeService, EntryService $_entryService)
+    public function __construct(QrCodeService $_qrCodeService, ReferralCodeService $_referralCodeService)
     {
         $this->qrCodeService = $_qrCodeService;
-        $this->entryService = $_entryService;
+        $this->referralCodeService = $_referralCodeService;
     }
 
     public function index()
     {
-        return view('qrcode');
+        return view('home');
     }
 
     public function showQrCode()
     {
 
-        $code = $this->entryService->generateReferral();
+        $code = $this->referralCodeService->generateReferral();
 
         $host = env('APP_URL');
 
@@ -43,7 +43,7 @@ class QrCodePageController extends Controller
 
     public function refreshQrCode()
     {
-        $this->entryService->generateReferral();
+        $this->referralCodeService->generateReferral();
         return redirect()->route('qrcode.');
     }
 }

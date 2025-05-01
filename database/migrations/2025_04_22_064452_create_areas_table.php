@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('join_form')->nullable();
             $table->unsignedBigInteger('member_count')->default(0);
             $table->unsignedBigInteger('pending_member_count')->default(0);
+            $table->tinyInteger('is_set_up')->default(0); 
             $table->softDeletes();
         });
     }

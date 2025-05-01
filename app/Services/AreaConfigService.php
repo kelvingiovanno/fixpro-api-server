@@ -12,12 +12,24 @@ class AreaConfigService
         return $area ?? Area::create();
     }
 
-    public function updateJoinPolicy(string $policy): void
+    public function isSetUp(): bool {
+        return $this->getArea()->is_set_up === 1;
+    }
+
+    public function markAsSetUp() : void {
+        $this->getArea()->update(['is_set_up' => 1]);
+    }
+
+    public function setName(string $name) : void {
+        $this->getArea()->update(['name' => $name]);
+    }
+
+    public function setJoinPolicy(string $policy): void
     {
         $this->getArea()->update(['join_policy' => $policy]);
     }
    
-    public function updateJoinForm(array $form): void
+    public function setJoinForm(array $form): void
     {
         $this->getArea()->update([
             'join_form' => json_encode($form),

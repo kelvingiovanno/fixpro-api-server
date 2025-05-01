@@ -4,6 +4,7 @@ use App\Http\Controllers\QrCodePageController;
 use App\Http\Controllers\UserFormPageController;
 use App\Http\Controllers\WebAuthPageController;
 use App\Http\Controllers\GoogleCalenderController;
+use App\Http\Controllers\SetupController;
 
 use App\Http\Middleware\WebAuthMiddleware;
 
@@ -17,24 +18,20 @@ Route::prefix('auth')->name('auth.')->group(function () {
 
 Route::middleware(WebAuthMiddleware::class)->group(function () {
 
-    Route::get('/', function () {
-        return view('welcome');
-    });
-
-    Route::prefix('user-form')->name('user-setting.')->group(function () {
-        Route::get('/', [UserFormPageController::class, 'index']);
-        Route::post('/submit', [UserFormPageController::class, 'handleSubmit'])->name('submit');
-    });
+    Route::get('/', [QrCodePageController::class, 'index']);
 
     Route::prefix('qrcode')->name('qrcode.')->group(function () {
-        Route::get('/', [QrCodePageController::class, 'index']);
         Route::get('/show', [QrCodePageController::class, 'showQrCode'])->name('show');
         Route::get('/refresh', [QrCodePageController::class, 'refreshQrCode'])->name('refresh');
     });
 
-    Route::prefix('/google')->group(function () {
-        Route::get('/auth', [GoogleCalenderController::class, 'auth']);
-        Route::get('/callback', [GoogleCalenderController::class, 'callback']);
-    });
+    Route::prefix('/google')->name('google.')->group(function () {
+        Route::get('/auth', [GoogleCalenderController::class, 'auth'])->name('auth');
+        Route::get('/callback', [GoogleCalenderController::class, 'callback'])->name('callback');
+    });    
 
+    Route::prefix('/setup')->group(function () {
+        Route::get('/', [SetupController::class, 'index']);
+        Route::post('/submit', [SetupController::class, 'submit'])->name('setup.submit');
+    });
 });

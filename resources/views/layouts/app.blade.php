@@ -8,7 +8,6 @@
 </head>
 <body class="bg-gray-100">
 
-    {{-- Include the Navbar --}}
     @if (!request()->routeIs('auth.form'))
         @include('layouts.navbar')
     @endif
