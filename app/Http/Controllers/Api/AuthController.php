@@ -50,10 +50,12 @@ class AuthController extends Controller
             $now = Carbon::now();
             $accessExpiry = $now->copy()->addDay();
             $refreshExpiry = $now->copy()->addMonths(3);
+            
         
             $customClaims = [
                 'sub' => 'profix_api_service',
-                'user_id' => $authCodeRecord->user_id,
+                'user_id' => $authCodeRecord->user->id,
+                'role' => $authCodeRecord->user->role->label,
                 'iat' => $now->timestamp,
                 'exp' => $accessExpiry->timestamp,
             ];
@@ -129,10 +131,10 @@ class AuthController extends Controller
                 'expires_at' => $refreshExpiry,
             ]);
     
-            $userId = $refreshTokenRecord->user_id;
             $customClaims = [
                 'sub' => 'profix_api_service',
-                'user_id' => $userId,
+                'user_id' => $new_refresh_token->user->id,
+                'role' => $new_refresh_token->user->role->label,
                 'iat' => $now->timestamp,
                 'exp' => $accessExpiry->timestamp,
             ];

@@ -151,8 +151,8 @@ class AreaController extends Controller
         $validator = Validator::make($_request->all(), [
             'application_id' => 'required|uuid|exists:applicants,id',
             'role' => 'required|string',
-            'specialization' => 'required|array',
-            'specialization.*' => 'required|string',
+            'specialization' => 'nullable|array',
+            'specialization.*' => 'string',
             'title' => 'required|string|max:255',
         ]);
         
@@ -171,19 +171,24 @@ class AreaController extends Controller
                 return $this->apiResponseService->unprocessableEntity('Invalid role provided.');
             }
 
-            $specializationIds = array_map(function ($label) {
-                $id = UserSpeciallityEnum::id($label);
-                if (!$id) {
-                    return null; 
+            if($specializationLabels)
+            {
+                $specializationIds = array_map(function ($label) {
+                    $id = UserSpeciallityEnum::id($label);
+                    if (!$id) {
+                        return null; 
+                    }
+                    return $id;
+                }, $specializationLabels);
+            
+                
+                if (in_array(null, $specializationIds, true)) {
+                    return $this->apiResponseService->unprocessableEntity('One or more specializations are invalid.');
                 }
-                return $id;
-            }, $specializationLabels);
-
-            if (in_array(null, $specializationIds, true)) {
-                return $this->apiResponseService->unprocessableEntity('One or more specializations are invalid.');
             }
 
             $applicant = Applicant::find($applicationId);
+
             if (!$applicant) {
                 return $this->apiResponseService->notFound('Applicant not found');
             }
@@ -196,7 +201,11 @@ class AreaController extends Controller
                 'title' => $title,
             ]);
 
-            $user->specialities()->attach($specializationIds);
+            if($specializationLabels)
+            {
+                $user->specialities()->attach($specializationIds);
+            }
+
 
             $applicantData = $applicant->toArray();
             unset($applicantData['name'], $applicantData['status_id'], $applicantData['id'], $applicantData['expires_at']);
@@ -409,6 +418,4 @@ class AreaController extends Controller
             return $this->apiResponseService->internalServerError('Failed to delete applicant.');
         }
     }
-    
-
 }

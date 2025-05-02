@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum TikectStatusEnum : int 
+enum TicketStatusEnum : int 
 {
     case OPEN = 1;
     case IN_ASSESSMENT = 2;

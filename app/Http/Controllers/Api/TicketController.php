@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Enums\IssueTypeEnum;
 use App\Enums\ResponLevelEnum;
 use App\Enums\TicketLogTypeEnum;
+use App\Enums\UserRoleEnum;
+use App\Enums\TicketStatusEnum;
 
 use App\Models\Ticket;
 use App\Models\Location;
@@ -220,7 +222,7 @@ class TicketController extends Controller
         }
     }
 
-    public function delTicket(string $_ticketId)
+    public function delTicket(Request $_request, string $_ticketId)
     {
         if (!Str::isUuid($_ticketId)) {
             return $this->apiResponseService->notFound('Ticket not found'); 
@@ -229,12 +231,37 @@ class TicketController extends Controller
         try 
         {
             $ticket = Ticket::find($_ticketId);
-
+            
             if (!$ticket) {
                 return $this->apiResponseService->notFound('Ticket not found');
             }
 
-            $ticket->delete();
+            $user_role = $_request->input('jwt_payload')['role'];
+            $user_id = $_request->input('jwt_payload')['user_id'];
+
+            if(UserRoleEnum::id($user_role) == UserRoleEnum::MEMBER->value)
+            {   
+                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::CANCELLED->value]);
+                
+                TicketLog::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $user_id,
+                    'ticket_log_type_id' => TicketLogTypeEnum::ACTIVITY->value,
+                    'news' => 'Ticket was cancelled by a member.',
+                ]);
+            }
+
+            if(UserRoleEnum::id($user_role) == UserRoleEnum::MANAGEMENT->value)
+            {   
+                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::REJECTED->value]);
+            
+                TicketLog::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $user_id,
+                    'ticket_log_type_id' => TicketLogTypeEnum::ACTIVITY->value,
+                    'news' => 'Ticket was rejected by management.',
+                ]);
+            }
 
             return $this->apiResponseService->ok(null, 'Ticket deleted successfully');
         } 
@@ -317,9 +344,9 @@ class TicketController extends Controller
             return $this->apiResponseService->unprocessableEntity('Validation failed, please check the provided data', $validator->errors());
         }
 
-        $log_type = TicketLogTypeEnum::id($_request->input('log_type'));
+        $log_type_id = TicketLogTypeEnum::id($_request->input('log_type'));
         
-        if(!$log_type)
+        if(!$log_type_id)
         {
             return $this->apiResponseService->unprocessableEntity('Validation failed, please check the provided data', ['log_type' => 'Invalid log type']);
         }
@@ -338,9 +365,29 @@ class TicketController extends Controller
             $ticket_log = TicketLog::create([
                 'ticket_id' => $_ticketId,
                 'user_id' => $user_id,
-                'ticket_log_type_id' => $log_type,
+                'ticket_log_type_id' => $log_type_id,
                 'news' => $_request->input('news'),
             ]);
+
+            if($log_type_id == TicketLogTypeEnum::ASSESSMENT->value)
+            {
+                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::IN_ASSESSMENT->value]);
+            }
+
+            if($log_type_id == TicketLogTypeEnum::WORK_PROGRESS->value)
+            {
+                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::ON_PROGRESS->value]);
+            }
+
+            if($log_type_id == TicketLogTypeEnum::WORK_EVALUATION_REQUEST->value)
+            {
+                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::WORK_EVALUATION->value]);
+            }
+
+            if($log_type_id == TicketLogTypeEnum::WORK_EVALUATION->value)
+            {
+                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::CLOSED->value]);
+            }
 
             $documents = $_request->input('supportive_documents', []);
            

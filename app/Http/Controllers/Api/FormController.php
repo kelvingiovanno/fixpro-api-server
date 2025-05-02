@@ -8,6 +8,8 @@ use App\Enums\ApplicantStatusEnum;
 
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
+use App\Models\User;
+use App\Models\UserData;
 use App\Services\ApiResponseService;
 use App\Services\AreaConfigService;
 use App\Services\ReferralCodeService;
@@ -84,6 +86,11 @@ class FormController extends Controller
     {
         $nonce_code = $_request->query('nonce');
 
+        if($this->areaConfigService->getJoinPolicy() == 'closed') {
+            $this->nonceCodeService->deleteNonce($nonce_code);
+            return $this->apiResponseService->forbidden('');
+        }
+
         if (!$nonce_code) {
             return $this->apiResponseService->badRequest('Nonce code is required.');
         }
@@ -124,13 +131,39 @@ class FormController extends Controller
 
         try 
         {
-            $new_applicant = Applicant::create($normalizedData);
+            $applicant = Applicant::create(array_merge($normalizedData, ['status_id' => 1]));
+        
+            if($this->areaConfigService->getJoinPolicy() == 'Opne')
+            {
+                $user = User::create([
+                    'name' => $applicant->name,
+                ]);
 
-            $this->areaConfigService->incrementPendingMemberCount();
+                $applicantData = $applicant->toArray();
+                unset($applicantData['name'], $applicantData['status_id'], $applicantData['id'], $applicantData['expires_at']);
+                
+                UserData::create(array_merge($applicantData, [
+                    'user_id' => $user->id,
+                ]));
+
+                $applicant->update(['is_accepted' => true]);
+
+                AuthenticationCode::create([
+                    'applicant_id' => $applicant->id,
+                    'user_id' => $user->id,
+                ]);
+
+                $this->areaConfigService->incrementMemberCount();
+            }
+
+            if($this->areaConfigService->getJoinPolicy() == 'Opproved-neeeded')
+            {
+                $this->areaConfigService->incrementPendingMemberCount();
+            }
 
             $response_data = [
-                'application_id' => $new_applicant->id,
-                'application_expiry_date' => $new_applicant->expires_at,
+                'application_id' => $applicant->id,
+                'application_expiry_date' => $applicant->expires_at,
             ];
             
             $this->nonceCodeService->deleteNonce($nonce_code);

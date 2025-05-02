@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Enums\TikectStatusEnum;
+use App\Enums\TicketStatusEnum;
 
 use App\Models\Enums\TicketIssueType;
 use App\Models\Enums\TicketStatusType;
@@ -55,7 +55,7 @@ class Ticket extends Model
         static::creating(function ($model) {
 
             $model->raised_on = now();
-            $model->ticket_status_type_id = TikectStatusEnum::OPEN;
+            $model->ticket_status_type_id = TicketStatusEnum::OPEN->value;
 
             if(! $model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();

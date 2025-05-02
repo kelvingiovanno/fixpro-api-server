@@ -119,7 +119,6 @@ class SetupController extends Controller
             }
 
             $table->softDeletes();
-            $table->timestamps();
 
             $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
         });

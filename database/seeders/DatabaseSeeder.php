@@ -8,7 +8,7 @@ use Illuminate\Database\Seeder;
 use App\Enums\UserRoleEnum;
 use App\Enums\UserSpeciallityEnum;
 use App\Enums\IssueTypeEnum;
-use App\Enums\TikectStatusEnum;
+use App\Enums\TicketStatusEnum;
 use App\Enums\ResponLevelEnum;
 use App\Enums\ApplicantStatusEnum;
 use App\Enums\TicketLogTypeEnum;
@@ -20,7 +20,6 @@ use App\Models\Enums\TicketStatusType;
 use App\Models\Enums\TicketIssueType;
 use App\Models\Enums\ApplicantStatus;
 use App\Models\Enums\TicketLogType;
-use Database\Factories\UserFactory;
 
 class DatabaseSeeder extends Seeder
 {
@@ -44,13 +43,13 @@ class DatabaseSeeder extends Seeder
         ResponseLevelType::create(['id' => ResponLevelEnum::URGENT_EMERGENCY->value, 'label' => ResponLevelEnum::URGENT_EMERGENCY->label()]);
         ResponseLevelType::create(['id' => ResponLevelEnum::NORMAL->value, 'label' => ResponLevelEnum::NORMAL->label()]);
 
-        TicketStatusType::create(['id' => TikectStatusEnum::OPEN->value, 'label' => TikectStatusEnum::OPEN->label()]);
-        TicketStatusType::create(['id' => TikectStatusEnum::IN_ASSESSMENT->value, 'label' => TikectStatusEnum::IN_ASSESSMENT->label()]);
-        TicketStatusType::create(['id' => TikectStatusEnum::ON_PROGRESS->value, 'label' => TikectStatusEnum::ON_PROGRESS->label()]);
-        TicketStatusType::create(['id' => TikectStatusEnum::WORK_EVALUATION, 'label' => TikectStatusEnum::WORK_EVALUATION->label()]);
-        TicketStatusType::create(['id' => TikectStatusEnum::CLOSED->value, 'label' => TikectStatusEnum::CLOSED->label()]);
-        TicketStatusType::create(['id' => TikectStatusEnum::CANCELLED->value, 'label' => TikectStatusEnum::CANCELLED->label()]);
-        TicketStatusType::create(['id' => TikectStatusEnum::REJECTED->value, 'label' => TikectStatusEnum::REJECTED->label()]);
+        TicketStatusType::create(['id' => TicketStatusEnum::OPEN->value, 'label' => TicketStatusEnum::OPEN->label()]);
+        TicketStatusType::create(['id' => TicketStatusEnum::IN_ASSESSMENT->value, 'label' => TicketStatusEnum::IN_ASSESSMENT->label()]);
+        TicketStatusType::create(['id' => TicketStatusEnum::ON_PROGRESS->value, 'label' => TicketStatusEnum::ON_PROGRESS->label()]);
+        TicketStatusType::create(['id' => TicketStatusEnum::WORK_EVALUATION, 'label' => TicketStatusEnum::WORK_EVALUATION->label()]);
+        TicketStatusType::create(['id' => TicketStatusEnum::CLOSED->value, 'label' => TicketStatusEnum::CLOSED->label()]);
+        TicketStatusType::create(['id' => TicketStatusEnum::CANCELLED->value, 'label' => TicketStatusEnum::CANCELLED->label()]);
+        TicketStatusType::create(['id' => TicketStatusEnum::REJECTED->value, 'label' => TicketStatusEnum::REJECTED->label()]);
 
         TicketIssueType::create(['id' => IssueTypeEnum::PLUMBING->value, 'label' => IssueTypeEnum::PLUMBING->label()]);
         TicketIssueType::create(['id' => IssueTypeEnum::HOUSEKEEPING->value, 'label' => IssueTypeEnum::HOUSEKEEPING->label()]);

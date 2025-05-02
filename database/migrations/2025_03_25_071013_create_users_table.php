@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignId('role_id')->constrained('users_role')->cascadeOnDelete();
             $table->string('name');
-            $table->string('title');
+            $table->string('title')->nullable();
             $table->dateTime('member_since');
             $table->dateTime('member_until');
             $table->softDeletes();  
