@@ -2,6 +2,8 @@
 
 namespace App\Enums;
 
+use App\Models\Enums\TicketLogType;
+
 enum TicketLogTypeEnum : int
 {
     case ASSESSMENT = 1;
@@ -29,6 +31,8 @@ enum TicketLogTypeEnum : int
             }
         }
 
-        return null; 
+        $logType = TicketLogType::where('label', $label)->first();
+
+        return $logType?->id; 
     }
 }

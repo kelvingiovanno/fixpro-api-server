@@ -53,12 +53,32 @@
           Add or remove custom fields that you want to collect from members.
       </p>
       
-      <div id="custom-fields" class="space-y-2 w-96 mb-2">
+      <div id="custom-fields-user-data" class="space-y-2 w-96 mb-2">  
+      </div>
+    
+      <button type="button" onclick="addCustomFieldUserData()" class="text-sm border-2 border-solid py-2 px-2 rounded-md hover:bg-gray-100">
+        + Add Custom Field
+      </button>
+    </div>
+
+    <div class="transition duration-300 ease-in-out mb-10">
+      <h2 class="text-2xl font-bold mb-4">Set Up Log type</h2>
+      <p class="text-sm text-gray-700">
+        In this step, you'll define which data fields should be collected for each member, such as email addresses, phone numbers, or other custom information.
+        This ensures the system captures all necessary details for user management and communication.
+      </p>
+
+      <h3 class="text-lg font-normal mb2 mt-7">Customize Member Data Fields</h3>
+      <p class="text-sm text-gray-600 mb-4">
+          Add or remove custom fields that you want to collect from members.
+      </p>
+      
+      <div id="custom-fields-log-type" class="space-y-2 w-96 mb-2">
         <div class="flex items-center space-x-2">
         </div>
       </div>
     
-      <button type="button" onclick="addCustomField()" class="text-sm border-2 border-solid py-2 px-2 rounded-md hover:bg-gray-100">
+      <button type="button" onclick="addCustomFieldLogType()" class="text-sm border-2 border-solid py-2 px-2 rounded-md hover:bg-gray-100">
         + Add Custom Field
       </button>
     </div>
@@ -161,9 +181,8 @@
 <script src="//unpkg.com/alpinejs" defer></script>
 
 <script>
-    // Function to add a new custom input field
-    function addCustomField() {
-        let container = document.getElementById("custom-fields");
+    function addCustomFieldUserData() {
+        let container = document.getElementById("custom-fields-user-data");
 
         let div = document.createElement("div");
         div.classList.add("flex", "items-center", "space-x-2");
@@ -172,6 +191,34 @@
         input.type = "text";
         input.name = "forms[]";
         input.placeholder = "Enter custom data";
+        input.classList.add("flex-1", "p-2", "border", "border-gray-300", "rounded", 'text-sm');
+
+        let removeButton = document.createElement("button");
+        removeButton.type = "button";
+        removeButton.classList.add("text-white", "p-2", "rounded");
+        removeButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-black" viewBox="0 0 448 512" fill="currentColor">
+                <path d="M135.2 17.7C140.6 6.8 151.7 0 163.8 0L284.2 0c12.1 0 23.2 6.8 28.6 17.7L320 32l96 0c17.7 0 32 14.3 32 32s-14.3 32-32 32L32 96C14.3 96 0 81.7 0 64S14.3 32 32 32l96 0 7.2-14.3zM32 128l384 0 0 320c0 35.3-28.7 64-64 64L96 512c-35.3 0-64-28.7-64-64l0-320zm96 64c-8.8 0-16 7.2-16 16l0 224c0 8.8 7.2 16 16 16s16-7.2 16-16l0-224c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16l0 224c0 8.8 7.2 16 16 16s16-7.2 16-16l0-224c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16l0 224c0 8.8 7.2 16 16 16s16-7.2 16-16l0-224c0-8.8-7.2-16-16-16z"/>
+            </svg>`;
+        removeButton.onclick = function () {
+            removeField(removeButton);
+        };
+
+        div.appendChild(input);
+        div.appendChild(removeButton);
+        container.appendChild(div);
+    }
+  
+    function addCustomFieldLogType() {
+        let container = document.getElementById("custom-fields-log-type");
+
+        let div = document.createElement("div");
+        div.classList.add("flex", "items-center", "space-x-2");
+
+        let input = document.createElement("input");
+        input.type = "text";
+        input.name = "logtypes[]";
+        input.placeholder = "Enter custom log type";
         input.classList.add("flex-1", "p-2", "border", "border-gray-300", "rounded", 'text-sm');
 
         let removeButton = document.createElement("button");
