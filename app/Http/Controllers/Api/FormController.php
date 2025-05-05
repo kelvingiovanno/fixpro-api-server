@@ -156,10 +156,10 @@ class FormController extends Controller
                 $this->areaConfigService->incrementMemberCount();
             }
 
-            if($this->areaConfigService->getJoinPolicy() == 'approval-needed')
-            {
-                $this->areaConfigService->incrementPendingMemberCount();
-            }
+                if($this->areaConfigService->getJoinPolicy() == 'approval-needed')
+                {
+                    $this->areaConfigService->incrementPendingMemberCount();
+                }
 
             $response_data = [
                 'application_id' => $applicant->id,

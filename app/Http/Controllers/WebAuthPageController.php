@@ -28,7 +28,7 @@ class WebAuthPageController extends Controller
         if ($this->webAuthTokenService::checkValidToken($request->auth_token)) {
             session(['auth_token' => $request->auth_token]);
 
-            return redirect()->route('auth.form')->with('success', 'Login successful!');
+            return redirect('/');
         }
 
         return redirect()->route('auth.form')->with('error', 'Invalid token. Please try again.');

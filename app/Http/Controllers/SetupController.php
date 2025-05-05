@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
+
 use Throwable;
 
 class SetupController extends Controller
@@ -110,17 +111,10 @@ class SetupController extends Controller
     {
         $formatted = $this->formatForms($data);
 
-        Schema::create('users_data', function (Blueprint $table) use ($formatted) {
-            $table->id();
-            $table->uuid('user_id')->nullable();
-
+        Schema::table('users_data', function (Blueprint $table) use ($formatted) {
             foreach ($formatted as $column) {
                 $table->string($column)->nullable();
             }
-
-            $table->softDeletes();
-
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
         });
 
         Schema::table('applicants', function (Blueprint $table) use ($formatted) {
