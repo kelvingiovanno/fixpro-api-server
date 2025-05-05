@@ -133,7 +133,7 @@ class FormController extends Controller
         {
             $applicant = Applicant::create(array_merge($normalizedData, ['status_id' => 1]));
         
-            if($this->areaConfigService->getJoinPolicy() == 'Opne')
+            if($this->areaConfigService->getJoinPolicy() == 'open')
             {
                 $user = User::create([
                     'name' => $applicant->name,
@@ -156,7 +156,7 @@ class FormController extends Controller
                 $this->areaConfigService->incrementMemberCount();
             }
 
-            if($this->areaConfigService->getJoinPolicy() == 'Opproved-neeeded')
+            if($this->areaConfigService->getJoinPolicy() == 'approval-needed')
             {
                 $this->areaConfigService->incrementPendingMemberCount();
             }
