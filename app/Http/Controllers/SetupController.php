@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SystemSetting;
-use App\Services\AreaConfigService;
+
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -14,19 +14,9 @@ use Throwable;
 
 class SetupController extends Controller
 {
-    private AreaConfigService $areaConfigService;
-
-    public function __construct(AreaConfigService $_areaConfigService)
-    {
-        $this->areaConfigService = $_areaConfigService;
-    }
 
     public function index()
     {
-        if ($this->areaConfigService->isSetUp()) {
-            return redirect('/');
-        }
-
         return view('setup');
     }
 
@@ -65,11 +55,8 @@ class SetupController extends Controller
                 ->withInput(); 
         }
     
-        try {
-            if ($this->areaConfigService->isSetUp()) {
-                return redirect('/');
-            }
-    
+        try 
+        {    
             $area_name = $request_data['area_name'];
             $join_policy = $request_data['join_policy'];
             $forms = $request_data['forms'];
@@ -78,23 +65,22 @@ class SetupController extends Controller
             $client_secret = $request_data['google_client_secret'];
             $callback = $request_data['google_callback'];
     
-            $this->areaConfigService->setName($area_name);
-            $this->areaConfigService->setJoinPolicy($join_policy);
-    
-            $formatted_forms = $this->formatForms($forms);
-            $this->areaConfigService->setJoinForm($formatted_forms);
-    
-            $this->createTable($formatted_forms);
+            $formatted_form = $this->formatForms($forms);
+            $this->createTable($formatted_form);
+
+            SystemSetting::put('area_name', $area_name);
+            SystemSetting::put('area_join_policy', $join_policy);
+            SystemSetting::put('area_join_form', json_encode($formatted_form));
     
             SystemSetting::put('google_client_id', $client_id);
             SystemSetting::put('google_client_secret', $client_secret);
             SystemSetting::put('google_redirect_uri', $callback);
     
-            $this->areaConfigService->markAsSetUp();
-    
             return redirect('google/auth');
     
-        } catch (Throwable $e) {
+        } 
+        catch (Throwable $e) 
+        {
             Log::error('Error occurred during set up', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),

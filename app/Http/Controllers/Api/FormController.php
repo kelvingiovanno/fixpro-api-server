@@ -8,10 +8,11 @@ use App\Enums\ApplicantStatusEnum;
 
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
+use App\Models\SystemSetting;
 use App\Models\User;
 use App\Models\UserData;
+
 use App\Services\ApiResponseService;
-use App\Services\AreaConfigService;
 use App\Services\ReferralCodeService;
 use App\Services\NonceCodeService;
 
@@ -27,18 +28,15 @@ class FormController extends Controller
     private ApiResponseService $apiResponseService;
     private ReferralCodeService $referralCodeService;
     private NonceCodeService $nonceCodeService;
-    private AreaConfigService $areaConfigService;
 
     public function __construct (
         ApiResponseService $_apiResponseService, 
         ReferralCodeService $_referralCodeService,
         NonceCodeService $_nonceCodeService, 
-        AreaConfigService $_areaConfigService
     ) {
         $this->apiResponseService = $_apiResponseService;
         $this->referralCodeService = $_referralCodeService;
         $this->nonceCodeService = $_nonceCodeService;
-        $this->areaConfigService = $_areaConfigService;
     }
 
     public function getForm(Request $_request)
@@ -56,15 +54,15 @@ class FormController extends Controller
         try 
         {
             $nonceToken = $this->nonceCodeService->generateNonce();
-            $area = $this->areaConfigService->getAreaData();
+            $area_name = SystemSetting::get('area_name');
     
-            $form = $this->areaConfigService->getJoinForm();
+            $form = json_decode(SystemSetting::get('area_join_form'),true);
             $form_fields = collect($form)->map(function ($field) {
                 return ['field_label' => ucfirst(str_replace('_', ' ', $field))];
             })->values();
 
             return $this->apiResponseService->ok([
-                'area_name' => $area->name,
+                'area_name' => $area_name,
                 'form_fields' => $form_fields,
                 'nonce' => $nonceToken,
             ], 'All the required fields and a nonce to be used for submission.');
@@ -86,11 +84,6 @@ class FormController extends Controller
     {
         $nonce_code = $_request->query('nonce');
 
-        if($this->areaConfigService->getJoinPolicy() == 'closed') {
-            $this->nonceCodeService->deleteNonce($nonce_code);
-            return $this->apiResponseService->forbidden('');
-        }
-
         if (!$nonce_code) {
             return $this->apiResponseService->badRequest('Nonce code is required.');
         }
@@ -99,7 +92,14 @@ class FormController extends Controller
             return $this->apiResponseService->forbidden('The provided referral code is invalid or has expired.');
         }
 
-        $form_labels = $this->areaConfigService->getJoinForm();
+        $join_policy = SystemSetting::get('area_join_policy');
+
+        if($join_policy == 'closed') {
+            $this->nonceCodeService->deleteNonce($nonce_code);
+            return $this->apiResponseService->forbidden('');
+        }
+
+        $form_labels = json_decode(SystemSetting::get('area_join_form'),true);
 
         $formattedFormLabels = array_map(function ($form_label) {
             return ucwords(str_replace('_', ' ', $form_label));
@@ -132,8 +132,8 @@ class FormController extends Controller
         try 
         {
             $applicant = Applicant::create(array_merge($normalizedData, ['status_id' => 1]));
-        
-            if($this->areaConfigService->getJoinPolicy() == 'open')
+            
+            if($join_policy == 'open')
             {
                 $user = User::create([
                     'name' => $applicant->name,
@@ -152,14 +152,7 @@ class FormController extends Controller
                     'applicant_id' => $applicant->id,
                     'user_id' => $user->id,
                 ]);
-
-                $this->areaConfigService->incrementMemberCount();
             }
-
-                if($this->areaConfigService->getJoinPolicy() == 'approval-needed')
-                {
-                    $this->areaConfigService->incrementPendingMemberCount();
-                }
 
             $response_data = [
                 'application_id' => $applicant->id,

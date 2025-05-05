@@ -8,7 +8,6 @@ use App\Services\WebAuthTokenService;
 use App\Services\ReferralCodeService;
 use App\Services\NonceCodeService;
 use App\Services\StorageService;
-use App\Services\AreaConfigService;
 use App\Services\GoogleCalendarService;
 
 
@@ -35,10 +34,6 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(StorageService::class, function () {
             return new StorageService();
-        });
-
-        $this->app->singleton(AreaConfigService::class , function () {
-            return new AreaConfigService();
         });
 
         $this->app->singleton(NonceCodeService::class, function () {

@@ -13,6 +13,7 @@ use App\Models\UserData;
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
 use App\Models\Enums\ApplicantStatus;
+use App\Models\SystemSetting;
 use App\Services\ApiResponseService;
 use App\Services\AreaConfigService;
 use App\Services\ReferralCodeService;
@@ -28,25 +29,27 @@ class AreaController extends Controller
 {
     private ReferralCodeService $referralCodeService;
     private ApiResponseService $apiResponseService;
-    private AreaConfigService $areaConfigService;
-
+    
     public function __construct (
         ReferralCodeService $_referralCodeService, 
-        ApiResponseService $_apiResponseService, 
-        AreaConfigService $_areaConfigService
+        ApiResponseService $_apiResponseService,
     ) {
         $this->referralCodeService = $_referralCodeService;
         $this->apiResponseService = $_apiResponseService;
-        $this->areaConfigService = $_areaConfigService;
     }
     
     public function index()
     {
         try 
         {
-            $data = $this->areaConfigService->getAreaData();
+            $reponse_data = [
+                'name' => SystemSetting::get('area_name'),
+                'join_policy' => SystemSetting::get('area_join_policy'),
+                'member_count' => Applicant::where('status_id', ApplicantStatusEnum::ACCEPTED->value)->count(),
+                'pending_member_count' => Applicant::where('status_id', ApplicantStatusEnum::PENDING->value)->count(), 
+            ];
 
-            return $this->apiResponseService->ok($data);
+            return $this->apiResponseService->ok($reponse_data, '');
         } 
         catch (Throwable $e) 
         {
@@ -221,9 +224,6 @@ class AreaController extends Controller
                 'user_id' => $user->id,
             ]);
 
-            $this->areaConfigService->incrementMemberCount();
-            $this->areaConfigService->decrementPendingMemberCount();
-
             unset($userData['id'], $userData['user_id']);
 
             $data = [
@@ -308,7 +308,6 @@ class AreaController extends Controller
             }
     
             $member->delete();
-            $this->areaConfigService->decrementMemberCount();
     
             return $this->apiResponseService->ok('Member deleted successfully.');
         } 
@@ -402,7 +401,6 @@ class AreaController extends Controller
             }
     
             $applicant->update(['status_id' => ApplicantStatusEnum::REJECTED->value]);
-            $this->areaConfigService->decrementPendingMemberCount();
     
             return $this->apiResponseService->ok('Applicant rejected successfully.');
         } 
