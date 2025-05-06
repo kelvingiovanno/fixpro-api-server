@@ -14,15 +14,17 @@ return new class extends Migration
         Schema::create('tickets', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('user_id')->nullable();
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');;
-            $table->foreignId('ticket_issue_type_id')->constrained();
-            $table->foreignId('ticket_status_type_id')->constrained();
-            $table->foreignId('response_level_type_id')->constrained();
+            $table->uuid('ticket_status_type_id')->nullable();
+            $table->uuid('response_level_type_id')->nullable();            
             $table->foreignId('location_id')->constrained();
             $table->string('executive_summary')->nullable();
             $table->string('stated_issue');
             $table->dateTime('raised_on');
             $table->dateTime('closed_on')->nullable();
+            
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+            $table->foreign('ticket_status_type_id')->references('id')->on('ticket_status_types')->onDelete('set null');
+            $table->foreign('response_level_type_id')->references('id')->on('response_level_types')->onDelete('set null');
             $table->softDeletes();
         });
     }

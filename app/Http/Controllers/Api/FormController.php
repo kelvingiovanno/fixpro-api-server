@@ -206,13 +206,13 @@ class FormController extends Controller
             $statusId = $applicant->status->id;
 
             switch ($statusId) {
-                case ApplicantStatusEnum::PENDING->value:
+                case ApplicantStatusEnum::PENDING->id():
                     return $this->apiResponseService->ok(null, 'Your application is still pending.');
                 
-                case ApplicantStatusEnum::REJECTED->value:
+                case ApplicantStatusEnum::REJECTED->id():
                     return $this->apiResponseService->forbidden('Your application has been rejected.');
                 
-                case ApplicantStatusEnum::ACCEPTED->value:
+                case ApplicantStatusEnum::ACCEPTED->id():
                     $authCode = AuthenticationCode::where('applicant_id', $applicationId)->first();
                     if (!$authCode) {
                         return $this->apiResponseService->notFound('Authentication code not found for this applicant.');

@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Models\Enums\ResponseLevelType;
+use App\Models\Enums\TicketIssueType;
 use App\Models\Location;
 use App\Models\Ticket;
 use App\Models\TicketDocument;
@@ -23,8 +25,7 @@ class TicketFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'ticket_issue_type_id' => rand(1, 5),
-            'response_level_type_id' => rand(1, 3),
+            'response_level_type_id' => ResponseLevelType::inRandomOrder()->value('id'),
             'location_id' => Location::factory(),
             'stated_issue' => $this->faker->sentence(rand(2,3)),
             'executive_summary' => $this->faker->sentence(rand(10,15)),
@@ -37,21 +38,21 @@ class TicketFactory extends Factory
     public function configure()
     {
         return $this->afterCreating(function (Ticket $ticket) {
-            // Ensure we have a valid ticket_id before creating related TicketLogs
+            
             $randomUserId = User::inRandomOrder()->first()->id;
 
-            // Create TicketLogs, ensuring the ticket_id exists in the database
             TicketLog::factory(rand(3,7))->create([
-                'ticket_id' => $ticket->id,  // Ensure that ticket_id is from the created ticket
+                'ticket_id' => $ticket->id,  
                 'user_id' => $randomUserId,
             ]);
 
-            // Create TicketDocuments for the ticket
+            $issueIds = TicketIssueType::inRandomOrder()->take(rand(1, 3))->pluck('id');
+            $ticket->issues()->attach($issueIds);
+
             TicketDocument::factory(rand(3,6))->create([
                 'ticket_id' => $ticket->id,
             ]);
 
-            // Attach maintainers to the ticket
             $maintainerIds = User::inRandomOrder()->take(rand(1, 3))->pluck('id');
             $ticket->maintainers()->attach($maintainerIds);
         });

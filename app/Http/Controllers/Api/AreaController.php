@@ -44,8 +44,8 @@ class AreaController extends Controller
             $reponse_data = [
                 'name' => SystemSetting::get('area_name'),
                 'join_policy' => SystemSetting::get('area_join_policy'),
-                'member_count' => Applicant::where('status_id', ApplicantStatusEnum::ACCEPTED->value)->count(),
-                'pending_member_count' => Applicant::where('status_id', ApplicantStatusEnum::PENDING->value)->count(), 
+                'member_count' => Applicant::where('status_id', ApplicantStatusEnum::ACCEPTED->id())->count(),
+                'pending_member_count' => Applicant::where('status_id', ApplicantStatusEnum::PENDING->id())->count(), 
             ];
 
             return $this->apiResponseService->ok($reponse_data, '');
@@ -195,7 +195,7 @@ class AreaController extends Controller
                 return $this->apiResponseService->notFound('Applicant not found');
             }
 
-            $applicant->update(['status_id' => ApplicantStatusEnum::ACCEPTED->value]);
+            $applicant->update(['status_id' => ApplicantStatusEnum::ACCEPTED->id()]);
 
             $user = User::create([
                 'role_id' => $role,
@@ -327,7 +327,7 @@ class AreaController extends Controller
     {
         try 
         {
-            $pendingMembers = ApplicantStatus::find(ApplicantStatusEnum::PENDING->value)->applicants;
+            $pendingMembers = ApplicantStatus::find(ApplicantStatusEnum::PENDING->id())->applicants;
     
             $response_data = $pendingMembers->map(function ($pendingMember) {
                 return [

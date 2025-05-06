@@ -13,9 +13,15 @@ return new class extends Migration
     {
         Schema::create('applicants', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignId('status_id')->constrained('applicant_statuses');
+            $table->uuid('status_id')->nullable();
             $table->string('name');
+            $table->string('email')->nullable();
+            $table->string('phone_number')->nullable();
+            $table->string('whatsapp_registered_number')->nullable();
             $table->dateTime('expires_at');
+            
+            $table->foreign('status_id')->references('id')->on('applicant_statuses')->onDelete('set null');
+
             $table->softDeletes();
         });
     }

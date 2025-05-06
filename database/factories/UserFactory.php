@@ -2,9 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Enums\UserRoleEnum;
 use App\Models\AuthenticationCode;
 use App\Models\Ticket;
-use App\Models\Location;
 use App\Models\Enums\Speciality;
 use App\Models\RefreshToken;
 use App\Models\User;
@@ -25,7 +25,7 @@ class UserFactory extends Factory
     {
         return [
             'name' => $this->faker->name(),
-            'role_id' => 1,
+            'role_id' => UserRoleEnum::MEMBER->id(),
             'title' => $this->faker->jobTitle(),
         ];
     }

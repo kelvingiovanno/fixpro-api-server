@@ -26,7 +26,6 @@ class Ticket extends Model
 
     protected $fillable = [
         'user_id',
-        'ticket_issue_type_id',
         'ticket_status_type_id',
         'response_level_type_id',
         'location_id',
@@ -78,9 +77,9 @@ class Ticket extends Model
         return $this->belongsTo(TicketStatusType::class, 'ticket_status_type_id');
     }
 
-    public function issueType()
+    public function issues()
     {
-        return $this->belongsTo(TicketIssueType::class, 'ticket_issue_type_id');
+        return $this->belongsToMany(TicketIssueType::class, 'issue_type_ticket', 'ticket_id', 'issue_type_id');
     }
 
     public function responseLevelType()

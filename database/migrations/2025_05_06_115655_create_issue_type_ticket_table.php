@@ -11,18 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ticket_logs', function (Blueprint $table) {
-            $table->uuid('id')->primary();
+        Schema::create('issue_type_ticket', function (Blueprint $table) {
+            $table->uuid('issue_type_id')->nullable();
             $table->uuid('ticket_id')->nullable();
-            $table->uuid('user_id')->nullable();
-            $table->uuid('ticket_log_type_id')->nullable();
-            $table->dateTime('recorded_on');
-            $table->string('news');
 
-            $table->foreign('ticket_log_type_id')->references('id')->on('ticket_log_types')->onDelete('set null');
+            $table->foreign('issue_type_id')->references('id')->on('ticket_issue_types')->onDelete('set null');
             $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('set null');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');;
             
+            $table->primary(['issue_type_id', 'ticket_id']);
             $table->softDeletes();
         });
     }
@@ -32,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ticket_logs');
+        Schema::dropIfExists('issue_type_ticket');
     }
 };

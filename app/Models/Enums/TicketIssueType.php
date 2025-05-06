@@ -46,6 +46,6 @@ class TicketIssueType extends Model
 
     public function tickets()
     {
-        return $this->hasMany(Ticket::class, 'ticket_issue_type_id', 'id');
+        return $this->belongsToMany(Ticket::class, 'issue_type_ticket', 'issue_type_id', 'ticket_id');
     }
 }
