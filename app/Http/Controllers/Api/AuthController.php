@@ -9,6 +9,7 @@ use App\Models\Applicant;
 use App\Services\ApiResponseService;
 
 use App\Http\Controllers\Controller;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Tymon\JWTAuth\Facades\JWTAuth;

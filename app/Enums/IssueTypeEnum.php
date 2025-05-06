@@ -2,35 +2,25 @@
 
 namespace App\Enums;
 
-enum IssueTypeEnum : int
+use App\Models\Enums\TicketIssueType;
+
+enum IssueTypeEnum : string
 {
-    case PLUMBING = 1;
-    case HOUSEKEEPING = 2;
-    case SOCIAL = 3;
-    case FACILITY = 4;
-    case ENGINEERING = 5;
-    case SECURITY = 6;
-
-    public function label() : string
+    case PLUMBING = "Plumbing";
+    case HOUSEKEEPING = "Housekeeping";
+    case SOCIAL = "Social";
+    case FACILITY = "Facility";
+    case ENGINEERING = "Engineering";
+    case SECURITY = "Security";
+    
+    public function id(): ?string
     {
-        return match($this) {
-            self::PLUMBING => 'Plumbing',
-            self::HOUSEKEEPING => 'Housekeeping',
-            self::SOCIAL => 'Social',
-            self::FACILITY => 'Facility',
-            self::ENGINEERING => 'Engineering',
-            self::SECURITY => 'Security',
-        };
+        $record = TicketIssueType::where('label', $this->value)->first();
+        return $record?->id;
     }
 
-    public static function id(string $label): ?int
+    public static function idFromLabel(string $label): ?string
     {
-        foreach (self::cases() as $case) {
-            if (strcasecmp($case->label(), $label) === 0) {
-                return $case->value;
-            }
-        }
-
-        return null; 
-    }
+        return TicketIssueType::where('label', $label)->first()?->id;
+    }   
 }

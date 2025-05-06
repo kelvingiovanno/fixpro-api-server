@@ -2,29 +2,22 @@
 
 namespace App\Enums;
 
-enum ResponLevelEnum : int
-{
-    case URGENT_EMERGENCY = 1;
-    case URGENT = 2;
-    case NORMAL = 3;
+use App\Models\Enums\ResponseLevelType;
 
-    public function label() : string
+enum ResponLevelEnum : string
+{
+    case EMERGENCY = "Emergency";
+    case URGENT = "Urgent";
+    case NORMAL = "Normal";
+
+    public function id(): ?string
     {
-        return match($this) {
-            self::URGENT_EMERGENCY => 'Urgent, Emergency',
-            self::URGENT => 'Urgent',
-            self::NORMAL => 'Normal',
-        };
+        $record = ResponseLevelType::where('label', $this->value)->first();
+        return $record?->id;
     }
 
-    public static function id(string $label): ?int
+    public static function idFromLabel(string $label): ?string
     {
-        foreach (self::cases() as $case) {
-            if (strcasecmp($case->label(), $label) === 0) {
-                return $case->value;
-            }
-        }
-
-        return null; 
+        return ResponseLevelType::where('label', $label)->first()?->id;
     }
 }

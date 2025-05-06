@@ -26,7 +26,7 @@ use Illuminate\Support\Str;
 
 use Throwable;
 
-class TicketController extends Controller
+class TicketController extends Controller   
 {
     private ApiResponseService $apiResponseService;
     private StorageService $storageService;
@@ -97,8 +97,8 @@ class TicketController extends Controller
             $locationData = $_request->input('location');
             $user_id = $_request->input('jwt_payload')['user_id'];
             
-            $ticket_issue_type = IssueTypeEnum::id($_request->input('issue_type'));
-            $ticket_response_level = ResponLevelEnum::id($_request->input('response_level'));
+            $ticket_issue_type = IssueTypeEnum::idFromLabel($_request->input('issue_type'));
+            $ticket_response_level = ResponLevelEnum::idFromLabel($_request->input('response_level'));
     
             $location = Location::create([
                 'stated_location' => $locationData['stated_location'],
@@ -236,10 +236,10 @@ class TicketController extends Controller
                 return $this->apiResponseService->notFound('Ticket not found');
             }
 
-            $user_role = $_request->input('jwt_payload')['role'];
+            $user_role = UserRoleEnum::idFromLabel($_request->input('jwt_payload')['role']);
             $user_id = $_request->input('jwt_payload')['user_id'];
 
-            if(UserRoleEnum::id($user_role) == UserRoleEnum::MEMBER->value)
+            if($user_role == UserRoleEnum::MEMBER->value)
             {   
                 $ticket->update(['ticket_status_type_id' => TicketStatusEnum::CANCELLED->value]);
                 
@@ -251,7 +251,7 @@ class TicketController extends Controller
                 ]);
             }
 
-            if(UserRoleEnum::id($user_role) == UserRoleEnum::MANAGEMENT->value)
+            if($user_role == UserRoleEnum::MANAGEMENT->value)
             {   
                 $ticket->update(['ticket_status_type_id' => TicketStatusEnum::REJECTED->value]);
             
@@ -344,7 +344,7 @@ class TicketController extends Controller
             return $this->apiResponseService->unprocessableEntity('Validation failed, please check the provided data', $validator->errors());
         }
 
-        $log_type_id = TicketLogTypeEnum::id($_request->input('log_type'));
+        $log_type_id = TicketLogTypeEnum::idFromLabel($_request->input('log_type'));
         
         if(!$log_type_id)
         {
@@ -540,5 +540,5 @@ class TicketController extends Controller
 
             return $this->apiResponseService->internalServerError('');
         }
-    }
+    }       
 }

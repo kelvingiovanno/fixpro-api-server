@@ -4,35 +4,22 @@ namespace App\Enums;
 
 use App\Models\Enums\TicketLogType;
 
-enum TicketLogTypeEnum : int
+enum TicketLogTypeEnum : string
 {
-    case ASSESSMENT = 1;
-    case WORK_PROGRESS = 2;
-    case WORK_EVALUATION_REQUEST = 3;
-    case WORK_EVALUATION = 4;
-    case ACTIVITY= 5;
+    case ASSESSMENT = "Assessment";
+    case WORK_PROGRESS = "Work Progress";
+    case WORK_EVALUATION_REQUEST = "Work Evaluation Request";
+    case WORK_EVALUATION = "Work Evaluation";
+    case ACTIVITY = "Activity";
 
-    public function label() : string
+    public function id(): ?string
     {
-        return match($this) {
-            self::ASSESSMENT => 'Assessment',
-            self::WORK_PROGRESS => 'Work Progress',
-            self::WORK_EVALUATION_REQUEST => 'Work Evaluation Request',
-            self::WORK_EVALUATION => 'Work Evaluation',
-            self::ACTIVITY => 'Activity',
-        };
+        $record = TicketLogType::where('label', $this->value)->first();
+        return $record?->id;
     }
 
-    public static function id(string $label): ?int
+    public static function idFromLabel(string $label): ?string
     {
-        foreach (self::cases() as $case) {
-            if (strcasecmp($case->label(), $label) === 0) {
-                return $case->value;
-            }
-        }
-
-        $logType = TicketLogType::where('label', $label)->first();
-
-        return $logType?->id; 
+        return TicketLogType::where('label', $label)->first()?->id;
     }
 }

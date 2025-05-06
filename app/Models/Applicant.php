@@ -45,7 +45,7 @@ class Applicant extends Model
                 $model->id = Str::uuid();
             }
 
-            $model->status_id = ApplicantStatusEnum::PENDING->value;
+            $model->status_id = ApplicantStatusEnum::PENDING->id();
             $model->expires_at = now()->addDays(2);
         });
     }

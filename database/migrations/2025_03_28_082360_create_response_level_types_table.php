@@ -12,8 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('response_level_types', function (Blueprint $table) {
-            $table->unsignedBigInteger('id')->primary();
+            $table->uuid('id')->primary();
             $table->string('label')->unique();
+            $table->double('sla_modifier', 8, 2);
             $table->softDeletes();
         });
     }

@@ -62,15 +62,14 @@
     </div>
 
     <div class="transition duration-300 ease-in-out mb-10">
-      <h2 class="text-2xl font-bold mb-4">Set Up Log type</h2>
+      <h2 class="text-2xl font-bold mb-4">Set Up Issue Type</h2>
       <p class="text-sm text-gray-700">
-        In this step, you'll define which data fields should be collected for each member, such as email addresses, phone numbers, or other custom information.
-        This ensures the system captures all necessary details for user management and communication.
+        In this step, you'll define what information needs to be collected for each issue type
       </p>
-
-      <h3 class="text-lg font-normal mb2 mt-7">Customize Member Data Fields</h3>
+    
+      <h3 class="text-lg font-normal mb-2 mt-7">Customize Issue Fields</h3>
       <p class="text-sm text-gray-600 mb-4">
-          Add or remove custom fields that you want to collect from members.
+        Add or remove custom fields relevant to each issue type.
       </p>
       
       <div id="custom-fields-log-type" class="space-y-2 w-96 mb-2">
@@ -82,6 +81,7 @@
         + Add Custom Field
       </button>
     </div>
+    
 
     <div class="transition duration-300 ease-in-out space-y-4 mb-10">
       <h2 class="text-2xl font-bold mb-4">Set Up Google Calendar</h2>
@@ -217,8 +217,8 @@
 
         let input = document.createElement("input");
         input.type = "text";
-        input.name = "logtypes[]";
-        input.placeholder = "Enter custom log type";
+        input.name = "issue_types[]";
+        input.placeholder = "Enter custom issue types";
         input.classList.add("flex-1", "p-2", "border", "border-gray-300", "rounded", 'text-sm');
 
         let removeButton = document.createElement("button");

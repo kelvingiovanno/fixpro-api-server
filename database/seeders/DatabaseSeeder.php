@@ -28,44 +28,44 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        UserRole::create(['id' => UserRoleEnum::MEMBER->value, 'label' => UserRoleEnum::MEMBER->label()]);
-        UserRole::create(['id' => UserRoleEnum::CREW->value, 'label' => UserRoleEnum::CREW->label()]);
-        UserRole::create(['id' => UserRoleEnum::MANAGEMENT->value,'label' => UserRoleEnum::MANAGEMENT->label()]);
+        UserRole::create(['label' => UserRoleEnum::MEMBER->value]);
+        UserRole::create([ 'label' => UserRoleEnum::CREW->value]);
+        UserRole::create(['label' => UserRoleEnum::MANAGEMENT->value]);
 
-        Speciality::create(['id' => UserSpeciallityEnum::PLUMBING->value, 'label' => UserSpeciallityEnum::PLUMBING->label()]);
-        Speciality::create(['id' => UserSpeciallityEnum::HOUSEKEEPING->value, 'label' => UserSpeciallityEnum::HOUSEKEEPING->label()]);
-        Speciality::create(['id' => UserSpeciallityEnum::SOCIAL->value, 'label' => UserSpeciallityEnum::SOCIAL->label()]);
-        Speciality::create(['id' => UserSpeciallityEnum::FACILITY->value, 'label' => UserSpeciallityEnum::FACILITY->label()]);
-        Speciality::create(['id' => UserSpeciallityEnum::ENGINEERING->value, 'label' => UserSpeciallityEnum::ENGINEERING->label()]);
-        Speciality::create(['id' => UserSpeciallityEnum::SECURITY->value, 'label' => UserSpeciallityEnum::SECURITY->label()]);
+        Speciality::create(['label' => UserSpeciallityEnum::PLUMBING->value]);
+        Speciality::create([ 'label' => UserSpeciallityEnum::HOUSEKEEPING->value]);
+        Speciality::create([ 'label' => UserSpeciallityEnum::SOCIAL->value]);
+        Speciality::create(['label' => UserSpeciallityEnum::FACILITY->value]);
+        Speciality::create(['label' => UserSpeciallityEnum::ENGINEERING->value]);
+        Speciality::create(['label' => UserSpeciallityEnum::SECURITY->value]);
 
-        ResponseLevelType::create(['id' => ResponLevelEnum::URGENT->value, 'label' => ResponLevelEnum::URGENT->label()]);
-        ResponseLevelType::create(['id' => ResponLevelEnum::URGENT_EMERGENCY->value, 'label' => ResponLevelEnum::URGENT_EMERGENCY->label()]);
-        ResponseLevelType::create(['id' => ResponLevelEnum::NORMAL->value, 'label' => ResponLevelEnum::NORMAL->label()]);
+        ResponseLevelType::create(['label' => ResponLevelEnum::URGENT->value, 'sla_modifier' => 0.8]); 
+        ResponseLevelType::create(['label' => ResponLevelEnum::EMERGENCY->value, 'sla_modifier' => 0.6]);
+        ResponseLevelType::create(['label' => ResponLevelEnum::NORMAL->value, 'sla_modifier' => 0.1]);
 
-        TicketStatusType::create(['id' => TicketStatusEnum::OPEN->value, 'label' => TicketStatusEnum::OPEN->label()]);
-        TicketStatusType::create(['id' => TicketStatusEnum::IN_ASSESSMENT->value, 'label' => TicketStatusEnum::IN_ASSESSMENT->label()]);
-        TicketStatusType::create(['id' => TicketStatusEnum::ON_PROGRESS->value, 'label' => TicketStatusEnum::ON_PROGRESS->label()]);
-        TicketStatusType::create(['id' => TicketStatusEnum::WORK_EVALUATION, 'label' => TicketStatusEnum::WORK_EVALUATION->label()]);
-        TicketStatusType::create(['id' => TicketStatusEnum::CLOSED->value, 'label' => TicketStatusEnum::CLOSED->label()]);
-        TicketStatusType::create(['id' => TicketStatusEnum::CANCELLED->value, 'label' => TicketStatusEnum::CANCELLED->label()]);
-        TicketStatusType::create(['id' => TicketStatusEnum::REJECTED->value, 'label' => TicketStatusEnum::REJECTED->label()]);
+        TicketStatusType::create(['label' => TicketStatusEnum::OPEN->value]);
+        TicketStatusType::create(['label' => TicketStatusEnum::IN_ASSESSMENT->value]);
+        TicketStatusType::create(['label' => TicketStatusEnum::ON_PROGRESS->value]);
+        TicketStatusType::create(['label' => TicketStatusEnum::WORK_EVALUATION->value]);
+        TicketStatusType::create(['label' => TicketStatusEnum::CLOSED->value]);
+        TicketStatusType::create(['label' => TicketStatusEnum::CANCELLED->value]);
+        TicketStatusType::create(['label' => TicketStatusEnum::REJECTED->value]);
 
-        TicketIssueType::create(['id' => IssueTypeEnum::PLUMBING->value, 'label' => IssueTypeEnum::PLUMBING->label()]);
-        TicketIssueType::create(['id' => IssueTypeEnum::HOUSEKEEPING->value, 'label' => IssueTypeEnum::HOUSEKEEPING->label()]);
-        TicketIssueType::create(['id' => IssueTypeEnum::SOCIAL->value, 'label' => IssueTypeEnum::SOCIAL->label()]);
-        TicketIssueType::create(['id' => IssueTypeEnum::FACILITY->value, 'label' => IssueTypeEnum::FACILITY->label()]);
-        TicketIssueType::create(['id' => IssueTypeEnum::ENGINEERING->value, 'label' => IssueTypeEnum::ENGINEERING->label()]);
-        TicketIssueType::create(['id' => IssueTypeEnum::SECURITY->value, 'label' => IssueTypeEnum::SECURITY->label()]);      
+        TicketIssueType::create(['label' => IssueTypeEnum::PLUMBING->value]);
+        TicketIssueType::create(['label' => IssueTypeEnum::HOUSEKEEPING->value]);
+        TicketIssueType::create(['label' => IssueTypeEnum::SOCIAL->value]);
+        TicketIssueType::create(['label' => IssueTypeEnum::FACILITY->value]);
+        TicketIssueType::create(['label' => IssueTypeEnum::ENGINEERING->value]);
+        TicketIssueType::create(['label' => IssueTypeEnum::SECURITY->value]);      
 
-        ApplicantStatus::create(['id' => ApplicantStatusEnum::ACCEPTED->value, 'label' => ApplicantStatusEnum::ACCEPTED->label()]);
-        ApplicantStatus::create(['id' => ApplicantStatusEnum::PENDING->value, 'label' => ApplicantStatusEnum::PENDING->label()]);
-        ApplicantStatus::create(['id' => ApplicantStatusEnum::REJECTED->value, 'label' => ApplicantStatusEnum::REJECTED->label()]);
+        ApplicantStatus::create(['label' => ApplicantStatusEnum::ACCEPTED->value]);
+        ApplicantStatus::create(['label' => ApplicantStatusEnum::PENDING->value]);
+        ApplicantStatus::create(['label' => ApplicantStatusEnum::REJECTED->value]);
 
-        TicketLogType::create(['id' => TicketLogTypeEnum::ASSESSMENT->value, 'label' => TicketLogTypeEnum::ASSESSMENT->label()]);
-        TicketLogType::create(['id' => TicketLogTypeEnum::WORK_PROGRESS->value, 'label' => TicketLogTypeEnum::WORK_PROGRESS->label()]);
-        TicketLogType::create(['id' => TicketLogTypeEnum::WORK_EVALUATION_REQUEST->value, 'label' => TicketLogTypeEnum::WORK_EVALUATION_REQUEST->label()]);
-        TicketLogType::create(['id' => TicketLogTypeEnum::WORK_EVALUATION->value, 'label' => TicketLogTypeEnum::WORK_EVALUATION->label()]);
-        TicketLogType::create(['id' => TicketLogTypeEnum::ACTIVITY->value, 'label' => TicketLogTypeEnum::ACTIVITY->label()]);
+        TicketLogType::create(['label' => TicketLogTypeEnum::ASSESSMENT->value]);
+        TicketLogType::create(['label' => TicketLogTypeEnum::WORK_PROGRESS->value]);
+        TicketLogType::create(['label' => TicketLogTypeEnum::WORK_EVALUATION_REQUEST->value]);
+        TicketLogType::create(['label' => TicketLogTypeEnum::WORK_EVALUATION->value]);
+        TicketLogType::create(['label' => TicketLogTypeEnum::ACTIVITY->value]);
     }
 }

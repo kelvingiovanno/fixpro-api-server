@@ -6,6 +6,8 @@ use App\Models\User;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
+
 
 class Speciality extends Model
 {
@@ -23,7 +25,20 @@ class Speciality extends Model
         'deleted_at',
     ];
 
+    public $incrementing = false; 
     public $timestamps = false;
+    protected $keyType = 'string';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if(! $model->getKey()) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
+            }
+        });
+    }
 
     public function users()
     {

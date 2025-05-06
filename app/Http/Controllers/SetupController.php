@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SystemSetting;
+use App\Models\Enums\TicketIssueType;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -36,6 +37,8 @@ class SetupController extends Controller
             'join_policy' => 'required|string',
             'forms' => 'required|array|min:1',
             'forms.*' => 'required|string|max:255',
+            'issue_types' => 'nullable|array',
+            'issue_types.*' => 'required_with:logtypes|string|max:255',
             'google_client_id' => 'required|string|max:255',
             'google_client_secret' => 'required|string|max:255',
             'google_callback' => 'required|string|url|max:255',
@@ -46,8 +49,13 @@ class SetupController extends Controller
             'forms.array' => 'The forms field must be an array.',
             'forms.min' => 'You must have at least one form.',
             'forms.*.required' => 'Each form must be a valid string.',
+            'logtypes.array' => 'The logtypes field must be an array.',
+            'logtypes.*.required_with' => 'Each logtype must be a valid string if logtypes are provided.',
+            'logtypes.*.string' => 'Each logtype must be a string.',
+            'logtypes.*.max' => 'Each logtype must not exceed 255 characters.',
             'google_callback.url' => 'The Google Callback URL must be a valid URL.',
         ]);
+        
     
         if ($validator->fails()) {
             return redirect()->back()
@@ -65,6 +73,8 @@ class SetupController extends Controller
             $client_secret = $request_data['google_client_secret'];
             $callback = $request_data['google_callback'];
     
+            $logTypes = $request_data['logtypes']; 
+
             $formatted_form = $this->formatForms($forms);
             $this->createTable($formatted_form);
 
@@ -75,7 +85,16 @@ class SetupController extends Controller
             SystemSetting::put('google_client_id', $client_id);
             SystemSetting::put('google_client_secret', $client_secret);
             SystemSetting::put('google_redirect_uri', $callback);
-    
+
+            
+            foreach ($logTypes as $logtype) {
+                if (!empty($logtype)) {
+                    TicketIssueType::create([
+                        'label' => ucwords(strtolower($logtype)), 
+                    ]);
+                }
+            }
+
             return redirect('google/auth');
     
         } 

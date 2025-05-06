@@ -6,6 +6,7 @@ use App\Models\Ticket;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class TicketIssueType extends Model
 {
@@ -16,6 +17,7 @@ class TicketIssueType extends Model
     protected $fillable = [
         'id',
         'label',
+        'sla_hours',
     ];
 
     protected $hidden = [
@@ -23,7 +25,24 @@ class TicketIssueType extends Model
         'deleted_at',
     ];
 
+    protected $casts = [
+        'sla_hours' => 'integer',
+    ];
+
+    public $incrementing = false; 
     public $timestamps = false;
+    protected $keyType = 'string';
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if(! $model->getKey()) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
+            }
+        });
+    }
 
     public function tickets()
     {

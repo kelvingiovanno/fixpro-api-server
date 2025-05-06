@@ -2,29 +2,22 @@
 
 namespace App\Enums;
 
-enum ApplicantStatusEnum : int
-{
-    case ACCEPTED = 1;
-    case PENDING = 2;
-    case REJECTED = 3;
+use App\Models\Enums\ApplicantStatus;
 
-    public function label() : string
+enum ApplicantStatusEnum : string
+{
+    case ACCEPTED = "Accepted";
+    case PENDING = "Pending";
+    case REJECTED = "Rejected";
+
+    public function id(): ?string
     {
-        return match($this) {
-            self::ACCEPTED => 'Accepted',
-            self::PENDING => 'Pending',
-            self::REJECTED => 'Rejected',
-        };
+        $record = ApplicantStatus::where('label', $this->value)->first();
+        return $record?->id;
     }
 
-    public static function id(string $label): ?int
+    public static function idFromLabel(string $label): ?string
     {
-        foreach (self::cases() as $case) {
-            if (strcasecmp($case->label(), $label) === 0) {
-                return $case->value;
-            }
-        }
-
-        return null; 
+        return ApplicantStatus::where('label', $label)->first()?->id;
     }
 }

@@ -15,7 +15,6 @@ use App\Models\AuthenticationCode;
 use App\Models\Enums\ApplicantStatus;
 use App\Models\SystemSetting;
 use App\Services\ApiResponseService;
-use App\Services\AreaConfigService;
 use App\Services\ReferralCodeService;
 
 use Illuminate\Http\Request;
@@ -166,7 +165,7 @@ class AreaController extends Controller
         try 
         {
             $applicationId = $_request->input('application_id');
-            $role = UserRoleEnum::id($_request->input('role'));
+            $role = UserRoleEnum::idFromLabel($_request->input('role'));
             $specializationLabels = $_request->input('specialization');
             $title = $_request->input('title');
 
@@ -177,7 +176,7 @@ class AreaController extends Controller
             if($specializationLabels)
             {
                 $specializationIds = array_map(function ($label) {
-                    $id = UserSpeciallityEnum::id($label);
+                    $id = UserSpeciallityEnum::idFromLabel($label);
                     if (!$id) {
                         return null; 
                     }

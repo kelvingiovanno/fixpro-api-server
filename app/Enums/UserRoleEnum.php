@@ -2,29 +2,22 @@
 
 namespace App\Enums;
 
-enum UserRoleEnum: int
+use App\Models\Enums\UserRole;
+
+enum UserRoleEnum: string
 {
-    case MEMBER = 1;
-    case CREW = 2;
-    case MANAGEMENT = 3;
-    
-    public function label(): string
+    case MEMBER = "Member";
+    case CREW = "Crew";
+    case MANAGEMENT = "Management";
+
+    public function id(): ?string
     {
-        return match($this) {
-            self::MEMBER => 'Member',
-            self::CREW => 'Crew',
-            self::MANAGEMENT => 'Management',
-        };
+        $record = UserRole::where('label', $this->value)->first();
+        return $record?->id;
     }
 
-    public static function id(string $label): ?int
+    public static function idFromLabel(string $label): ?string
     {
-        foreach (self::cases() as $case) {
-            if (strcasecmp($case->label(), $label) === 0) {
-                return $case->value;
-            }
-        }
-
-        return null; 
+        return UserRole::where('label', $label)->first()?->id;
     }
 }

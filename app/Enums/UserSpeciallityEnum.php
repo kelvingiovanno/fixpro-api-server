@@ -2,36 +2,25 @@
 
 namespace App\Enums;
 
-enum UserSpeciallityEnum : int 
-{
-    case PLUMBING = 1;
-    case HOUSEKEEPING = 2;
-    case SOCIAL = 3;
-    case FACILITY = 4;
-    case ENGINEERING = 5;
-    case SECURITY = 6;
+use App\Models\Enums\Speciality;
 
-    
-    public function label() : string
+enum UserSpeciallityEnum : string
+{
+    case PLUMBING = "Plumbing";
+    case HOUSEKEEPING = "Housekeeping";
+    case SOCIAL = "Social";
+    case FACILITY = "Facility";
+    case ENGINEERING = "Engineering";
+    case SECURITY = "Security";
+
+    public function id(): ?string
     {
-        return match($this) {
-            self::PLUMBING => 'Plumbing',
-            self::HOUSEKEEPING => 'Housekeeping',
-            self::SOCIAL => 'Social',
-            self::FACILITY => 'Facility',
-            self::ENGINEERING => 'Engineering',
-            self::SECURITY => 'Security',
-        };
+        $record = Speciality::where('label', $this->value)->first();
+        return $record?->id;
     }
 
-    public static function id(string $label): ?int
+    public static function idFromLabel(string $label): ?string
     {
-        foreach (self::cases() as $case) {
-            if (strcasecmp($case->label(), $label) === 0) {
-                return $case->value;
-            }
-        }
-
-        return null; 
+        return Speciality::where('label', $label)->first()?->id;
     }
 }
