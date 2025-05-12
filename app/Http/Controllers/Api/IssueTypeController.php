@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+
 use Throwable;
 
 class IssueTypeController extends Controller
@@ -33,7 +34,7 @@ class IssueTypeController extends Controller
             $response_data = $issue_types->map(function ($issue) {
                 return [
                     'id' => $issue->id,
-                    'name' => $issue->label,
+                    'name' => $issue->name,
                     'service_level_agreement_duration_hour' => $issue->sla_duration_hour ?? 'Not assigned yet',
                 ];
             });
@@ -70,7 +71,7 @@ class IssueTypeController extends Controller
         try
         {
             $issue_type = TicketIssueType::create([
-                'label' => $data['name'],
+                'name' => $data['name'],
                 'sla_duration_hour' => $data['service_level_agreement_duration_hour'],
             ]);
 
@@ -78,7 +79,7 @@ class IssueTypeController extends Controller
 
             $response_data = [
                 'id' => $new_issue_type->id,
-                'name' => $new_issue_type->label,
+                'name' => $new_issue_type->name,
                 'service_level_agreement_duration_hour' => $new_issue_type->sla_duration_hour,
             ];
 
@@ -117,7 +118,7 @@ class IssueTypeController extends Controller
 
             $response_data = [
                 'id' => $issue_type->id,
-                'name' => $issue_type->label,
+                'name' => $issue_type->name,
                 'service_level_agreement_duration_hour' => $issue_type->sla_duration_hour ?? 'Not assigned yet',
             ];
 
