@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Models\Enums\TicketLogType;
 
 use App\Models\Ticket;
-use App\Models\User;
+use App\Models\Member;
 use App\Models\TicketLogDocument;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -59,16 +59,16 @@ class TicketLog extends Model
 
     public function issuer()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(Member::class, 'member_id', 'id');
     }
 
-    public function logType()
+    public function log_type()
     {
-        return $this->belongsTo(TicketLogType::class, 'ticket_log_type_id', 'id');
+        return $this->belongsTo(TicketLogType::class, 'type_id', 'id');
     }
 
     public function documents()
     {
-        return $this->hasMany(TicketLogDocument::class, 'ticket_log_id', 'id');
+        return $this->hasMany(TicketLogDocument::class, 'log_id', 'id');
     }
 }

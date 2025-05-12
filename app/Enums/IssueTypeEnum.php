@@ -15,12 +15,12 @@ enum IssueTypeEnum : string
     
     public function id(): ?string
     {
-        $record = TicketIssueType::where('label', $this->value)->first();
+        $record = TicketIssueType::where('name', $this->value)->first();
         return $record?->id;
     }
 
-    public static function idFromLabel(string $label): ?string
+    public static function idFromName(string $name): ?string
     {
-        return TicketIssueType::where('label', $label)->first()?->id;
+        return TicketIssueType::where('name', $name)->first()?->id;
     }   
 }

@@ -16,11 +16,10 @@ class ApplicantStatus extends Model
 
     protected $fillable = [
         'id',
-        'label',
+        'name',
     ];
 
     protected $hidden = [
-        'id',
         'deleted_at',
     ];
 
@@ -41,6 +40,6 @@ class ApplicantStatus extends Model
 
     public function applicants()
     {
-        return $this->hasMany(Applicant::class, 'status_id', 'id');
+        return $this->hasMany(Applicant::class, 'applicant_id', 'id');
     }
 }

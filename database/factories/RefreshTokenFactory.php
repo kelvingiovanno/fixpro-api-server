@@ -2,8 +2,9 @@
 
 namespace Database\Factories;
 
-use App\Models\User;
+use App\Models\Member;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\RefreshToken>
@@ -18,9 +19,8 @@ class RefreshTokenFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => User::factory(),
-            'token' => $this->faker-> uuid(),
-            'expires_at' => now()->addYear(),
+            'member_id' => Member::factory(),
+            'token' => Str::random(302),
         ];
     }
 }

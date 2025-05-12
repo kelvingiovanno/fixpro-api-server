@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('response_level_types', function (Blueprint $table) {
+        Schema::create('applicant_statuses', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('label')->unique();
-            $table->double('sla_modifier', 8, 2);
+            $table->string('name')->unique();
+            
             $table->softDeletes();
         });
     }
@@ -24,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('response_level_types');
+        Schema::dropIfExists('applicant_statuses');
     }
 };

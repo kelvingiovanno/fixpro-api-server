@@ -2,28 +2,26 @@
 
 namespace App\Models;
 
-use App\Models\User;
+use App\Models\Member;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+USE Illuminate\Support\Str;
 
 class RefreshToken extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use SoftDeletes, HasFactory;
     
     protected $table = 'refresh_tokens';
 
     protected $fillable = [
-        'user_id',
+        'member_id',
         'token',
-        'expires_at',
-        'deleted_at',
     ];
 
     protected $casts = [
-        'expires_at' => 'datetime',
+        'expires_on' => 'datetime',
     ];
 
     protected $hidden = [
@@ -32,9 +30,26 @@ class RefreshToken extends Model
     ];
 
     public $timestamps = false;
+    public $incrementing = false; 
+    protected $keyType = 'string'; 
 
-    public function user()
+    protected static function boot()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        parent::boot();
+
+        static::creating(function ($model) 
+        {            
+            $model->expires_on = now()->addMonth();
+
+            if (!$model->getKey()) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
+            }
+            
+        });
+    }
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class, 'member_id', 'id');
     }
 }

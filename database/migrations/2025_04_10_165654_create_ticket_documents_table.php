@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ticket_documents', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('ticket_id');
+            $table->uuid('id')->primary();
+            $table->uuid('ticket_id')->nullable();
             $table->string('resource_type');
             $table->string('resource_name');
             $table->string('resource_size');

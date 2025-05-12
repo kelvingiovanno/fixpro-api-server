@@ -16,11 +16,10 @@ class TicketStatusType extends Model
 
     protected $fillable = [
         'id',
-        'label',
+        'name',
     ];
 
     protected $hidden = [
-        'id',
         'deleted_at',
     ];
 
@@ -41,6 +40,6 @@ class TicketStatusType extends Model
 
     public function tickets() 
     {
-        return $this->hasMany(Ticket::class, 'ticket_status_type_id', 'id');
+        return $this->hasMany(Ticket::class, 'status_id', 'id');
     }
 }

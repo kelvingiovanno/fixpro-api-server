@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('ticket_issue_types', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('label')->unique();
+            $table->string('name')->unique();
             $table->integer('sla_duration_hour')->nullable();
+            
             $table->softDeletes();
         });
     }

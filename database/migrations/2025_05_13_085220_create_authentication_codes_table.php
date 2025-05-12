@@ -13,13 +13,11 @@ return new class extends Migration
     {
         Schema::create('authentication_codes', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('applicant_id')->nullable();
-            $table->uuid('user_id')->nullable();
-            $table->timestamp('expires_at');
-            $table->softDeletes();
+            $table->uuid('application_id')->nullable();
+            $table->timestamp('expires_on');    
 
-            $table->foreign('applicant_id')->references('id')->on('applicants')->onDelete('cascade');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('application_id')->references('id')->on('applicants')->onDelete('set null');
+            $table->softDeletes();
         });
     }
 

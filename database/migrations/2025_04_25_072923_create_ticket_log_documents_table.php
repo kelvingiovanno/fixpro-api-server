@@ -12,15 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('ticket_log_documents', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('ticket_log_id');
+            $table->uuid('id')->primary();
+            $table->uuid('log_id')->nullable();
             $table->string('resource_type');
             $table->string('resource_name');
             $table->string('resource_size');
             $table->string('previewable_on')->unique();
-            $table->softDeletes();
             
-            $table->foreign('ticket_log_id')->references('id')->on('ticket_logs');
+            $table->foreign('log_id')->references('id')->on('ticket_logs');
+            $table->softDeletes();
         });
     }
 

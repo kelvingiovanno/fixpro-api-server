@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Member;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Model>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Applicant>
  */
 class ApplicantFactory extends Factory
 {
@@ -17,11 +18,7 @@ class ApplicantFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->name(),
-            'email' => $this->faker->unique()->safeEmail(),
-            'phone_number' => $this->faker->phoneNumber(),
-            'status_id' => 2,
-            'whatsapp_registered_number' => $this->faker->e164PhoneNumber(),
+            'member_id' => Member::factory(),
         ];
     }
 }

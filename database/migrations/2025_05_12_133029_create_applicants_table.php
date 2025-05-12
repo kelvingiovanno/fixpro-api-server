@@ -13,16 +13,13 @@ return new class extends Migration
     {
         Schema::create('applicants', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->uuid('member_id')->nullable();
             $table->uuid('status_id')->nullable();
-            $table->string('name');
-            $table->string('email')->nullable();
-            $table->string('phone_number')->nullable();
-            $table->string('whatsapp_registered_number')->nullable();
-            $table->dateTime('expires_at');
-            
-            $table->foreign('status_id')->references('id')->on('applicant_statuses')->onDelete('set null');
+            $table->dateTime('expires_on')->nullable();
 
             $table->softDeletes();
+            $table->foreign('member_id')->references('id')->on('members')->onDelete('set null');
+            $table->foreign('status_id')->references('id')->on('applicant_statuses')->onDelete('set null');
         });
     }
 

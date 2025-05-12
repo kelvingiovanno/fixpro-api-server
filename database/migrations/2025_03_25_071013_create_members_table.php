@@ -11,15 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('members', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('role_id')->nullable();
             $table->string('name');
             $table->string('title')->nullable();
-            $table->dateTime('member_since');
-            $table->dateTime('member_until');
 
-            $table->foreign('role_id')->references('id')->on('users_role')->onDelete('set null');
+            $table->string('email')->nullable();
+            $table->string('phone_number')->nullable();
+
+            $table->dateTime('member_since')->nullable();
+            $table->dateTime('member_until')->nullable();
+
+            $table->foreign('role_id')->references('id')->on('member_roles')->onDelete('set null');
             $table->softDeletes();  
         });
     }

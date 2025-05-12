@@ -4,20 +4,20 @@ namespace App\Enums;
 
 use App\Models\Enums\ApplicantStatus;
 
-enum ApplicantStatusEnum : string
+enum ApplicantStatusEnum: string
 {
-    case ACCEPTED = "Accepted";
     case PENDING = "Pending";
+    case ACCEPTED = "Accepted";
     case REJECTED = "Rejected";
 
     public function id(): ?string
     {
-        $record = ApplicantStatus::where('label', $this->value)->first();
+        $record = ApplicantStatus::where('name', $this->value)->first();
         return $record?->id;
     }
 
-    public static function idFromLabel(string $label): ?string
+    public static function idFromName(string $name): ?string
     {
-        return ApplicantStatus::where('label', $label)->first()?->id;
+        return ApplicantStatus::where('name', $name)->first()?->id;
     }
 }

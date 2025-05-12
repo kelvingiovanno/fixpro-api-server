@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class SystemSetting extends Model
 {
@@ -15,9 +16,23 @@ class SystemSetting extends Model
 
     protected $hidden = [
         'id',
-        'created_at',
-        'updated_at',
     ];
+
+    public $timestamps = false;
+    public $incrementing = false; 
+    protected $keyType = 'string'; 
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) 
+        {    
+            if (!$model->getKey()) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
+            } 
+        });
+    }
 
     public static function get(string $key, $default = null)
     {

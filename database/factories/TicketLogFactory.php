@@ -4,9 +4,9 @@ namespace Database\Factories;
 
 use App\Models\Enums\TicketLogType;
 use App\Models\Ticket;
+use App\Models\Member;
 use App\Models\TicketLog;
 use App\Models\TicketLogDocument;
-use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,19 +23,27 @@ class TicketLogFactory extends Factory
     {
         return [
             'ticket_id' => Ticket::factory(),
-            'user_id' => User::factory(),
-            'ticket_log_type_id' => TicketLogType::inRandomOrder()->value('id'),
-            'recorded_on' => $this->faker->dateTimeBetween('-1 year', 'now'),
-            'news' =>  $this->faker->sentence(),
+            'member_id' => Member::factory(),
+            'type_id' => TicketLogType::inRandomOrder()->first()->id,
+            'news' => $this->faker->sentence(rand(6,10)),
         ];
     }
 
+    /**
+     * Configure the factory's model state.
+     *
+     * @return $this
+     */
     public function configure()
     {
         return $this->afterCreating(function (TicketLog $ticketLog) {
-            TicketLogDocument::factory(rand(3,6))->create([
-                'ticket_log_id' => $ticketLog->id,
-            ]);
+
+            $docCount = $this->faker->numberBetween(3, 5);
+            for ($i = 0; $i < $docCount; $i++) {
+                TicketLogDocument::factory()->create([
+                    'log_id' => $ticketLog->id,
+                ]);
+            }
         });
     }
 }

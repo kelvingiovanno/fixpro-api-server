@@ -2,26 +2,23 @@
 
 namespace App\Models\Enums;
 
-use App\Models\User;
+use App\Models\Member;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-
-class Speciality extends Model
+class MemberRole extends Model
 {
     use SoftDeletes;
-
-    protected $table = 'specialities';
+    
+    protected $table = 'member_roles';
 
     protected $fillable = [
-        'id',
-        'label',
-    ];
+        'name',
+    ]; 
 
     protected $hidden = [
-        'id',
         'deleted_at',
     ];
 
@@ -42,6 +39,6 @@ class Speciality extends Model
 
     public function users()
     {
-        return $this->belongsToMany(User::class, 'speciality_user', 'speciality_id', 'user_id');
+        return $this->hasMany(Member::class, 'role_id', 'id');
     }
 }

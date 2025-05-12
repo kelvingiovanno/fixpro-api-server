@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('applicant_statuses', function (Blueprint $table) {
+        Schema::create('system_settings', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('label')->unique();
-            $table->softDeletes();
+            $table->string('key')->unique();
+            $table->text('value')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -23,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('applicant_statuses');
+        Schema::dropIfExists('system_settings');
     }
 };

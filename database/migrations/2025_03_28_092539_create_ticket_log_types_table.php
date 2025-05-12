@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('ticket_log_types', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('label')->unique();
+            $table->string('name')->unique();
+            
             $table->softDeletes();
         });
     }

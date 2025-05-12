@@ -16,12 +16,12 @@ enum TicketStatusEnum: string
 
     public function id(): ?string
     {
-        $record = TicketStatusType::where('label', $this->value)->first();
+        $record = TicketStatusType::where('name', $this->value)->first();
         return $record?->id;
     }
 
-    public static function idFromLabel(string $label): ?string
+    public static function idFromName(string $name): ?string
     {
-        return TicketStatusType::where('label', $label)->first()?->id;
+        return TicketStatusType::where('name', $name)->first()?->id;
     }
 }

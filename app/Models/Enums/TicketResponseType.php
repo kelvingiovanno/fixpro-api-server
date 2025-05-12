@@ -8,21 +8,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-
-class ResponseLevelType extends Model
+class TicketResponseType extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'response_level_types';
+    protected $table = 'ticket_response_types';
 
     protected $fillable = [
         'id',
-        'label',
+        'name',
         'sla_modifier',
     ];
 
     protected $hidden = [
-        'id',
         'deleted_at',
     ];
 
@@ -47,6 +45,6 @@ class ResponseLevelType extends Model
 
     public function tickets()
     {
-        return $this->hasMany(Ticket::class, 'response_level_type_id', 'id');   
+        return $this->hasMany(Ticket::class, 'response_id', 'id');   
     }
 }

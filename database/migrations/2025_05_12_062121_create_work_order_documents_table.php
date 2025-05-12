@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users_role', function (Blueprint $table) {
+        Schema::create('work_order_documents', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('label')->unique();
+            $table->string('resource_type');
+            $table->string('resource_name');
+            $table->string('resource_size');
+            $table->string('previewable_on')->unique();
+            
             $table->softDeletes();
         });
     }
@@ -23,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users_role');
+        Schema::dropIfExists('work_order_documents');
     }
 };

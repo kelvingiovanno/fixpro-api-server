@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use App\Models\Ticket;
+use App\Models\TicketLog;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class TicketLogDocument extends Model
 {
@@ -30,9 +31,25 @@ class TicketLogDocument extends Model
     ];
 
     public $timestamps = false;
+    public $incrementing = false; 
+    protected $keyType = 'string'; 
 
-    public function tickets()
+    protected static function boot()
     {
-        return $this->belongsTo(Ticket::class, 'ticket_log_id' , 'id');
+        parent::boot();
+
+        static::creating(function ($model) 
+        {    
+            $model->expires_at = now()->addYear();
+        
+            if (!$model->getKey()) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
+            } 
+        });
+    }
+
+    public function ticket_logs()
+    {
+        return $this->belongsTo(TicketLog::class, 'log_id' , 'id');
     }
 }

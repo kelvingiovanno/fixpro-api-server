@@ -9,8 +9,7 @@ use App\Enums\ApplicantStatusEnum;
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
 use App\Models\SystemSetting;
-use App\Models\User;
-use App\Models\UserData;
+use App\Models\Member;
 
 use App\Services\ApiResponseService;
 use App\Services\ReferralCodeService;
@@ -23,7 +22,7 @@ use Illuminate\Support\Str;
 
 use Throwable;
 
-class FormController extends Controller
+class EntryController extends Controller
 {
     private ApiResponseService $apiResponseService;
     private ReferralCodeService $referralCodeService;
@@ -41,7 +40,7 @@ class FormController extends Controller
 
     public function getForm(Request $_request)
     {
-        $referralCode = $_request->query('ref');
+        $referralCode = $_request->query('area_join_form_referral_tracking_identifier');
 
         if (!$referralCode) {
             return $this->apiResponseService->badRequest('Referral code is required.');
@@ -82,7 +81,7 @@ class FormController extends Controller
 
     public function submit(Request $_request)
     {
-        $nonce_code = $_request->query('nonce');
+        $nonce_code = $_request->query('area_join_form_submission_nonce');
 
         if (!$nonce_code) {
             return $this->apiResponseService->badRequest('Nonce code is required.');
@@ -131,32 +130,21 @@ class FormController extends Controller
 
         try 
         {
-            $applicant = Applicant::create(array_merge($normalizedData, ['status_id' => 1]));
-            
+            $member = Member::create($normalizedData);
+            $applicant = Applicant::create([
+                'member_id' => $member->id,
+            ]);
+
             if($join_policy == 'open')
             {
-                $user = User::create([
-                    'name' => $applicant->name,
-                ]);
-
-                $applicantData = $applicant->toArray();
-                unset($applicantData['name'], $applicantData['status_id'], $applicantData['id'], $applicantData['expires_at']);
-                
-                UserData::create(array_merge($applicantData, [
-                    'user_id' => $user->id,
-                ]));
-
-                $applicant->update(['is_accepted' => true]);
-
-                AuthenticationCode::create([
-                    'applicant_id' => $applicant->id,
-                    'user_id' => $user->id,
+                $applicant->update([
+                    'status_id' => ApplicantStatusEnum::ACCEPTED->id(),
                 ]);
             }
 
             $response_data = [
                 'application_id' => $applicant->id,
-                'application_expiry_date' => $applicant->expires_at,
+                'application_expiry_date' => $applicant->expires_on,
             ];
             
             $this->nonceCodeService->deleteNonce($nonce_code);
@@ -178,28 +166,28 @@ class FormController extends Controller
             return $this->apiResponseService->internalServerError('Failed to submit application');
         }
     }
-
+    
     public function check(Request $request)
     {
-        $applicationId = $request->input('application_id');
+        $application_id = $request->input('data.application_id');
     
-        if (!$applicationId) {
+        if (!$application_id) {
             return $this->apiResponseService->badRequest('Application ID is required.');
         }
     
-        if (!Str::isUuid($applicationId)) {
+        if (!Str::isUuid($application_id)) {
             return $this->apiResponseService->badRequest('Application not found');
         }
     
         try 
         {    
-            $applicant = Applicant::with('status')->find($applicationId);
+            $applicant = Applicant::with('status')->find($application_id);
         
             if (!$applicant) {
                 return $this->apiResponseService->badRequest('Application not found.');
             }
             
-            if ($applicant->expires_at < now()) {
+            if ($applicant->expires_on < now()) {
                 return $this->apiResponseService->forbidden('Your application has expired.');
             }
             
@@ -213,10 +201,10 @@ class FormController extends Controller
                     return $this->apiResponseService->forbidden('Your application has been rejected.');
                 
                 case ApplicantStatusEnum::ACCEPTED->id():
-                    $authCode = AuthenticationCode::where('applicant_id', $applicationId)->first();
-                    if (!$authCode) {
-                        return $this->apiResponseService->notFound('Authentication code not found for this applicant.');
-                    }
+                    $authCode = AuthenticationCode::create([
+                        'application_id' => $application_id,
+                    ]);
+                    
                     return $this->apiResponseService->ok(
                         ['authentication_code' => $authCode->id],
                         'Your application has been approved. Use the authentication code to proceed.'

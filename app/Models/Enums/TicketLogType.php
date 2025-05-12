@@ -2,7 +2,7 @@
 
 namespace App\Models\Enums;
 
-use App\Models\Ticket;
+use App\Models\TicketLog;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -16,11 +16,10 @@ class TicketLogType extends Model
     
     protected $fillable = [
         'id',
-        'label',
+        'name',
     ];
 
     protected $hidden = [
-        'id',
         'deleted_at',
     ];
 
@@ -39,8 +38,8 @@ class TicketLogType extends Model
         });
     }
 
-    public function tickets()
+    public function ticket_logs()
     {
-        return $this->hasMany(Ticket::class, 'ticket_log_type_id', 'id');
+        return $this->hasMany(TicketLog::class, 'type_id', 'id');
     }
 }

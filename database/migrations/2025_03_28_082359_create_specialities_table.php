@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('speciality_user', function (Blueprint $table) {
-            $table->uuid('user_id');
-            $table->uuid('speciality_id')->nullable();
+        Schema::create('specialties', function (Blueprint $table) {
+            $table->uuid('member_id');
+            $table->uuid('issue_id')->nullable();
 
-            $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete('set null'); 
-            $table->foreign('speciality_id')->references('id')->on('specialities')->cascadeOnDelete('set null');
+            $table->foreign('member_id')->references('id')->on('members')->cascadeOnDelete('set null'); 
+            $table->foreign('issue_id')->references('id')->on('ticket_issue_types')->cascadeOnDelete('set null');
 
-            $table->primary(['user_id', 'speciality_id']);
+            $table->primary(['member_id', 'issue_id']);
             $table->softDeletes();
         });
     }   

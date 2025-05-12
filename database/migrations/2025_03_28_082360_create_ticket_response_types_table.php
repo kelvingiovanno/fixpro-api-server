@@ -11,10 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('specialities', function (Blueprint $table) {
+        Schema::create('ticket_response_types', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->string('label')->unique();
-            $table->softDeletes();  
+            $table->string('name')->unique();
+            $table->double('sla_modifier', 8, 2);
+            
+            $table->softDeletes();
         });
     }
 
@@ -23,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('table_speciallity');
+        Schema::dropIfExists('response_level_types');
     }
 };

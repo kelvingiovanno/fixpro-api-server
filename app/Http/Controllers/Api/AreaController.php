@@ -6,14 +6,15 @@ use App\Enums\ApplicantStatusEnum;
 use App\Http\Controllers\Controller;
 
 use App\Enums\UserRoleEnum;
-use App\Enums\UserSpeciallityEnum;
+use App\Models\Enums\ApplicantStatus;
+use App\Models\Enums\TicketIssueType;
 
 use App\Models\User;
 use App\Models\UserData;
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
-use App\Models\Enums\ApplicantStatus;
 use App\Models\SystemSetting;
+
 use App\Services\ApiResponseService;
 use App\Services\ReferralCodeService;
 
@@ -176,7 +177,7 @@ class AreaController extends Controller
             if($specializationLabels)
             {
                 $specializationIds = array_map(function ($label) {
-                    $id = UserSpeciallityEnum::idFromLabel($label);
+                    $id = TicketIssueType::idFromLabel($label);
                     if (!$id) {
                         return null; 
                     }

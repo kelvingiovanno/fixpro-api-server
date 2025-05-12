@@ -116,13 +116,7 @@ class SetupController extends Controller
     {
         $formatted = $this->formatForms($data);
 
-        Schema::table('users_data', function (Blueprint $table) use ($formatted) {
-            foreach ($formatted as $column) {
-                $table->string($column)->nullable();
-            }
-        });
-
-        Schema::table('applicants', function (Blueprint $table) use ($formatted) {
+        Schema::table('members', function (Blueprint $table) use ($formatted) {
             foreach ($formatted as $column) {
                 $table->string($column)->nullable();
             }

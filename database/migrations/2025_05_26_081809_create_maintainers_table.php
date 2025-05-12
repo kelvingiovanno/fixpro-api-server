@@ -11,15 +11,15 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ticket_maintenance_staffs', function (Blueprint $table) {
-            
-            $table->uuid('ticket_id');
-            $table->uuid('user_id');
-            $table->softDeletes();
+        Schema::create('maintainers', function (Blueprint $table) {
+            $table->uuid('ticket_issue_id');
+            $table->uuid('member_id');
 
-            $table->foreign('ticket_id')->references('id')->on('tickets');
-            $table->foreign('user_id')->references('id')->on('users');
-            $table->primary(['ticket_id', 'user_id']);
+            $table->foreign('ticket_issue_id')->references('id')->on('ticket_issues')->onDelete('set null');
+            $table->foreign('member_id')->references('id')->on('members')->onDelete('set null');
+            
+            $table->primary(['ticket_issue_id', 'member_id']);
+            $table->softDeletes();
         });
     }
 

@@ -4,11 +4,10 @@ namespace App\Models;
 
 use App\Enums\TicketStatusEnum;
 
-use App\Models\Enums\TicketIssueType;
 use App\Models\Enums\TicketStatusType;
-use App\Models\Enums\ResponseLevelType;
+use App\Models\Enums\TicketResponseType;
 
-use App\Models\User;
+use App\Models\Member;
 use App\Models\TicketDocument;
 use App\Models\TicketLog;
 
@@ -25,11 +24,10 @@ class Ticket extends Model
     protected $table = 'tickets';
 
     protected $fillable = [
-        'user_id',
-        'ticket_status_type_id',
-        'response_level_type_id',
+        'member_id',
+        'status_id',
+        'response_id',
         'location_id',
-        'executive_summary',
         'stated_issue',
         'closed_at',
     ];
@@ -54,7 +52,7 @@ class Ticket extends Model
         static::creating(function ($model) {
 
             $model->raised_on = now();
-            $model->ticket_status_type_id = TicketStatusEnum::OPEN->id();
+            $model->status_id = TicketStatusEnum::OPEN->id();
 
             if(! $model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();
@@ -64,27 +62,22 @@ class Ticket extends Model
 
     public function issuer()
     {
-        return $this->belongsTo(User::class, 'user_id', 'id');
+        return $this->belongsTo(Member::class, 'member_id', 'id');
     }
 
-    public function maintainers()
+    public function ticket_issues()
     {
-        return $this->belongsToMany(User::class, 'ticket_maintenance_staffs', 'ticket_id', 'user_id');
+        return $this->hasMany(TicketIssue::class, 'ticket_id', 'id');
     }
 
-    public function statusType()
+    public function status()
     {
-        return $this->belongsTo(TicketStatusType::class, 'ticket_status_type_id');
+        return $this->belongsTo(TicketStatusType::class, 'status_id', 'id');
     }
 
-    public function issues()
+    public function response()
     {
-        return $this->belongsToMany(TicketIssueType::class, 'issue_type_ticket', 'ticket_id', 'issue_type_id');
-    }
-
-    public function responseLevelType()
-    {
-        return $this->belongsTo(ResponseLevelType::class, 'response_level_type_id');
+        return $this->belongsTo(TicketResponseType::class, 'response_id', 'id');
     }
 
     public function location()

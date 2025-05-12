@@ -7,11 +7,11 @@ use App\Models\Ticket;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Location extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use SoftDeletes, HasFactory;
 
     protected $table = 'locations';
     
@@ -28,6 +28,22 @@ class Location extends Model
     ];
 
     public $timestamps = false;
+    public $incrementing = false; 
+    protected $keyType = 'string'; 
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) 
+        {    
+            $model->expires_at = now()->addYear();
+        
+            if (!$model->getKey()) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
+            } 
+        });
+    }
 
     public function ticket()
     {

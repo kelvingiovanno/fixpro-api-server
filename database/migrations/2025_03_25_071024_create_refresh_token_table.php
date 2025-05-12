@@ -12,14 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('refresh_tokens', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('user_id');
+            $table->uuid('id')->primary();
+            $table->uuid('member_id')->nullable();
             $table->text('token')->unique();
-            $table->timestamp('expires_at');
-            $table->boolean('revoked')->default(false);
-            $table->softDeletes();
+            $table->timestamp('expires_on');
         
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('member_id')->references('id')->on('members')->onDelete('set null');
+            $table->softDeletes();
         });
     }
 

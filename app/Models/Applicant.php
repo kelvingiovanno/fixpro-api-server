@@ -6,26 +6,27 @@ use App\Enums\ApplicantStatusEnum;
 
 use App\Models\Enums\ApplicantStatus;
 
+use App\Models\Member;
 use App\Models\AuthenticationCode;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class Applicant extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use SoftDeletes, HasFactory;
 
     protected $table = 'applicants';
-    
-    protected $guarded = [
-        'id',
+
+    protected $fillable = [
+        'member_id',
+        'status_id',
     ];
 
     protected $casts = [
-        'expires_at' => 'datetime',
+        'expires_on' => 'datetime',
     ];
 
     protected $hidden = [
@@ -34,20 +35,26 @@ class Applicant extends Model
 
     public $incrementing = false; 
     public $timestamps = false;
-    protected $keyType = 'string'; 
+    protected $keyType = 'string';
 
     protected static function boot()
     {
         parent::boot();
 
         static::creating(function ($model) {
-            if (empty($model->id)) {
-                $model->id = Str::uuid();
-            }
 
             $model->status_id = ApplicantStatusEnum::PENDING->id();
-            $model->expires_at = now()->addDays(2);
+            $model->expires_on = now()->addWeek();
+
+            if(! $model->getKey()) {
+                $model->{$model->getKeyName()} = (string) Str::uuid();
+            }
         });
+    }
+
+    public function member()
+    {
+        return $this->belongsTo(Member::class, 'member_id', 'id');
     }
 
     public function status()
@@ -55,7 +62,7 @@ class Applicant extends Model
         return $this->belongsTo(ApplicantStatus::class, 'status_id', 'id');
     }
 
-    public function authCode()
+    public function authentication_code()
     {
         return $this->hasOne(AuthenticationCode::class, 'application_id', 'id');
     }

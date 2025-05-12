@@ -14,12 +14,12 @@ enum TicketLogTypeEnum : string
 
     public function id(): ?string
     {
-        $record = TicketLogType::where('label', $this->value)->first();
+        $record = TicketLogType::where('name', $this->value)->first();
         return $record?->id;
     }
 
-    public static function idFromLabel(string $label): ?string
+    public static function idFromName(string $name): ?string
     {
-        return TicketLogType::where('label', $label)->first()?->id;
+        return TicketLogType::where('name', $name)->first()?->id;
     }
 }

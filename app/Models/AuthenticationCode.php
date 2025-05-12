@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use App\Models\Applicant;
-use App\Models\User;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,18 +11,16 @@ use Illuminate\Support\Str;
 
 class AuthenticationCode extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use SoftDeletes, HasFactory;
     
     protected $table = 'authentication_codes';
     
     protected $fillable = [
-        'applicant_id', 
-        'user_id',
+        'application_id',
     ];
 
     protected $casts = [
-        'expires_at' => 'datetime',
+        'expires_on' => 'datetime',
     ];
 
     protected $hidden = [
@@ -40,7 +37,7 @@ class AuthenticationCode extends Model
 
         static::creating(function ($model) 
         {    
-            $model->expires_at = now()->addYear();
+            $model->expires_on = now()->addWeek();
         
             if (!$model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();
@@ -53,8 +50,4 @@ class AuthenticationCode extends Model
         return $this->belongsTo(Applicant::class, 'application_id', 'id');
     }
 
-    public function user() 
-    {
-        return $this->belongsTo(User::class, 'user_id', 'id');
-    }
 }

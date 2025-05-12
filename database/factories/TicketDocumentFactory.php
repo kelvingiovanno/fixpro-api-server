@@ -19,10 +19,10 @@ class TicketDocumentFactory extends Factory
     {
         return [
             'ticket_id' => Ticket::factory(),
-            'resource_type' => $this->faker->randomElement(['image', 'document', 'video', 'audio']),
-            'resource_name' => $this->faker->word() . '.' . $this->faker->fileExtension(),
-            'resource_size' => $this->faker->numberBetween(1000, 5000000),
-            'previewable_on' => $this->faker->filePath(), 
+            'resource_type' => $this->faker->randomElement(['image', 'video', 'pdf', 'doc']),
+            'resource_name' => $this->faker->word . '.' . $this->faker->fileExtension,
+            'resource_size' => $this->faker->numberBetween(100, 5000), 
+            'previewable_on' => $this->faker->url, 
         ];
     }
 }

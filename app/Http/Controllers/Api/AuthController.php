@@ -30,7 +30,7 @@ class AuthController extends Controller
 
     public function exchange(Request $_request)
     {
-        $authenticationCode = $_request->input('authentication_code');
+        $authenticationCode = $_request->input('data.authentication_code');
         
         if (!$authenticationCode) {
             return $this->apiResponseService->forbidden('Authentication code is required');
@@ -55,8 +55,8 @@ class AuthController extends Controller
         
             $customClaims = [
                 'sub' => 'profix_api_service',
-                'user_id' => $authCodeRecord->user->id,
-                'role' => $authCodeRecord->user->role->label,
+                'member_id' => $authCodeRecord->applicant->member->id,
+                'role_id' => $authCodeRecord->applicant->member->role->id,
                 'iat' => $now->timestamp,
                 'exp' => $accessExpiry->timestamp,
             ];
@@ -67,9 +67,9 @@ class AuthController extends Controller
             $refreshToken = Str::random(302);
  
             RefreshToken::create([
-                'user_id'    => $authCodeRecord->user_id,
+                'member_id'    => $authCodeRecord->applicant->member->id,
                 'token'      => $refreshToken,
-                'expires_at' => $refreshExpiry,
+                'expires_on' => $refreshExpiry,
             ]);
         
             $response_data = [
@@ -78,11 +78,10 @@ class AuthController extends Controller
                 "refresh_token" => $refreshToken,
                 "refresh_expiry_interval" => $refreshExpiry->diffInMilliseconds($now),
                 "token_type" => "Bearer",
-                "role_scope" => $authCodeRecord->user->role->label,
+                "role_scope" => $authCodeRecord->applicant->member->role->name,
             ];
     
             $authCodeRecord->delete();
-            Applicant::find($authCodeRecord->applicant_id)->delete();
     
             return $this->apiResponseService->ok($response_data, 'Authentication successful');
             
@@ -104,7 +103,7 @@ class AuthController extends Controller
     {
         try 
         {
-            $refreshToken = $_request->input('refresh_token');
+            $refreshToken = $_request->input('data.refresh_token');
     
             if (!$refreshToken) {
                 return $this->apiResponseService->forbidden('Refresh token is required');
@@ -116,7 +115,7 @@ class AuthController extends Controller
                 return $this->apiResponseService->forbidden('Invalid refresh token');
             }
     
-            if ($refreshTokenRecord->expires_at < now()) {
+            if ($refreshTokenRecord->expires_on < now()) {
                 return $this->apiResponseService->forbidden('Expired refresh token');
             }
 
@@ -127,15 +126,15 @@ class AuthController extends Controller
             $refreshExpiry = $now->copy()->addMonths(3);
 
             $new_refresh_token = RefreshToken::create([
-                'user_id'    => $refreshTokenRecord->user_id,
+                'member_id'    => $refreshTokenRecord->member->id,
                 'token'      => Str::random(302),
                 'expires_at' => $refreshExpiry,
             ]);
     
             $customClaims = [
                 'sub' => 'profix_api_service',
-                'user_id' => $new_refresh_token->user->id,
-                'role' => $new_refresh_token->user->role->label,
+                'user_id' => $new_refresh_token->member->id,
+                'role' => $new_refresh_token->member->role->id,
                 'iat' => $now->timestamp,
                 'exp' => $accessExpiry->timestamp,
             ];
@@ -149,7 +148,7 @@ class AuthController extends Controller
                 "refresh_token" => $new_refresh_token->token,
                 "refresh_expiry_interval" => $refreshExpiry->diffInMilliseconds($now),
                 "token_type" => "Bearer",
-                "role_scope" => $new_refresh_token->user->role->label,
+                "role_scope" => $new_refresh_token->member->role->name,
             ];
     
             return $this->apiResponseService->ok($response_data, 'Access token successfully refreshed');

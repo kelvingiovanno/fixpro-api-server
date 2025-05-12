@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DummyDataSeed extends Seeder
@@ -12,6 +11,5 @@ class DummyDataSeed extends Seeder
      */
     public function run(): void
     {
-        User::factory(10)->create();
     }
 }

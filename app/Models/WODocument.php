@@ -2,32 +2,25 @@
 
 namespace App\Models;
 
-use App\Models\Ticket;
+use App\Models\TicketIssue;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-class TicketDocument extends Model
+class WODocument extends Model
 {
     use HasFactory;
     use SoftDeletes;
     
-    protected $table = 'ticket_documents';
+    protected $table = 'work_order_documents';
 
     protected $fillable = [
-        'ticket_id',
         'resource_type',
         'resource_name',
         'resource_size',
         'previewable_on',
-    ];
-
-    protected $hidden = [
-        'id',
-        'ticket_id',
-        'deleted_at',
     ];
 
     public $timestamps = false;
@@ -48,8 +41,8 @@ class TicketDocument extends Model
         });
     }
 
-    public function tickets()
+    public function ticket_issue()
     {
-        return $this->belongsTo(Ticket::class, 'ticket_id', 'id');
+        return $this->hasOne(TicketIssue::class, 'wo_id', 'id');
     }
 }

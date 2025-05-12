@@ -3,11 +3,11 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\Api\FormController;
+use App\Http\Controllers\Api\EntryController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AreaController;
-use App\Http\Controllers\Api\GoogleCalenderController;
+use App\Http\Controllers\Api\IssueTypeController;
 
 use App\Http\Middleware\ApiAuthMiddleware;
 
@@ -25,13 +25,10 @@ Route::prefix('/auth')->group(function() {
 });
 
 Route::prefix('entry')->group(function(){
-    Route::post('/check', [FormController::class, 'check']);
-    Route::get('/form', [FormController::class, 'getForm']);
-    Route::post('/form',[FormController::class, 'submit']);
+    Route::post('/check', [EntryController::class, 'check']);
+    Route::get('/form', [EntryController::class, 'getForm']);
+    Route::post('/form',[EntryController::class, 'submit']);
 });
-
-
-
 
 Route::middleware(ApiAuthMiddleware::class)->group(function () {
 
@@ -40,7 +37,11 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
         Route::prefix('/{_ticketId}')->group(function () {
 
             Route::get('/', [TicketController::class, 'getTicket']);
+            Route::patch('/', [TicketController::class, 'patchTicket']);
             Route::delete('/', [TicketController::class, 'delTicket']);
+            
+            Route::post('/reject', [TicketController::class, 'rejectTicket']);
+            Route::post('/cancel', [TicketController::class, 'cancelTicket']);
 
             Route::prefix('handlers')->group(function () {
                 Route::get('/', [TicketController::class, 'getHandlers']);
@@ -51,7 +52,6 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
                 Route::get('/', [TicketController::class, 'getLogs']);
                 Route::post('/', [TicketController::class, 'postLog']);
             });
-
         }); 
     });
         
@@ -59,9 +59,17 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
         Route::get('/', [TicketController::class, 'getTickets']);
         Route::post('/', [TicketController::class, 'postTicket']);
     });    
+   
 
-    
+
+    Route::prefix('/issue-types')->group(function () {
+        Route::get('/', [IssueTypeController::class, 'getAllIssueType']);
+        Route::post('/', [IssueTypeController::class, 'postIssueType']);
+        Route::delete('/{_issueTypeId}', [IssueTypeController::class, 'deleteIssueType']);
+    });    
 });
+
+
 
 Route::prefix('/area')->group(function() {
 

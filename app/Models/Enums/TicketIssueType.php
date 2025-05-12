@@ -2,7 +2,8 @@
 
 namespace App\Models\Enums;
 
-use App\Models\Ticket;
+use App\Models\Member;
+use App\Models\TicketIssue;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -16,12 +17,11 @@ class TicketIssueType extends Model
 
     protected $fillable = [
         'id',
-        'label',
-        'sla_hours',
+        'name',
+        'sla_duration_hour',
     ];
 
     protected $hidden = [
-        'id',
         'deleted_at',
     ];
 
@@ -44,8 +44,13 @@ class TicketIssueType extends Model
         });
     }
 
-    public function tickets()
+    public function ticket_issues()
     {
-        return $this->belongsToMany(Ticket::class, 'issue_type_ticket', 'issue_type_id', 'ticket_id');
+        return $this->hasMany(TicketIssue::class, 'issue_id', 'id');
+    }
+
+    public function specialities()
+    {
+        return $this->belongsToMany(Member::class, 'specialties', 'issue_id', 'member_id');
     }
 }

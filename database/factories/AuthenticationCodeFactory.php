@@ -3,8 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Applicant;
-use App\Models\User;
-
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,9 +18,7 @@ class AuthenticationCodeFactory extends Factory
     public function definition(): array
     {
         return [
-            'applicant_id' => Applicant::factory(),
-            'user_id' => User::factory(),
-            'expires_at' => now()->addMonth(),
+            'application_id' => Applicant::factory(),
         ];
     }
 }
