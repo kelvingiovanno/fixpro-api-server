@@ -2,17 +2,14 @@
 
 namespace App\Models\Enums;
 
-use App\Models\Applicant;
+use App\Models\Member;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-class ApplicantStatus extends Model
+class MemberCapability extends Model
 {
-    use SoftDeletes;
-
-    protected $table = 'applicant_statuses';
+    protected $table = 'member_capabilities';
 
     protected $fillable = [
         'name',
@@ -37,8 +34,8 @@ class ApplicantStatus extends Model
         });
     }
 
-    public function applicants()
+    public function members()
     {
-        return $this->hasMany(Applicant::class, 'applicant_id', 'id');
+        return $this->belongsToMany(Member::class, 'capabilities', 'capability_id', 'member_id');
     }
 }

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 
 use App\Enums\ApplicantStatusEnum;
-
+use App\Enums\AreaJoinPolicyEnum;
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
 use App\Models\SystemSetting;
@@ -93,7 +93,7 @@ class EntryController extends Controller
 
         $join_policy = SystemSetting::get('area_join_policy');
 
-        if($join_policy == 'closed') {
+        if($join_policy == AreaJoinPolicyEnum::CLOSED->value) {
             $this->nonceCodeService->deleteNonce($nonce_code);
             return $this->apiResponseService->forbidden('');
         }
@@ -133,9 +133,10 @@ class EntryController extends Controller
             $member = Member::create($normalizedData);
             $applicant = Applicant::create([
                 'member_id' => $member->id,
+                'status_id' => ApplicantStatusEnum::PENDING->id(),
             ]);
 
-            if($join_policy == 'open')
+            if($join_policy == AreaJoinPolicyEnum::OPEN->value)
             {
                 $applicant->update([
                     'status_id' => ApplicantStatusEnum::ACCEPTED->id(),

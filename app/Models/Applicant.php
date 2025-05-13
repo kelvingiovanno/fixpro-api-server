@@ -42,8 +42,7 @@ class Applicant extends Model
         parent::boot();
 
         static::creating(function ($model) {
-
-            $model->status_id = ApplicantStatusEnum::PENDING->id();
+    
             $model->expires_on = now()->addWeek();
 
             if(! $model->getKey()) {

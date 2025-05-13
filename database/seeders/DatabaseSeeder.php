@@ -7,12 +7,14 @@ use Illuminate\Database\Seeder;
 use App\Enums\IssueTypeEnum;
 use App\Enums\MemberRoleEnum;
 use App\Enums\ApplicantStatusEnum;
+use App\Enums\MemberCapabilityEnum;
 use App\Enums\TicketStatusEnum;
 use App\Enums\TicketResponseTypeEnum;
 use App\Enums\TicketLogTypeEnum;
 
 use App\Models\Enums\MemberRole;
 use App\Models\Enums\ApplicantStatus;
+use App\Models\Enums\MemberCapability;
 use App\Models\Enums\TicketResponseType;
 use App\Models\Enums\TicketStatusType;
 use App\Models\Enums\TicketIssueType;
@@ -33,6 +35,9 @@ class DatabaseSeeder extends Seeder
         ApplicantStatus::create(['name' => ApplicantStatusEnum::PENDING->value]);
         ApplicantStatus::create(['name' => ApplicantStatusEnum::REJECTED->value]);
         
+        MemberCapability::create(['name' => MemberCapabilityEnum::INVITE->value]);
+        MemberCapability::create(['name' => MemberCapabilityEnum::APPROVAL->value]);
+
         TicketResponseType::create(['name' => TicketResponseTypeEnum::URGENT->value, 'sla_modifier' => 0.8]); 
         TicketResponseType::create(['name' => TicketResponseTypeEnum::EMERGENCY->value, 'sla_modifier' => 0.6]);
         TicketResponseType::create(['name' => TicketResponseTypeEnum::NORMAL->value, 'sla_modifier' => 0.1]);

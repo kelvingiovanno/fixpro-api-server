@@ -77,19 +77,25 @@ Route::prefix('/area')->group(function() {
     Route::get('/join-code', [AreaController::class, 'getJoinCode']);
     Route::delete('/join-code', [AreaController::class, 'delJoinCode']);
 
+    Route::prefix('/join-policy')->group(function () {
+        Route::get('/', [AreaController::class, 'getJoinPolicy']);
+        Route::put('/', [AreaController::class, 'putJoinPolicy']); 
+    });
+
     Route::prefix('members')->group(function() {        
         Route::get('/', [AreaController::class, 'getMembers']);
-        Route::post('/', [AreaController::class, 'postMembers']);
+    });
 
-        Route::prefix('pending')->group(function() {
-            Route::get('/', [AreaController::class, 'getPendingMembers']);
-            Route::get('/{application_id}', [AreaController::class, 'getApplicant']);
-            Route::delete('/{application_id}', [AreaController::class, 'delApplicant']);
-        });
+    Route::prefix('pending-memberships')->group(function() {
+        Route::get('/', [AreaController::class, 'getPendingMembers']);
+        Route::post('/', [AreaController::class, 'postPendingMembers']);
+        Route::get('/{application_id}', [AreaController::class, 'getPendingMember']);
+        Route::delete('/{application_id}', [AreaController::class, 'delPendingMember']);
     });
 
     Route::prefix('/member')->group(function () {
         Route::get('/{member_id}', [AreaController::class, 'getMember']);
-        Route::delete('/{member_id}', [AreaController::class, 'delMember']);
+        Route::delete('/{member_id}', [AreaController::class, 'deleteMember']);
+        Route::put('/{member_id}', [AreaController::class, 'putMember']);
     });
 });

@@ -24,9 +24,9 @@
       <div class="flex flex-col gap-1 my-2">
         <p class="text-xs bg-white text-gray-700">Join Policy</p>
         <select name="join_policy" class="text-sm p-2 border border-gray-300 rounded w-96">
-          <option value="open">Open</option>
-          <option value="approval-needed" selected>Approval Needed</option>
-          <option value="closed">Closed</option>
+          <option value="OPEN">Open</option>
+          <option value="APROVAL_NEEDED" selected>Approval Needed</option>
+          <option value="CLOSED">Closed</option>
         </select>
       </div>
       

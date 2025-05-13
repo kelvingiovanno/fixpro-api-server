@@ -6,6 +6,7 @@ use App\Enums\MemberRoleEnum;
 
 use App\Models\Enums\MemberRole;
 use App\Models\Enums\TicketIssueType;
+use App\Models\Enums\MemberCapability;
 
 use App\Models\Applicant;
 use App\Models\RefreshToken;
@@ -88,6 +89,11 @@ class Member extends Model
     public function specialities()
     {
         return $this->belongsToMany(TicketIssueType::class, 'specialties', 'member_id', 'issue_id');
+    }
+
+    public function capabilities()
+    {
+        return $this->belongsToMany(MemberCapability::class, 'capabilities', 'member_id' ,'capability_id');
     }
 
     public function refresh_token()

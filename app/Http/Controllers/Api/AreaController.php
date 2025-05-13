@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\ApplicantStatusEnum;
 use App\Http\Controllers\Controller;
 
-use App\Enums\UserRoleEnum;
-use App\Models\Enums\ApplicantStatus;
+use App\Enums\ApplicantStatusEnum;
+use App\Enums\IssueTypeEnum;
+use App\Enums\MemberRoleEnum;
+
+use App\Models\Enums\MemberCapability;
 use App\Models\Enums\TicketIssueType;
 
-use App\Models\User;
-use App\Models\UserData;
 use App\Models\Applicant;
-use App\Models\AuthenticationCode;
+use App\Models\Member;
 use App\Models\SystemSetting;
 
 use App\Services\ApiResponseService;
@@ -40,13 +40,14 @@ class AreaController extends Controller
     
     public function index()
     {
-        try 
+        try     
         {
             $reponse_data = [
                 'name' => SystemSetting::get('area_name'),
                 'join_policy' => SystemSetting::get('area_join_policy'),
                 'member_count' => Applicant::where('status_id', ApplicantStatusEnum::ACCEPTED->id())->count(),
                 'pending_member_count' => Applicant::where('status_id', ApplicantStatusEnum::PENDING->id())->count(), 
+                'issue_type_count' => TicketIssueType::all()->count(),
             ];
 
             return $this->apiResponseService->ok($reponse_data, '');
@@ -61,6 +62,70 @@ class AreaController extends Controller
             ]);
 
             return $this->apiResponseService->internalServerError('Failed to retrieve area data');
+        }
+    }
+    
+    public function getJoinPolicy()
+    {
+        try
+        {
+            $join_policy = SystemSetting::get('area_join_policy');
+
+            if (!$join_policy)
+            {
+                return $this->apiResponseService->noContent('join_policy has not been set.');
+            }
+
+            $response_data = [
+                'join_policy' => $join_policy,
+            ];
+
+            return $this->apiResponseService->ok($response_data, 'join_policy retrieved successfully.');
+        }
+        catch(Throwable $e)
+        {
+            Log::error('Failed to retrieve join policy', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('Failed to retrieve join policy');
+        }
+    }
+
+    public function putJoinPolicy(Request $_request)
+    {
+        $input = $_request->input('data.join_policy');
+
+        if(!$input)
+        {
+            return $this->apiResponseService->badRequest('The join_policy field is required.');
+        }
+
+        try
+        {
+            SystemSetting::put('area_join_policy', $input);
+
+            $join_policy = SystemSetting::get('area_join_policy');
+
+            $response_data = [
+                'join_policy' => $join_policy,
+            ];
+
+            return $this->apiResponseService->ok($response_data, 'join_policy has been updated successfully.');
+        }
+        catch (Throwable $e)
+        {
+            Log::error('Failed to update join policy', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('Failed to update join policy');
         }
     }
 
@@ -96,7 +161,8 @@ class AreaController extends Controller
         try 
         {
             $this->referralCodeService->deleteReferral();
-            return $this->apiResponseService->ok();
+            
+            return $this->apiResponseService->ok('Referral code successfully deleted.');
         } 
         catch (Throwable $e) 
         {
@@ -115,140 +181,44 @@ class AreaController extends Controller
     {
         try 
         {
-            $users = User::with(['userData', 'role'])->get();
+            $members = Member::whereHas('applicant', function ($query) {
+                $query->where('status_id', ApplicantStatusEnum::ACCEPTED->id());
+            })->get();
 
-            $data = $users->map(function ($user) {
-
-                $user_data = $user->userData;
-                unset($user_data['id'], $user_data['user_id']);
+            $data = $members->map(function ($member) {
 
                 return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'role' => $user->role->label,
-                    'speciality' => $user->specialities->pluck('label')->toArray(),
-                    'title' => $user->title,
-                    'member_since' => $user->member_since,
-                    'member_until' => $user->member_until,
-                    'more_information' => $user_data,
+                    'id' => $member->id,
+                    'name' => $member->name,
+                    'role' => $member->role->name,
+                    'title' => $member->title,
+                    'specialties' => $member->specialities->map(function ($speciality) {
+                        return [
+                            'id' => $speciality->id,
+                            'name' => $speciality->name,
+                            'service_level_agreement_duration_hour' => $speciality->sla_duration_hour ?? 'Not assigned yet',
+                        ];
+                    }),
+                    'capabilities' => $member->capabilities->map(function ($capability) {
+                        return $capability->name;
+                    }),
+                    'member_since' => $member->member_since,
+                    'member_until' => $member->member_until,
                 ];
             });
 
-            return $this->apiResponseService->ok($data);
+            return $this->apiResponseService->ok($data, 'Successfully retrieve member.');
         } 
         catch (Throwable $e) 
         {
-            Log::error('Failed to retrieve members', [
+            Log::error('Failed to retrieve member', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
         
-            return $this->apiResponseService->internalServerError('Failed to retrieve members');
-        }
-    }
-
-    public function postMembers(Request $_request)
-    {
-        $validator = Validator::make($_request->all(), [
-            'application_id' => 'required|uuid|exists:applicants,id',
-            'role' => 'required|string',
-            'specialization' => 'nullable|array',
-            'specialization.*' => 'string',
-            'title' => 'required|string|max:255',
-        ]);
-        
-        if ($validator->fails()) {
-            return $this->apiResponseService->unprocessableEntity("There was an issue with your input", $validator->errors());
-        }
-        
-        try 
-        {
-            $applicationId = $_request->input('application_id');
-            $role = UserRoleEnum::idFromLabel($_request->input('role'));
-            $specializationLabels = $_request->input('specialization');
-            $title = $_request->input('title');
-
-            if (!$role) {
-                return $this->apiResponseService->unprocessableEntity('Invalid role provided.');
-            }
-
-            if($specializationLabels)
-            {
-                $specializationIds = array_map(function ($label) {
-                    $id = TicketIssueType::idFromLabel($label);
-                    if (!$id) {
-                        return null; 
-                    }
-                    return $id;
-                }, $specializationLabels);
-            
-                
-                if (in_array(null, $specializationIds, true)) {
-                    return $this->apiResponseService->unprocessableEntity('One or more specializations are invalid.');
-                }
-            }
-
-            $applicant = Applicant::find($applicationId);
-
-            if (!$applicant) {
-                return $this->apiResponseService->notFound('Applicant not found');
-            }
-
-            $applicant->update(['status_id' => ApplicantStatusEnum::ACCEPTED->id()]);
-
-            $user = User::create([
-                'role_id' => $role,
-                'name' => $applicant->name,
-                'title' => $title,
-            ]);
-
-            if($specializationLabels)
-            {
-                $user->specialities()->attach($specializationIds);
-            }
-
-
-            $applicantData = $applicant->toArray();
-            unset($applicantData['name'], $applicantData['status_id'], $applicantData['id'], $applicantData['expires_at']);
-
-            $userData = UserData::create(array_merge($applicantData, [
-                'user_id' => $user->id,
-            ]));
-            
-            $applicant->update(['is_accepted' => true]);
-
-            AuthenticationCode::create([
-                'applicant_id' => $applicant->id,
-                'user_id' => $user->id,
-            ]);
-
-            unset($userData['id'], $userData['user_id']);
-
-            $data = [
-                'id' => $user->id,
-                'name' => $user->name,
-                'role' => $user->role->label,
-                'speciality' => $user->specialities->pluck('label')->toArray(),
-                'title' => $user->title,
-                'member_since' => $user->member_since,
-                'member_until' => $user->member_until,
-                'more_information' => $userData
-            ];
-
-            return $this->apiResponseService->created($data, 'User created');
-        } 
-        catch (Throwable $e) 
-        { 
-            Log::error('Failed to create member', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return $this->apiResponseService->internalServerError('An error occurred while creating the user.');
+            return $this->apiResponseService->internalServerError('Failed to retrieve member.');
         }
     }
 
@@ -260,25 +230,32 @@ class AreaController extends Controller
 
         try 
         {
-            $member = User::with(['userData', 'role', 'specialities'])->find($_memberId);
+            $member = Member::with(['role', 'specialities'])->find($_memberId);
     
             if (!$member) {
                 return $this->apiResponseService->notFound('Member not found.');
             }
     
-            $userData = $member->userData;
-            unset($userData['id'], $userData['user_id']);
-    
-            $data = [
+            $response_data = [
                 'id' => $member->id,
-                'role' => $member->role->label ?? null,
-                'speciality' => $member->specialities->pluck('label')->toArray(),
+                'name' => $member->name,
+                'role' => $member->role->name,
+                'title' => $member->title,
+                'specialties' => $member->specialities->map(function ($speciality) {
+                    return [
+                        'id' => $speciality->id,
+                        'name' => $speciality->name,
+                        'service_level_agreement_duration_hour' => $speciality->sla_duration_hour ?? 'Not assigned yet',
+                    ];
+                }),
+                'capabilities' => $member->capabilities->map(function ($capability) {
+                    return $capability->name;
+                }),
                 'member_since' => $member->member_since,
                 'member_until' => $member->member_until,
-                'user_data' => $userData,
             ];
     
-            return $this->apiResponseService->ok($data);
+            return $this->apiResponseService->ok($response_data, 'Successfully retrieve member');
         } 
         catch (Throwable $e) 
         {
@@ -293,7 +270,7 @@ class AreaController extends Controller
         }
     }
     
-    public function delMember(string $_memberId)
+    public function deleteMember(string $_memberId)
     {
         if (!Str::isUuid($_memberId)) {
             return $this->apiResponseService->badRequest('Member not found.');
@@ -301,7 +278,7 @@ class AreaController extends Controller
 
         try 
         {
-            $member = User::find($_memberId);
+            $member = Member::find($_memberId);
     
             if (!$member) {
                 return $this->apiResponseService->notFound('Member not found.');
@@ -323,26 +300,119 @@ class AreaController extends Controller
             return $this->apiResponseService->internalServerError('Failed to delete member.');
         }
     }
+
+    public function putMember(string $_memberId)
+    {
+        if (!Str::isUuid($_memberId)) {
+            return $this->apiResponseService->badRequest('Member not found.');
+        }
+
+        $data = request()->input('data');
+
+        if(!$data)
+        {
+            return $this->apiResponseService->unprocessableEntity('Missing required data payload.');
+        }
+
+        $validator = Validator::make($data, [
+            'id' => 'required|uuid|exists:members,id',
+            'name' => 'required|string',
+            'role' => 'required|string|exists:member_roles,name',
+            'title' => 'required|string',
+            'specialties' => 'nullable|array',
+            'specialties.*.id' => 'required|uuid|exists:ticket_issue_types,id',
+            'specialties.*.name' => 'required|string',
+            'specialties.*.service_level_agreement_duration_hour' => 'required|integer',
+            'capabilities' => 'nullable|array',
+            'capabilities.*' => 'required|string|exists:member_capabilities,name',
+            'member_since' => 'required|date',
+            'member_until' => 'required|date|after_or_equal:member_since',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->apiResponseService->unprocessableEntity('There was an issue with your input', $validator->errors());
+        }
+
+        try {
+            $member = Member::find($_memberId);
+
+            if (!$member) {
+                return $this->apiResponseService->notFound('Member not found.');
+            }
+
+            $member->update([
+                'name' => $data['name'],
+                'role_id' => MemberRoleEnum::idFromName($data['role']),
+                'title' => $data['title'],
+                'member_since' => $data['member_since'],
+                'member_until' => $data['member_until'],
+            ]);
+
+            $specialtiesIds = collect($data['specialties'])->pluck('id');
+            $member->specialities()->sync($specialtiesIds); 
+
+            $capabilityIds = MemberCapability::whereIn('name', $data['capabilities'])->pluck('id');
+            $member->capabilities()->sync($capabilityIds);
+
+            $new_member = Member::find($_memberId);
+
+            $response_data = [
+                'id' => $new_member->id,
+                'name' => $new_member->name,
+                'role' => $new_member->role->name,
+                'title' => $new_member->title,
+                'specialties' => $new_member->specialities->map(function ($speciality) {
+                    return [
+                        'id' => $speciality->id,
+                        'name' => $speciality->name,
+                        'service_level_agreement_duration_hour' => $speciality->sla_duration_hour ?? 'Not assigned yet',
+                    ];
+                }),
+                'capabilities' => $new_member->capabilities->map(function ($capability) {
+                    return $capability->name;
+                }),
+                'member_since' => $new_member->member_since,
+                'member_until' => $new_member->member_until,
+            ];
+
+            return $this->apiResponseService->ok($response_data);
+
+        } 
+        catch (Throwable $e) {
+            Log::error('Failed to update member', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('Failed to update member.');
+        }
+    }
     
     public function getPendingMembers()
     {
         try 
         {
-            $pendingMembers = ApplicantStatus::find(ApplicantStatusEnum::PENDING->id())->applicants;
-    
-            $response_data = $pendingMembers->map(function ($pendingMember) {
-                return [
-                    'id' => $pendingMember->id,
-                    'status' => $pendingMember->status->label,
-                    'name' => $pendingMember->name,
-                    'expires_at' => $pendingMember->expires_at,
-                    'email' => $pendingMember->email,
-                    'phone_number' => $pendingMember->phone_number,
-                    'whatsapp_registered_number' => $pendingMember->whatsapp_registered_number,
-                ];
-            });    
+            $members = Member::whereHas('applicant', function ($query) {
+                $query->where('status_id', ApplicantStatusEnum::PENDING->id());
+            })->get();
 
-            return $this->apiResponseService->ok($response_data);
+            $formFields = json_decode(SystemSetting::get('area_join_form'), true);
+
+            $response_data = $members->map(function ($member) use ($formFields) {
+                return [
+                    'id' => (string) Str::uuid(), 
+                    'form_answer' => collect($formFields)->map(function ($field) use ($member) {
+                        return [
+                            'field_label' => $field,
+                            'field_value' => $member->$field,
+                        ];
+                    })->toArray(),
+                ];
+            });
+
+            return $this->apiResponseService->ok($response_data , 'Successfully retrieved pending members.');
         } 
         catch (Throwable $e) 
         {
@@ -357,7 +427,94 @@ class AreaController extends Controller
         }
     }
     
-    public function getApplicant(string $_applicationId)
+    public function postPendingMembers(Request $_request)
+    {
+        $validator = Validator::make($_request->input('data'), [
+            'application_id' => 'required|uuid|exists:applicants,id',
+            'role' => 'required|string',
+            'specialization' => 'nullable|array',
+            'specialization.*' => 'string',
+            'title' => 'required|string|max:255',
+        ]);
+        
+        if ($validator->fails()) {
+            return $this->apiResponseService->unprocessableEntity("There was an issue with your input", $validator->errors());
+        }
+        
+        try 
+        {
+            $applicationId = $_request->input('data.application_id');
+            $role = MemberRoleEnum::idFromName($_request->input('data.role'));
+            $specializationLabels = $_request->input('data.specialization');
+            $title = $_request->input('data.title');
+
+            if (!$role) {
+                return $this->apiResponseService->unprocessableEntity('Invalid role provided.');
+            }
+
+            if($specializationLabels)
+            {
+                $specializationIds = array_map(function ($label) {
+                    $id = IssueTypeEnum::idFromName($label);
+                    if (!$id) {
+                        return null; 
+                    }
+                    return $id;
+                }, $specializationLabels);
+            
+                
+                if (in_array(null, $specializationIds, true)) {
+                    return $this->apiResponseService->unprocessableEntity('One or more specializations are invalid.');
+                }
+            }
+
+            $applicant = Applicant::find($applicationId);
+
+            if (!$applicant) {
+                return $this->apiResponseService->notFound('Applicant not found');
+            }
+
+            $applicant->update([
+                'status_id' => ApplicantStatusEnum::ACCEPTED->id(),
+                'role_id' => $role,
+                'title' => $title,
+            ]);
+
+            $member = $applicant->member;
+
+            if($specializationLabels)
+            {
+                $member->specialities()->attach($specializationIds);
+            }
+
+            $formFields = json_decode(SystemSetting::get('area_join_form'), true);
+
+            $response_data = [
+                'id' => $member->id,
+                'form_answer' => collect($formFields)->map(function ($field) use ($member) {
+                    return [
+                        'field_label' => $field,
+                        'field_value' => $member->$field,
+                    ];
+                })->toArray(),
+            ];
+
+            return $this->apiResponseService->created($response_data, 'Applicant Acccpted');
+        } 
+        catch (Throwable $e) 
+        { 
+            Log::error('Failed to create member', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('An error occurred while creating the member.');
+        }
+    }
+
+    public function getPendingMember(string $_applicationId)
     {
         if (!Str::isUuid($_applicationId)) {
             return $this->apiResponseService->badRequest('Applicant not found.');
@@ -365,13 +522,25 @@ class AreaController extends Controller
 
         try 
         {
-            $applicant = Applicant::find($_applicationId);
+            $member = Applicant::find($_applicationId)->member;
     
-            if (!$applicant) {
+            if (!$member) {
                 return $this->apiResponseService->notFound('Applicant not found.');
             }
+
+            $formFields = json_decode(SystemSetting::get('area_join_form'), true);
+
+            $response_data = [
+                'id' => $member->id,
+                'form_answer' => collect($formFields)->map(function ($field) use ($member) {
+                    return [
+                        'field_label' => $field,
+                        'field_value' => $member->$field,
+                    ];
+                })->toArray(),
+            ];
     
-            return $this->apiResponseService->ok($applicant);
+            return $this->apiResponseService->ok($response_data, 'Successfully retrieved pending member.');
         } 
         catch (Throwable $e) 
         {
@@ -386,7 +555,7 @@ class AreaController extends Controller
         }
     }
     
-    public function delApplicant(string $_applicationId)
+    public function delPendingMember(string $_applicationId)
     {
         if (!Str::isUuid($_applicationId)) {
             return $this->apiResponseService->badRequest('Applicant not found.');
@@ -400,7 +569,7 @@ class AreaController extends Controller
                 return $this->apiResponseService->notFound('Applicant not found.');
             }
     
-            $applicant->update(['status_id' => ApplicantStatusEnum::REJECTED->value]);
+            $applicant->update(['status_id' => ApplicantStatusEnum::REJECTED->id()]);
     
             return $this->apiResponseService->ok('Applicant rejected successfully.');
         } 

@@ -13,14 +13,14 @@ class NonceCodeService
             $nonce = Str::random(64); 
         } while (Cache::has("nonce:$nonce")); 
 
-        Cache::store('redis')->put("nonce:$nonce", true, now()->addMinutes(15));
+        Cache::put("nonce:$nonce", true, now()->addMinutes(15));
 
         return $nonce;
     }
 
     public function checkNonce(string $nonce) : bool
     {
-        if (Cache::store('redis')->has("nonce:$nonce")) {
+        if (Cache::has("nonce:$nonce")) {
             return true;
         }
 
@@ -29,8 +29,8 @@ class NonceCodeService
 
     public function deleteNonce(string $nonce) : bool
     {
-        if (Cache::store('redis')->has("nonce:$nonce")) {
-            Cache::store('redis')->forget("nonce:$nonce");
+        if (Cache::has("nonce:$nonce")) {
+            Cache::forget("nonce:$nonce");
             return true;
         }
 
