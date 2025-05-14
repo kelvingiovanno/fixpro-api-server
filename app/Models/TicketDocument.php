@@ -40,8 +40,6 @@ class TicketDocument extends Model
 
         static::creating(function ($model) 
         {    
-            $model->expires_at = now()->addYear();
-        
             if (!$model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             } 

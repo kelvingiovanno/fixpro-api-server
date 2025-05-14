@@ -11,6 +11,7 @@ use App\Models\Member;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class TicketIssue extends Model
 {
@@ -23,11 +24,28 @@ class TicketIssue extends Model
         'issue_id',
         'ticket_id',
         'wo_id',
+        'work_description',
     ];
 
     protected $hidden = [
         'id',
     ];
+
+    public $timestamps = false;
+    public $incrementing = false; 
+    protected $keyType = 'string';
+    
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->id)) {
+                $model->id = Str::uuid();
+            }
+        });
+    }
+
 
     public function ticket()
     {

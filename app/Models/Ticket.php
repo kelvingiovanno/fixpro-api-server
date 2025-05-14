@@ -29,6 +29,7 @@ class Ticket extends Model
         'response_id',
         'location_id',
         'stated_issue',
+        'executive_summary',
         'closed_at',
     ];
 

@@ -32,9 +32,8 @@ class TicketIssueFactory extends Factory
     public function configure()
     {
         return $this->afterCreating(function (TicketIssue $ticketIssue) {
-            
-            $memberIds = Member::inRandomOrder()->take(rand(2, 5))->pluck('id')->toArray();
-            $ticketIssue->maintainers()->attach($memberIds);
+            $members = Member::factory()->count(rand(2, 4))->create();
+            $ticketIssue->maintainers()->syncWithoutDetaching($members->pluck('id')->toArray());
         });
     }      
 }

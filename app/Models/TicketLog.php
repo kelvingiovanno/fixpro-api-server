@@ -22,8 +22,8 @@ class TicketLog extends Model
 
     protected $fillable = [
         'ticket_id',
-        'user_id',
-        'ticket_log_type_id',
+        'member_id',
+        'type_id',
         'news',
     ];
 
@@ -62,7 +62,7 @@ class TicketLog extends Model
         return $this->belongsTo(Member::class, 'member_id', 'id');
     }
 
-    public function log_type()
+    public function type()
     {
         return $this->belongsTo(TicketLogType::class, 'type_id', 'id');
     }

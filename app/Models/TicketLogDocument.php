@@ -17,7 +17,7 @@ class TicketLogDocument extends Model
     protected $table = 'ticket_log_documents';
 
     protected $fillable = [
-        'ticket_log_id',
+        'log_id',
         'resource_type',
         'resource_name',
         'resource_size',
@@ -26,7 +26,7 @@ class TicketLogDocument extends Model
 
     protected $hidden = [
         'id',
-        'ticket_log_id',
+        'log_id',
         'deleted_at',
     ];
 
@@ -40,8 +40,6 @@ class TicketLogDocument extends Model
 
         static::creating(function ($model) 
         {    
-            $model->expires_at = now()->addYear();
-        
             if (!$model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             } 

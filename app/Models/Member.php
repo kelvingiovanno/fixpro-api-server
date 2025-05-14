@@ -31,7 +31,6 @@ class Member extends Model
     ];
 
     protected $casts = [
-        'application_expires_on' => 'datetime',
         'member_since' => 'datetime',
         'member_until' => 'datetime',
     ];
@@ -68,7 +67,7 @@ class Member extends Model
     
     public function maintained_tickets()
     {
-        return $this->belongsToMany(TicketIssue::class, 'maintainers', 'member_id', 'issue_id');
+        return $this->belongsToMany(TicketIssue::class, 'maintainers', 'member_id', 'ticket_issue_id');
     }
     
     public function ticket_logs()

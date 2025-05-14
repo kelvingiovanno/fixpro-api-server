@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\MemberCapabilityEnum;
+use App\Enums\MemberRoleEnum;
 use App\Http\Controllers\Controller;
 
 use App\Enums\TicketResponseTypeEnum;
 use App\Enums\TicketLogTypeEnum;
 use App\Enums\UserRoleEnum;
 use App\Enums\TicketStatusEnum;
-
+use App\Models\Enums\TicketLogType;
 use App\Models\Ticket;
 use App\Models\Location;
+use App\Models\Member;
 use App\Models\TicketDocument;
 use App\Models\TicketIssue;
 use App\Models\TicketLog;
@@ -48,7 +51,7 @@ class TicketController extends Controller
             $response_data = $tickets->map(function ($ticket) {
                 return [
                     'id' => $ticket->id,
-                    'issue_type' => $ticket->ticket_issues->map(function ($ticket_issue) {
+                    'issue_types' => $ticket->ticket_issues->map(function ($ticket_issue) {
                         return [
                             'id' => $ticket_issue->issue->id,
                             'name' => $ticket_issue->issue->name,
@@ -79,11 +82,19 @@ class TicketController extends Controller
 
     public function postTicket(Request $_request)
     {
-        $validator = Validator::make($_request->input('data'), [
-            'issue_type' => 'required|array',
+        $data = $_request->input('data');
+
+        if(!$data)
+        {
+            return $this->apiResponseService->unprocessableEntity('Missing required data payload');
+        }
+
+        $validator = Validator::make($data, [
+            'issue_type_ids' => 'required|array',
             'issue_type_ids.*' => 'required|uuid|exists:ticket_issue_types,id',
             'response_level' => 'required|string',
             'stated_issue' => 'required|string',
+            'executive_summary' => 'required|string',
             'location.stated_location' => 'required|string',
             'location.gps_location.latitude' => 'required|numeric',
             'location.gps_location.longitude' => 'required|numeric',
@@ -100,8 +111,6 @@ class TicketController extends Controller
     
         try 
         {
-            $data = $_request->input('data');
-
             $locationData = $data['location'];
             $member_id = $_request->input('jwt_payload')['member_id'];
             
@@ -121,9 +130,13 @@ class TicketController extends Controller
                 'stated_issue' => $data['stated_issue'],
             ]);
 
-            $ticket->issues()->attach($ticket_issue_types);
-
-            TicketIssue::create()
+            foreach ($ticket_issue_types as $issue)
+            {
+                TicketIssue::create([
+                    'ticket_id' => $ticket->id,
+                    'issue_id' => $issue,
+                ]);
+            }
     
             $documents = $data['supportive_documents'] ?? [];
            
@@ -146,16 +159,17 @@ class TicketController extends Controller
 
             $reponse_data = [
                 'id' => $ticket->id,
-                'issue_type' => $ticket->issues->map(function ($issue) {
+                'issue_types' => $ticket->ticket_issues->map(function ($ticket_issue) {
                     return [
-                        'id' => $issue->id,
-                        'name' => $issue->label,
-                        'service_level_agreement_duration_hour' => $issue->sla_duration_hour ?? 'Not assigned yet',
+                        'id' => $ticket_issue->issue->id,
+                        'name' => $ticket_issue->issue->name,
+                        'service_level_agreement_duration_hour' => $ticket_issue->issue->sla_duration_hour ?? 'Not assigned yet',
                     ];
                 }),
-                'response_level' => $ticket->responseLevelType->label,
+                'response_level' => $ticket->response->name,
                 'raised_on' => $ticket->raised_on,
-                'status' => $ticket->statusType->label,
+                'status' => $ticket->status->name,
+                'executive_summary' =>  $ticket->executive_summary,
                 'closed_on' => $ticket->closed_on ?? 'Not closed yet',
             ];
     
@@ -183,7 +197,7 @@ class TicketController extends Controller
 
         try 
         {
-            $ticket = Ticket::with(['issuer', 'location', 'documents', 'issues', 'statusType', 'responseLevelType', 'logs'])->find($_ticketId);
+            $ticket = Ticket::with(['issuer','ticket_issues', 'location', 'documents', 'status', 'response', 'logs'])->find($_ticketId);
 
             if (!$ticket) {
                 return $this->apiResponseService->notFound('Ticket not found');
@@ -191,16 +205,17 @@ class TicketController extends Controller
 
             $response_data = [
                 'id' => $ticket->id,
-                'issue_type' => $ticket->issues->map(function ($issue) {
+                'issue_type' => $ticket->ticket_issues->map(function ($ticket_issue) {
                     return [
-                        'id' => $issue->id,
-                        'name' => $issue->label,
-                        'service_level_agreement_duration_hour' => $issue->sla_duration_hour ?? 'Not assigned yet',
+                        'id' => $ticket_issue->issue->id,
+                        'name' => $ticket_issue->issue->name,
+                        'service_level_agreement_duration_hour' => $ticket_issue->issue->sla_duration_hour ?? 'Not assigned yet',
                     ];
                 }),
-                'response_level' => $ticket->responseLevelType->label,
+                'response_level' => $ticket->response->name,
                 'raised_on' => $ticket->raised_on,
-                'status' => $ticket->statusType->label,
+                'status' => $ticket->status->name,
+                'executive_summary' => $ticket->executive_summary,
                 'stated_issue' => $ticket->stated_issue,
                 'location' => [
                     'stated_location' => $ticket->location->stated_location,
@@ -213,32 +228,38 @@ class TicketController extends Controller
                 'issuer' => [
                     'id' => $ticket->issuer->id,
                     'name' => $ticket->issuer->name,
-                    'role' => $ticket->issuer->role->label,
+                    'role' => $ticket->issuer->role->name,
                     'title' => $ticket->issuer->title,
-                    'specialty' => $ticket->issuer->specialities->map(function ($specialty){
+                    'specialties' => $ticket->issuer->specialities->map(function ($specialty){
                         return [
                             'id' => $specialty->id,
-                            'name' => $specialty->label,
+                            'name' => $specialty->name,
                             'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
                         ];
+                    }),
+                    'capabilities' => $ticket->issuer->capabilities->map(function ($capability) {
+                        return $capability->name;
                     }),
                 ],
                 'logs' => $ticket->logs->map(function ($log) {
                     return [
                         'id' => $log->id,
                         'owning_ticket_id' => $log->ticket_id,
-                        'type' => $log->logType->label,
+                        'type' => $log->type->name,
                         'issuer' => [
                             'id' => $log->issuer->id,
                             'name' => $log->issuer->name,
-                            'role' => $log->issuer->role->label,
+                            'role' => $log->issuer->role->name,
                             'title' => $log->issuer->title,
-                            'specialty' => $log->issuer->specialities->map(function ($specialty){
+                            'specialties' => $log->issuer->specialities->map(function ($specialty){
                                 return [
                                     'id' => $specialty->id,
-                                    'name' => $specialty->label,
+                                    'name' => $specialty->name,
                                     'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
                                 ];
+                            }),
+                            'capabilities' => $log->issuer->capabilities->map(function ($capability) {
+                                return $capability->name;
                             }),
                         ],
                         'recorded_on' => $log->recorded_on,
@@ -246,20 +267,25 @@ class TicketController extends Controller
                         'attachments' => $log->documents,
                     ];
                 }),
-                'handlers' => $ticket->maintainers->map(function ($maintainer) {
-                    return [
-                        'id' => $maintainer->id,
-                        'name' => $maintainer->name,
-                        'role' => $maintainer->role,
-                        'title' => $maintainer->title,
-                        'specialty' => $maintainer->specialities->map(function ($specialty){
-                            return [
-                                'id' => $specialty->id,
-                                'name' => $specialty->label,
-                                'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
-                            ];
-                        }),
-                    ];
+                'handlers' => $ticket->ticket_issues->flatMap(function ($issue) {
+                    return $issue->maintainers->map(function ($maintainer) {
+                        return [
+                            'id' => $maintainer->id,
+                            'name' => $maintainer->name,
+                            'role' => $maintainer->role,
+                            'title' => $maintainer->title,
+                            'specialties' => $maintainer->specialities->map(function ($specialty){
+                                return [
+                                    'id' => $specialty->id,
+                                    'name' => $specialty->name,
+                                    'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
+                                ];
+                            }),
+                            'capabilities' => $maintainer->capabilities->map(function ($capability) {
+                                return $capability->name;
+                            }),
+                        ];
+                    });
                 }),
                 'closed_on' => $ticket->closed_on ?? 'Not closed yet',
             ];
@@ -286,12 +312,19 @@ class TicketController extends Controller
             return $this->apiResponseService->notFound('Ticket not found.');
         }  
 
-        $body = $_request->all();
+        $data = $_request->input('data');
 
-        $validator = Validator::make($body, [
+        if(!$data) 
+        {
+            return $this->apiResponseService->badRequest('Missing required data payload');
+        }
+
+        $validator = Validator::make($data, [
             'issue_type' => 'required|array|min:1',
             'issue_type.*' => 'required|uuid|exists:ticket_issue_types,id',
-            'status' => 'required|string',
+            'status' => 'required|string|exists:ticket_status_types,name',
+            'stated_issue' => 'required|string',
+            'executive_summary' => 'required|string',
             'location' => 'required|array',
             'location.stated_location' => 'required|string',
             'location.gps_location' => 'required|array',
@@ -304,129 +337,151 @@ class TicketController extends Controller
             return $this->apiResponseService->badRequest('Validation failed.', $validator->errors());
         }
 
-        $ticket_status_id = TicketStatusEnum::idFromLabel($_request->input('status'));
+        $ticket_status_id = TicketStatusEnum::idFromName($data['status']);
 
         if(!$ticket_status_id)
         {
             return $this->apiResponseService->badRequest('Invalid ticket status.');
         }
-
-        $updated_ticket_issue = $_request->input('issue_type');
-
-        if($_request->input('jwt_payload')['role'] == UserRoleEnum::CREW)
+        
+        if($_request->input('jwt_payload')['role_id'] == MemberRoleEnum::CREW->id())
         {
             return $this->apiResponseService->forbidden('Client are not allowed to update tickets.');
         }
 
         $ticket_updated_data = [
-            'user_id' => $_request->input('jwt_payload')['user_id'],
-            'ticket_status_type_id' => $ticket_status_id,
-            'executive_summary' => $_request->input('executive_summary'),
+            'member_id' => $_request->input('jwt_payload')['member_id'],
+            'status_id' => $ticket_status_id,
+            'stated_issue' => $data['stated_issue'],
+            'executive_summary' => $data['executive_summary'],
         ];
+
+        $updated_ticket_issue = $data['issue_type'];
 
         $ticket_location_updated_data = [
-            'stated_location' => $_request->input('location')['stated_location'],
-            'latitude' => $_request->input('location')['gps_location']['latitude'],
-            'longitude' => $_request->input('location')['gps_location']['longitude'],
+            'stated_location' => $data['location']['stated_location'],
+            'latitude' => $data['location']['gps_location']['latitude'],
+            'longitude' => $data['location']['gps_location']['longitude'],
         ];
 
-            try
+        try
+        {
+            $ticket = Ticket::find($_ticketId);
+            
+            if(!$ticket)
             {
-                $ticket = Ticket::find($_ticketId);
-                
-                if(!$ticket)
-                {
-                    return $this->apiResponseService->notFound('Ticket not found.');
+                return $this->apiResponseService->notFound('Ticket not found.');
+            }
+            
+            $ticket->update($ticket_updated_data);
+            
+
+            foreach ($updated_ticket_issue as $issueId) {
+                $exists = $ticket->ticket_issues()
+                    ->where('issue_id', $issueId)
+                    ->exists();
+
+                if (! $exists) {
+                    $ticket->ticket_issues()->create([
+                        'issue_id' => $issueId,
+                    ]);
                 }
-               
-                $ticket->update($ticket_updated_data);
-               
-                $ticket->location->update($ticket_location_updated_data);
-               
-                $ticket->issues()->detach();
-                $ticket->issues()->attach($updated_ticket_issue);
+            }
 
-                $updated_ticket = Ticket::find($_ticketId);
+            $ticket->location->update($ticket_location_updated_data);
 
-                $response_data = [
-                    'id' => $updated_ticket->id,
-                    'issue_type' => $updated_ticket->issues->map(function ($issue) {
+            $updated_ticket = Ticket::find($_ticketId);
+
+            $response_data = [
+                'id' => $updated_ticket->id,
+                'issue_type' => $updated_ticket->ticket_issues->map(function ($ticket_issue) {
+                    return [
+                        'id' => $ticket_issue->issue->id,
+                        'name' => $ticket_issue->issue->name,
+                        'service_level_agreement_duration_hour' => $ticket_issue->issue->sla_duration_hour ?? 'Not assigned yet', 
+                    ];
+                }),
+                'response_level' => $updated_ticket->response-> name,
+                'raised_on' => $updated_ticket->raised_on,
+                'status' => $updated_ticket->status->name,
+                'executive_summary' => $updated_ticket->executive_summary,
+                'stated_issue' => $updated_ticket->stated_issue,
+                'location' => [
+                    'stated_location' => $updated_ticket->location->stated_location,
+                    'gps_location' => [
+                        'latitude' => $updated_ticket->location->latitude,
+                        'longitude' => $updated_ticket->location->longitude
+                    ],
+                ],
+                'supportive_documents' => $updated_ticket->documents,
+                'issuer' => [
+                    'id' => $updated_ticket->issuer->id,
+                    'name' => $updated_ticket->issuer->name,
+                    'role' => $updated_ticket->issuer->role->name,
+                    'title' => $updated_ticket->issuer->title,
+                    'specialities' => $updated_ticket->issuer->specialities->map(function ($specialty) {
                         return [
-                            'id' => $issue->id,
-                            'name' => $issue->label,
-                            'service_level_agreement_duration_hour' => $issue->sla_duration_hour ?? 'Not assigned yet', 
+                            'id' => $specialty->id,
+                            'name' => $specialty->name,
+                            'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
                         ];
                     }),
-                    'response_level' => $updated_ticket->responseLevelType->label,
-                    'raised_on' => $updated_ticket->raised_on,
-                    'status' => $updated_ticket->statusType->label,
-                    'stated_issue' => $updated_ticket->stated_issue,
-                    'location' => [
-                        'stated_location' => $updated_ticket->location->stated_location,
-                        'gps_location' => [
-                            'latitude' => $updated_ticket->location->latitude,
-                            'longitude' => $updated_ticket->location->longitude
-                        ],
-                    ],
-                    'supportive_documents' => $updated_ticket->documents,
-                    'issuer' => [
-                        'id' => $updated_ticket->issuer->id,
-                        'name' => $updated_ticket->issuer->name,
-                        'role' => $updated_ticket->issuer->role->label,
-                        'title' => $updated_ticket->issuer->title,
-                        'specialty' => $updated_ticket->issuer->specialities->map(function ($specialty) {
-                            return [
-                                'id' => $specialty->id,
-                                'name' => $specialty->label,
-                                'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
-                            ];
-                        }),
-                    ],
-                    'logs' => $updated_ticket->logs->map(function ($log) {
-                        return [
-                            'id' => $log->id,
-                            'owning_ticket_id' => $log->ticket_id,
-                            'type' => $log->logType->label,
-                            'issuer' => [
-                                'id' => $log->issuer->id,
-                                'name' => $log->issuer->name,
-                                'role' => $log->issuer->role->label,
-                                'title' => $log->issuer->title,
-                                'specialty' => $log->issuer->specialities->map(function ($specialty) {
-                                    return [
-                                        'id' => $specialty->id,
-                                        'name' => $specialty->label,
-                                        'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
-                                    ];
-                                }),
-                                
-                            ],
-                            'recorded_on' => $log->recorded_on, 
-                            'news' => $log->news,
-                            'attachments' => $log->documents,
-                        ];
+                    'capabilities' => $updated_ticket->issuer->capabilities->map(function ($capability){
+                        return $capability->name;
                     }),
-                    'handlers' => $updated_ticket->maintainers->map(function ($maintainer) {
-                        return [
-                            'id' => $maintainer->id,
-                            'name' => $maintainer->name,
-                            'role' => $maintainer->role->label,
-                            'title' => $maintainer->title,
-                            'specialty' => $maintainer->specialities->map(function ($specialty) {
+                ],
+                'logs' => $updated_ticket->logs->map(function ($log) {
+                    return [
+                        'id' => $log->id,
+                        'owning_ticket_id' => $log->ticket_id,
+                        'type' => $log->type->name,
+                        'issuer' => [
+                            'id' => $log->issuer->id,
+                            'name' => $log->issuer->name,
+                            'role' => $log->issuer->role->name,
+                            'title' => $log->issuer->title,
+                            'specialities' => $log->issuer->specialities->map(function ($specialty) {
                                 return [
                                     'id' => $specialty->id,
-                                    'name' => $specialty->label,
+                                    'name' => $specialty->name,
                                     'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
                                 ];
                             }),
+                            'capabilities' => $log->issuer->capabilities->map(function ($capability){
+                                return $capability->name;
+                            }),
+                        ],
+                        'recorded_on' => $log->recorded_on, 
+                        'news' => $log->news,
+                        'attachments' => $log->documents,
+                    ];
+                }),
+                'handlers' => $updated_ticket->ticket_issues->flatMap(function ($issue) {
+                    return $issue->maintainers->map(function ($maintainer) {
+                        return [
+                            'id' => $maintainer->id,
+                            'name' => $maintainer->name,
+                            'role' => $maintainer->role,
+                            'title' => $maintainer->title,
+                            'specialities' => $maintainer->specialities->map(function ($specialty){
+                                return [
+                                    'id' => $specialty->id,
+                                    'name' => $specialty->name,
+                                    'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
+                                ];
+                            }),
+                            'capabilities' => $maintainer->capabilities->map(function ($capability){
+                                return $capability->name;
+                            }),
                         ];
-                    }),
-                    'closed_on' => $updated_ticket->closed_on ?? 'Not closed yet',
-                ];
+                    });
+                }),
+                'closed_on' => $updated_ticket->closed_on ?? 'Not closed yet',
+            ];
 
-                return $this->apiResponseService->ok($response_data, 'Ticket updated successfully.');
+            return $this->apiResponseService->ok($response_data, 'Ticket updated successfully.');
 
-            }
+        }
         catch (Throwable $e)
         {
             Log::error('Error updating ticket.', [
@@ -448,9 +503,9 @@ class TicketController extends Controller
             return $this->apiResponseService->notFound('Ticket not found.');
         }
 
-        $rejected_reason = $_request->input('reason');
+        $rejected_reason = $_request->input('data');
 
-        $validator = Validator::make($_request->all(), [
+        $validator = Validator::make($rejected_reason, [
             'reason' => 'required|string',
         ]);
 
@@ -458,10 +513,10 @@ class TicketController extends Controller
             return $this->apiResponseService->badRequest('', $validator->errors());
         }
 
-        $user_id = $_request->input('jwt_payload')['user_id'];
-        $role = $_request->input('jwt_payload')['role'];
+        $member_id = $_request->input('jwt_payload')['member_id'];
+        $role = $_request->input('jwt_payload')['role_id'];
 
-        if(UserRoleEnum::idFromLabel($role) != UserRoleEnum::MANAGEMENT->id())
+        if($role != MemberRoleEnum::MANAGEMENT->id())
         {
             return $this->apiResponseService->forbidden('Client are not allowed to reject tickets.');
         }
@@ -475,14 +530,14 @@ class TicketController extends Controller
             }
 
             $ticket->update([
-                'ticket_status_type_id' => TicketStatusEnum::REJECTED->id(),
+                'status_id' => TicketStatusEnum::REJECTED->id(),
             ]);
 
             TicketLog::create([
                 'ticket_id' => $_ticketId,
-                'user_id' => $user_id,
-                'ticket_log_type' => TicketLogTypeEnum::ACTIVITY->id(),
-                'news' => $rejected_reason,
+                'member_id' => $member_id,
+                'type' => TicketLogTypeEnum::ACTIVITY->id(),
+                'news' => $rejected_reason['reason'],
             ]);
 
             return $this->apiResponseService->ok('Ticket successfully rejected.');
@@ -507,7 +562,7 @@ class TicketController extends Controller
             return $this->apiResponseService->notFound('Ticket not found.');
         }
 
-        $user_id = $_request->input('jwt_payload')['user_id'];
+        $member_id = $_request->input('jwt_payload')['member_id'];
 
         try
         {
@@ -518,19 +573,19 @@ class TicketController extends Controller
                 return $this->apiResponseService->notFound('Ticket not found.');
             }
 
-            if($ticket->issuer->id != $user_id)
+            if($ticket->issuer->id != $member_id)
             {
                 return $this->apiResponseService->forbidden('Client are not allowed to cancel tickets.');
             }
 
             $ticket->update([
-                'ticket_status_id' => TicketStatusEnum::CANCELLED->id(),
+                'status_id' => TicketStatusEnum::CANCELLED->id(),
             ]);
 
             TicketLog::create([
                 'ticket_id' => $_ticketId,
-                'user_id' => $user_id,
-                'ticket_log_type' => TicketLogTypeEnum::ACTIVITY->id(),
+                'member_id' => $member_id,
+                'type' => TicketLogTypeEnum::ACTIVITY->id(),
                 'news' => 'Ticket cancelled',
             ]);
 
@@ -546,62 +601,6 @@ class TicketController extends Controller
             ]);
     
             return $this->apiResponseService->internalServerError('An unexpected error occurred while cenceling the ticket.');
-        }
-    }
-
-    public function delTicket(Request $_request, string $_ticketId)
-    {
-        if (!Str::isUuid($_ticketId)) {
-            return $this->apiResponseService->notFound('Ticket not found'); 
-        }
-
-        try 
-        {
-            $ticket = Ticket::find($_ticketId);
-            
-            if (!$ticket) {
-                return $this->apiResponseService->notFound('Ticket not found');
-            }
-
-            $user_role = UserRoleEnum::idFromLabel($_request->input('jwt_payload')['role']);
-            $user_id = $_request->input('jwt_payload')['user_id'];
-
-            if($user_role == UserRoleEnum::MEMBER->id())
-            {   
-                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::CANCELLED->id()]);
-                
-                TicketLog::create([
-                    'ticket_id' => $ticket->id,
-                    'user_id' => $user_id,
-                    'ticket_log_type_id' => TicketLogTypeEnum::ACTIVITY->id(),
-                    'news' => 'Ticket was cancelled by a member.',
-                ]);
-            }
-
-            if($user_role == UserRoleEnum::MANAGEMENT->id())
-            {   
-                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::REJECTED->id()]);
-            
-                TicketLog::create([
-                    'ticket_id' => $ticket->id,
-                    'user_id' => $user_id,
-                    'ticket_log_type_id' => TicketLogTypeEnum::ACTIVITY->id(),
-                    'news' => 'Ticket was rejected by management.',
-                ]);
-            }
-
-            return $this->apiResponseService->ok(null, 'Ticket deleted successfully');
-        } 
-        catch (Throwable $e) 
-        {
-            Log::error('Error deleting ticket',  [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return $this->apiResponseService->internalServerError('An error occurred while deleting the ticket. Please try again later.');
         }
     }
 
@@ -624,26 +623,28 @@ class TicketController extends Controller
                 return [
                     'id' => $log->id,
                     'owning_ticket_id' => $log->ticket_id,
-                    'type' => $log->logType->label,
+                    'type' => $log->type->name,
                     'issuer' => [
                         'id' => $log->issuer->id,
                         'name' => $log->issuer->name,
-                        'role' => $log->issuer->role->label,
+                        'role' => $log->issuer->role->name,
                         'title' => $log->issuer->title,
-                        'specialty' => $log->issuer->specialities->map(function ($specialty) {
+                        'specialities' => $log->issuer->specialities->map(function ($specialty) {
                             return [
                                 'id' => $specialty->id,
-                                'name' => $specialty->label,
+                                'name' => $specialty->name,
                                 'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
                             ];
+                        }),
+                        'capabilities' => $log->issuer->capabilities->map(function ($capability) {
+                            return $capability->name;
                         }),
                     ],
                     'recorded_on' => $log->recorded_on,
                     'news' => $log->news,
                     'attachments' => $log->documents,
                 ];
-            })->toArray();
-
+            });
 
             return $this->apiResponseService->ok($response_data, 'Ticket logs retrieved successfully');
         }
@@ -665,9 +666,16 @@ class TicketController extends Controller
         if (!Str::isUuid($_ticketId)) {
             return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID'); 
         }
+
+        $data = $_request->input('data');
+
+        if (!$data) 
+        {
+            return $this->apiResponseService->badRequest('Missing required data payload');
+        }
         
-        $validator = Validator::make($_request->input('data'), [
-            'type' => 'required|string',
+        $validator = Validator::make($data, [
+            'type' => 'required|string|exists:ticket_log_types,name',
             'news' => 'required|string',
             'supportive_documents' => 'nullable|array',
             'supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
@@ -680,13 +688,6 @@ class TicketController extends Controller
             return $this->apiResponseService->unprocessableEntity('Validation failed, please check the provided data', $validator->errors());
         }
 
-        $log_type_id = TicketLogTypeEnum::idFromLabel($_request->input('data')['type']);
-        
-        if(!$log_type_id)
-        {
-            return $this->apiResponseService->unprocessableEntity('Validation failed, please check the provided data', ['log_type' => 'Invalid log type']);
-        }
-
         try
         {
             $ticket = Ticket::find($_ticketId);
@@ -696,47 +697,48 @@ class TicketController extends Controller
                 return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
             }
 
-            $user_id = $_request->input('jwt_payload')['user_id'];
-
+            $member_id = $_request->input('jwt_payload')['member_id'];
+            $log_type_id = TicketLogTypeEnum::idFromName($data['type']);
+            
             $ticket_log = TicketLog::create([
                 'ticket_id' => $_ticketId,
-                'user_id' => $user_id,
-                'ticket_log_type_id' => $log_type_id,
-                'news' => $_request->input('data')['news'],
+                'member_id' => $member_id,
+                'type_id' => $log_type_id,
+                'news' => $data['news'],
             ]);
 
             if($log_type_id == TicketLogTypeEnum::ASSESSMENT->id())
             {
-                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::IN_ASSESSMENT->id()]);
+                $ticket->update(['status_id' => TicketStatusEnum::IN_ASSESSMENT->id()]);
             }
 
             if($log_type_id == TicketLogTypeEnum::WORK_PROGRESS->id())
             {
-                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::ON_PROGRESS->id()]);
+                $ticket->update(['status_id' => TicketStatusEnum::ON_PROGRESS->id()]);
             }
 
             if($log_type_id == TicketLogTypeEnum::WORK_EVALUATION_REQUEST->id())
             {
-                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::WORK_EVALUATION->id()]);
+                $ticket->update(['status_id' => TicketStatusEnum::WORK_EVALUATION->id()]);
             }
 
             if($log_type_id == TicketLogTypeEnum::WORK_EVALUATION->id())
             {
-                $ticket->update(['ticket_status_type_id' => TicketStatusEnum::CLOSED->id()]);
+                $ticket->update(['status_id' => TicketStatusEnum::CLOSED->id()]);
             }
 
-            $documents = $_request->input('supportive_documents', []);
+            $documents = $data['supportive_documents'] ?? [];
            
             foreach ($documents as $document) {
                 
                 $filePath = $this->storageService->storeLogTicketDocument(
-                    $document['resource_content'],
+                    $document['previewable_on'],
                     $document['resource_name'],
                     $ticket->id
                 );
     
                 TicketLogDocument::create([
-                    'ticket_log_id' => $ticket_log->id,
+                    'log_id' => $ticket_log->id,
                     'resource_type' => $document['resource_type'],
                     'resource_name' => $document['resource_name'],
                     'resource_size' => $document['resource_size'],
@@ -747,18 +749,21 @@ class TicketController extends Controller
             $reponse_data = [
                 'id' => $ticket_log->id,
                 'owning_ticket_id' => $ticket_log->ticket_id,
-                'type' => $ticket_log->logType->label,
+                'type' => $ticket_log->type->name,
                 'issuer' => [
                     'id' => $ticket_log->issuer->id,
                     'name' => $ticket_log->issuer->name,
                     'role' => $ticket_log->issuer->role,
                     'title' => $ticket_log->issuer->title,
-                    'specialty' => $ticket_log->issuer->specialities->map(function ($specialty){
+                    'specialities' => $ticket_log->issuer->specialities->map(function ($specialty){
                         return [
                             'id' => $specialty->id,
-                            'name' => $specialty->label,
+                            'name' => $specialty->name,
                             'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
                         ]; 
+                    }),
+                    'capabilities' => $ticket_log->issuer->capabilities->map(function ($capability) {
+                        return $capability->name;
                     }),
                 ],
                 'recorded_on' => $ticket_log->recorded_on,
@@ -803,20 +808,26 @@ class TicketController extends Controller
                 return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
             }
 
-            $response_data = $ticket->maintainers->map(function ($maintainer) {
-                return [
-                    'id' => $maintainer->id,
-                    'name' => $maintainer->name,
-                    'role' => $maintainer->role,
-                    'title' => $maintainer->title,
-                    'specialty' => $maintainer->specialities->map(function ($specialty){
-                        return [
-                            'id' => $specialty->id,
-                            'name' => $specialty->label,
-                            'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
-                        ];
-                    }),
-                ];
+            $response_data =  $ticket->ticket_issues->flatMap(function ($issue) {
+                
+                return $issue->maintainers->map(function ($maintainer) {
+                    return [
+                        'id' => $maintainer->id,
+                        'name' => $maintainer->name,
+                        'role' => $maintainer->role,
+                        'title' => $maintainer->title,
+                        'specialties' => $maintainer->specialities->map(function ($specialty){
+                            return [
+                                'id' => $specialty->id,
+                                'name' => $specialty->name,
+                                'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
+                            ];
+                        }),
+                        'capabilities' => $maintainer->capabilities->map(function ($capability) {
+                            return $capability->name;
+                        }),
+                    ];
+                });
             });
 
             return $this->apiResponseService->ok($response_data, 'Ticket handlers retrieved successfully');
@@ -840,10 +851,17 @@ class TicketController extends Controller
             return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID'); 
         } 
 
-        $validator = Validator::make($_request->all(), [
+        $data = $_request->input('data');
+
+        if(!$data)
+        {
+            return $this->apiResponseService->badRequest('Missing required data payload');
+        }
+
+        $validator = Validator::make($data, [
             'appointed_member_ids' => 'required|array', 
-            'appointed_member_ids.*' => 'uuid|exists:users,id',
-            'work_description' => 'required|string|max:126', 
+            'appointed_member_ids.*' => 'uuid|exists:members,id',
+            'work_description' => 'required|string', 
             'issue_type' => 'required|uuid|exists:ticket_issue_types,id'
         ]);
 
@@ -855,51 +873,80 @@ class TicketController extends Controller
         try
         {
             $ticket = Ticket::find($_ticketId);
-            $user_id = $_request->input('jwt_payload')['user_id'];
+            $member_id = $_request->input('jwt_payload')['member_id'];
+
+            $member = Member::find($member_id);
+
+            $hasAssign = collect($member->capabilities)->contains('id', MemberCapabilityEnum::INVITE->id());
+
+            if(!$hasAssign)
+            {
+                return $this->apiResponseService->forbidden('You do not have permission to perform this action.');
+            }
 
             if(!$ticket)
             {
                 return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
             }
 
-            $executive_summary = $_request->input('executive_summary');
-            $maintainers = $_request->input('target_member_ids');
+            $work_description = $data['work_description'];
+            $appointed_member_ids = $data['appointed_member_ids'];
+            $issue_type_id = $data['issue_type'];
 
-            $ticket->maintainers()->detach();
-            $ticket->maintainers()->attach($maintainers, ['executive_summary' => $executive_summary]);
+            $ticket_issue = $ticket->ticket_issues->firstWhere('issue_id', $issue_type_id);
 
-            $new_ticket_log = TicketLog::create([
+            if (!$ticket_issue) {
+                return $this->apiResponseService->unprocessableEntity('Ticket issue not found.');
+            }
+
+            $ticket_issue->update([
+                'work_description' => $work_description,
+            ]);
+
+            $ticket_issue->maintainers()->sync($appointed_member_ids);
+
+            TicketLog::create([
                 'ticket_id' => $_ticketId,
-                'user_id' => $user_id,
+                'member_id' => $member_id,
                 'ticket_log_type_id' => TicketLogTypeEnum::ACTIVITY->id(),
-                'news' => '',
+                'news' => count($appointed_member_ids) . ' maintainer(s) assigned to the ticket issue.',
             ]);
 
             $updated_ticket = Ticket::find($_ticketId);
 
-            $response_data = [
-                'handlers' => $updated_ticket->maintainers->map(function ($maintainer) {
+            $response_data =  $updated_ticket->ticket_issues->flatMap(function ($issue) {
+                return $issue->maintainers->map(function ($maintainer) {
                     return [
+                        'id' => $maintainer->id,
                         'name' => $maintainer->name,
-                        'more_information' => $maintainer->userData,
+                        'role' => $maintainer->role,
+                        'title' => $maintainer->title,
+                        'specialties' => $maintainer->specialities->map(function ($specialty){
+                            return [
+                                'id' => $specialty->id,
+                                'name' => $specialty->name,
+                                'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
+                            ];
+                        }),
+                        'capabilities' => $maintainer->capabilities->map(function ($capability) {
+                            return $capability->name;
+                        }),
                     ];
-                }), 
-                'executive_summary' => $updated_ticket->executive_summary,
-            ];
+                });
+            });
 
-            return $this->apiResponseService->created($response_data, 'Successfully added handler to the ticket');
-
+            return $this->apiResponseService->ok($response_data, 'Successfully added handler to the ticket');
         }
         catch (Throwable $e)
         {
-            Log::error('Error deleting ticket',  [
+            Log::error('Error assigns ticket handlers',  [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('');
+            return $this->apiResponseService->internalServerError('An error occurred while assigns ticket handlers');
         }
     }       
 }

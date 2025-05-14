@@ -13,16 +13,17 @@ return new class extends Migration
     {
         Schema::create('tickets', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('mamber_id')->nullable();
+            $table->uuid('member_id')->nullable();
             $table->uuid('status_id')->nullable();
             $table->uuid('response_id')->nullable();
             $table->uuid('location_id')->nullable();        
 
             $table->string('stated_issue');
+            $table->text('executive_summary')->nullable();
             $table->dateTime('raised_on');
             $table->dateTime('closed_on')->nullable();
             
-            $table->foreign('mamber_id')->references('id')->on('members')->onDelete('set null');
+            $table->foreign('member_id')->references('id')->on('members')->onDelete('set null');
             $table->foreign('status_id')->references('id')->on('ticket_status_types')->onDelete('set null');
             $table->foreign('response_id')->references('id')->on('ticket_response_types')->onDelete('set null');
             $table->foreign('location_id')->references('id')->on('locations')->onDelete('set null');

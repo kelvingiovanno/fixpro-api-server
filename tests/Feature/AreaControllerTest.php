@@ -5,14 +5,19 @@ namespace Tests\Feature;
 use App\Enums\ApplicantStatusEnum;
 use App\Enums\MemberCapabilityEnum;
 use App\Enums\MemberRoleEnum;
+
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
+
 use App\Models\Enums\MemberCapability;
 use App\Models\Enums\MemberRole;
 use App\Models\Enums\TicketIssueType;
+
 use App\Models\Member;
 use App\Models\SystemSetting;
+
 use App\Services\ReferralCodeService;
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
@@ -621,7 +626,7 @@ class AreaControllerTest extends TestCase
         }
     }
 
-    public function test_get_applicant()
+    public function test_get_pending_member()
     {
         SystemSetting::put('area_join_form', json_encode(['name','email', 'phone_number']));
 
@@ -674,7 +679,7 @@ class AreaControllerTest extends TestCase
         }
     }
 
-    public function test_delete_applicant()
+    public function test_delete_pending_member()
     {
         SystemSetting::put('area_join_form', json_encode(['name','email', 'phone_number']));
 

@@ -32,9 +32,7 @@ class WODocument extends Model
         parent::boot();
 
         static::creating(function ($model) 
-        {    
-            $model->expires_at = now()->addYear();
-        
+        {   
             if (!$model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             } 
