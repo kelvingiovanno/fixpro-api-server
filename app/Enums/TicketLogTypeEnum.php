@@ -10,7 +10,10 @@ enum TicketLogTypeEnum : string
     case WORK_PROGRESS = "Work Progress";
     case WORK_EVALUATION_REQUEST = "Work Evaluation Request";
     case WORK_EVALUATION = "Work Evaluation";
+    case CLIENT_EVALUATION = "Client Evaluation";
+    case TIME_EXTENSION = "Time Extension";
     case ACTIVITY = "Activity";
+    case INVITATION = "Invitation";
 
     public function id(): ?string
     {

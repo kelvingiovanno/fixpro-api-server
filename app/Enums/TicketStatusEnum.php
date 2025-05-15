@@ -10,6 +10,8 @@ enum TicketStatusEnum: string
     case IN_ASSESSMENT = "In Assessment";
     case ON_PROGRESS = "On Progress";
     case WORK_EVALUATION = "Work Evaluation";
+    case QUIALITY_CONTROL = "Quality Control";
+    case REPOTER_EVALUATION = "Repoter Evaluation";
     case CLOSED = "Closed";
     case CANCELLED = "Cancelled";
     case REJECTED = "Rejected";

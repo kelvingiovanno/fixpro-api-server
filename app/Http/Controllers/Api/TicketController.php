@@ -8,9 +8,8 @@ use App\Http\Controllers\Controller;
 
 use App\Enums\TicketResponseTypeEnum;
 use App\Enums\TicketLogTypeEnum;
-use App\Enums\UserRoleEnum;
 use App\Enums\TicketStatusEnum;
-use App\Models\Enums\TicketLogType;
+
 use App\Models\Ticket;
 use App\Models\Location;
 use App\Models\Member;
