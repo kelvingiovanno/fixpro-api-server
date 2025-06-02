@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\MemberCapabilityEnum;
-use App\Enums\MemberRoleEnum;
 use App\Http\Controllers\Controller;
 
+use App\Enums\MemberCapabilityEnum;
+use App\Enums\MemberRoleEnum;
 use App\Enums\TicketResponseTypeEnum;
 use App\Enums\TicketLogTypeEnum;
 use App\Enums\TicketStatusEnum;
@@ -515,7 +515,7 @@ class TicketController extends Controller
         $member_id = $_request->input('jwt_payload')['member_id'];
         $role = $_request->input('jwt_payload')['role_id'];
 
-        if($role != MemberRoleEnum::MANAGEMENT->id())
+        if($role != MemberRoleEnum::MANAGEMENT->id() && $role != MemberRoleEnum::MEMBER->id())
         {
             return $this->apiResponseService->forbidden('Client are not allowed to reject tickets.');
         }
@@ -603,6 +603,387 @@ class TicketController extends Controller
         }
     }
 
+    public function evaluateRequest(Request $_request, string $_ticketId)
+    {
+        if (!Str::isUuid($_ticketId)) {
+            return $this->apiResponseService->notFound('Ticket is not found.');
+        }
+
+        $data = $_request->input('data');
+
+        if (!$data) {
+            return $this->apiResponseService->badRequest('The data payload is missing from the request.');
+        }
+
+        $validator = Validator::make($data, [
+            'remark' => 'required|string',
+            'supportive_documents' => 'nullable|array',
+            'supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
+            'supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->apiResponseService->unprocessableEntity('Validation failed. Please check the input fields.', $validator->errors());
+        }
+
+        $member_id = $_request->input('jwt_payload')['member_id'];
+        $member_role_id = $_request->input('jwt_payload')['role_id'];
+
+        if ($member_role_id != MemberRoleEnum::CREW->id()) {
+            return $this->apiResponseService->forbidden('You are not authorized to perform this action.');
+        }
+
+        try 
+        {
+            $ticket = Ticket::find($_ticketId);
+
+            if(!$ticket)
+            {
+                return $this->apiResponseService->notFound('The ticket is not found.');
+            }
+
+            if($ticket->status->id != TicketStatusEnum::ON_PROGRESS->id())
+            {
+                return $this->apiResponseService->forbidden('Action not allowed for the current ticket status.');
+            }
+
+            $ticket->update(['status_id' => TicketStatusEnum::WORK_EVALUATION->id()]);
+
+            $ticket_log = $ticket->logs()->create([
+                'member_id' => $member_id,
+                'type_id' => TicketLogTypeEnum::WORK_EVALUATION_REQUEST->id(),
+                'news' => $data['remark'],
+            ]);
+
+            $documents = $data['supportive_documents'] ?? [];
+
+            foreach ($documents as $document) {
+                $filePath = $this->storageService->storeLogTicketDocument(
+                    $document['resource_content'],
+                    $document['resource_name'],
+                    $ticket->id
+                );
+
+                TicketLogDocument::create([
+                    'log_id' => $ticket_log->id,
+                    'resource_type' => $document['resource_type'],
+                    'resource_name' => $document['resource_name'],
+                    'resource_size' => $document['resource_size'],
+                    'previewable_on' => $filePath,
+                ]);
+            }
+
+            return $this->apiResponseService->created('Evaluation request submitted successfully');
+        } 
+        catch (Throwable $e) 
+        {
+            Log::error('Error submitting the evaluation request.', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('An error occurred while submitting the evaluation request.');
+        }
+    }
+
+    public function evaluate(Request $_request, string $_ticketId)
+    {
+        if(!Str::isUuid($_ticketId)){
+            return $this->apiResponseService->notFound('Ticket not found.');
+        }
+
+        $data = $_request->input('data');
+
+        if(!$data)
+        {
+            return $this->apiResponseService->badRequest('Missing required data payload');
+        }
+
+        $validator = Validator::make($data, [
+            'resolveToApprove' => 'required|boolean',
+            'reason' => 'required|string',    
+            'supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
+            'supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
+        ]);
+
+        if($validator->fails())
+        {
+            return $this->apiResponseService->unprocessableEntity('Validation failed', $validator->errors());
+        }
+
+        $member_id = $_request->input('jwt_payload')['member_id'];
+        $member_role_id = $_request->input('jwt_payload')['role_id'];
+
+        if($member_role_id != MemberRoleEnum::MANAGEMENT->id())
+        {
+            return $this->apiResponseService->forbidden('Only management members are authorized to evaluate tickets.');
+        }
+
+        try
+        {
+            $ticket = Ticket::find($_ticketId);
+
+            if(!$ticket)
+            {
+                return $this->apiResponseService->notFound('The ticket is not found.');
+            }
+
+            if($data['resolveToApprove'])
+            {
+                $ticket->update([
+                    'status_id' => TicketStatusEnum::IN_ASSESSMENT->id(),
+                ]);
+            }
+            else 
+            {
+                if($ticket->status->id == TicketStatusEnum::WORK_EVALUATION->id())
+                {
+                    $ticket->update([
+                        'status_id' => TicketStatusEnum::QUIALITY_CONTROL->id(),
+                    ]);
+                }
+                else if($ticket->status->id == TicketStatusEnum::QUIALITY_CONTROL->id())
+                {
+                    $ticket->update([
+                        'status_id' => TicketStatusEnum::CLOSED->id(),
+                    ]);
+                }
+                else {
+                    return $this->apiResponseService->forbidden('Action not allowed for the current ticket status.');
+                }
+            }
+
+            $ticket_log = $ticket->logs()->create([
+                'member_id' => $member_id,
+                'type_id' => TicketLogTypeEnum::WORK_EVALUATION->id(),
+                'news' => $data['reason'],
+            ]);
+
+            $documents = $data['supportive_documents'] ?? [];
+
+            foreach ($documents as $document) {
+                $filePath = $this->storageService->storeLogTicketDocument(
+                    $document['resource_content'],
+                    $document['resource_name'],
+                    $ticket->id
+                );
+
+                TicketLogDocument::create([
+                    'log_id' => $ticket_log->id,
+                    'resource_type' => $document['resource_type'],
+                    'resource_name' => $document['resource_name'],
+                    'resource_size' => $document['resource_size'],
+                    'previewable_on' => $filePath,
+                ]);
+            }
+
+            return $this->apiResponseService->created('Ticket evaluation recorded successfully.');
+        }
+        catch (Throwable $e)
+        {
+            Log::error('Error evaluating ticket.', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('An unexpected error occurred while processing the ticket evaluation.');
+        }
+    }
+
+    public function close(Request $_request, string $_ticketId)
+    {
+        if(!Str::isUuid($_ticketId))
+        {
+            return $this->apiResponseService->notFound('The ticket not found');
+        }
+
+        $data = $_request->input('data');
+
+        if(!$data)
+        {
+            return $this->apiResponseService->badRequest('Missing required data payload');
+        }
+
+        $validator = Validator::make($data, [
+            'reason' => 'required|string',    
+            'supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
+            'supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
+        ]);
+
+        if($validator->fails())
+        {
+            return $this->apiResponseService->unprocessableEntity('Validation failed', $validator->errors());
+        }
+
+        $member_id = $_request->input('jwt_payload')['member_id'];
+        $member_role_id = $_request->input('jwt_payload')['role_id'];
+        
+        try
+        {
+            $ticket = Ticket::find($_ticketId);
+
+            if(!$ticket)
+            {
+                return $this->apiResponseService->notFound('The ticket not found.');
+            }
+
+            if($ticket->status->id != TicketStatusEnum::IN_ASSESSMENT->id() &&  $ticket->status->id != TicketStatusEnum::OPEN->id())
+            {
+                return $this->apiResponseService->forbidden('Action not allowed for the current ticket status.');
+            }
+
+            if($ticket->issuer->id == $member_id)
+            {
+                $ticket->update([
+                    'status_id' => TicketStatusEnum::CANCELLED->id(),
+                ]);
+            }
+            else if ($member_role_id == MemberRoleEnum::MANAGEMENT->id())
+            {
+                $ticket->update([
+                    'status_id' => TicketStatusEnum::REJECTED->id(),
+                ]);
+            }
+            else {
+                return $this->apiResponseService->forbidden('You are not authorized to perform this action.');
+            }
+
+            $ticket_log = $ticket->logs()->create([
+                'member_id' => $member_id,
+                'type_id' => TicketLogTypeEnum::REJECTION->id(),
+                'news' => $data['reason'],
+            ]);
+
+            $documents = $data['supportive_documents'] ?? [];
+
+            foreach ($documents as $document) {
+                $filePath = $this->storageService->storeLogTicketDocument(
+                    $document['resource_content'],
+                    $document['resource_name'],
+                    $ticket->id
+                );
+
+                TicketLogDocument::create([
+                    'log_id' => $ticket_log->id,
+                    'resource_type' => $document['resource_type'],
+                    'resource_name' => $document['resource_name'],
+                    'resource_size' => $document['resource_size'],
+                    'previewable_on' => $filePath,
+                ]);
+            }
+
+            return $this->apiResponseService->created('Ticket has been closed successfully.');
+        }
+        catch (Throwable $e)
+        {
+            Log::error('Error closing ticket.', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('An unexpected error occurred while closing the ticket.');
+        }
+    }
+
+    public function forceClose(Request $_request, string $_ticketId)
+    {
+        if(!Str::isUuid($_ticketId))
+        {
+            return $this->apiResponseService->notFound('The ticket not found');
+        }
+
+        $data = $_request->input('data');
+
+        if(!$data)
+        {
+            return $this->apiResponseService->badRequest('Missing required data payload');
+        }
+
+        $validator = Validator::make($data, [
+            'reason' => 'required|string',    
+            'supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
+            'supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
+        ]);
+
+        if($validator->fails())
+        {
+            return $this->apiResponseService->unprocessableEntity('Validation failed', $validator->errors());
+        }
+
+        $member_id = $_request->input('jwt_payload')['member_id'];
+        $member_role_id =$_request->input('jwt_payload')['role_id'];
+
+        try
+        {
+            $ticket = Ticket::find($_ticketId);
+
+            if(!$ticket)
+            {
+                return $this->apiResponseService->notFound('The ticket not found.');
+            }
+
+            if($member_role_id != MemberRoleEnum::MANAGEMENT->id())
+            {
+                return $this->apiResponseService->forbidden('You are not authorized to perform this action.');
+            }
+            
+            $ticket->update([
+                'status_id' => TicketStatusEnum::CLOSED->id(),
+            ]);
+
+            $ticket_log = $ticket->logs()->create([
+                'member_id' => $member_id,
+                'type_id' => TicketLogTypeEnum::FORCE_CLOSURE->id(),
+                'news' => $data['reason'],
+            ]);
+
+            $documents = $data['supportive_documents'] ?? [];
+
+            foreach ($documents as $document) {
+                $filePath = $this->storageService->storeLogTicketDocument(
+                    $document['resource_content'],
+                    $document['resource_name'],
+                    $ticket->id
+                );
+
+                TicketLogDocument::create([
+                    'log_id' => $ticket_log->id,
+                    'resource_type' => $document['resource_type'],
+                    'resource_name' => $document['resource_name'],
+                    'resource_size' => $document['resource_size'],
+                    'previewable_on' => $filePath,
+                ]);
+            }
+
+            return $this->apiResponseService->created('Ticket has been closed successfully.');
+        }
+        catch (Throwable $e)
+        {
+            Log::error('Error closing ticket.', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('An unexpected error occurred while closing the ticket.');
+        }
+    }
+
     public function getLogs(string $_ticketId)
     {
         if (!Str::isUuid($_ticketId)) {
@@ -680,7 +1061,7 @@ class TicketController extends Controller
             'supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
             'supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
             'supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
-            'supportive_documents.*.previewable_on' => 'required_with:supportive_documents|string',
+            'supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
         ]);
 
         if ($validator->fails()) {
@@ -706,32 +1087,25 @@ class TicketController extends Controller
                 'news' => $data['news'],
             ]);
 
-            if($log_type_id == TicketLogTypeEnum::ASSESSMENT->id())
-            {
-                $ticket->update(['status_id' => TicketStatusEnum::IN_ASSESSMENT->id()]);
-            }
+            $statusMap = [
+                TicketLogTypeEnum::ASSESSMENT->id() => TicketStatusEnum::IN_ASSESSMENT->id(),
+                TicketLogTypeEnum::INVITATION->id() => TicketStatusEnum::ON_PROGRESS->id(),
+                TicketLogTypeEnum::WORK_PROGRESS->id() => TicketStatusEnum::ON_PROGRESS->id(),
+                TicketLogTypeEnum::WORK_EVALUATION_REQUEST->id() => TicketStatusEnum::WORK_EVALUATION->id(),
+                TicketLogTypeEnum::WORK_EVALUATION->id() => TicketStatusEnum::QUIALITY_CONTROL->id(),
+                TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id() => TicketStatusEnum::OWNER_EVALUATION->id(),
+            ];
 
-            if($log_type_id == TicketLogTypeEnum::WORK_PROGRESS->id())
-            {
-                $ticket->update(['status_id' => TicketStatusEnum::ON_PROGRESS->id()]);
+            if (isset($statusMap[$log_type_id])) {
+                $ticket->update(['status_id' => $statusMap[$log_type_id]]);
             }
-
-            if($log_type_id == TicketLogTypeEnum::WORK_EVALUATION_REQUEST->id())
-            {
-                $ticket->update(['status_id' => TicketStatusEnum::WORK_EVALUATION->id()]);
-            }
-
-            if($log_type_id == TicketLogTypeEnum::WORK_EVALUATION->id())
-            {
-                $ticket->update(['status_id' => TicketStatusEnum::CLOSED->id()]);
-            }
-
+                
             $documents = $data['supportive_documents'] ?? [];
            
             foreach ($documents as $document) {
                 
                 $filePath = $this->storageService->storeLogTicketDocument(
-                    $document['previewable_on'],
+                    $document['resource_content'],
                     $document['resource_name'],
                     $ticket->id
                 );
@@ -847,105 +1221,128 @@ class TicketController extends Controller
     public function postHandlers(Request $_request, string $_ticketId)
     {
         if (!Str::isUuid($_ticketId)) {
-            return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID'); 
-        } 
+            return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
+        }
 
         $data = $_request->input('data');
 
-        if(!$data)
-        {
-            return $this->apiResponseService->badRequest('Missing required data payload');
+        if (!$data || !is_array($data)) {
+            return $this->apiResponseService->badRequest('Missing or invalid data payload');
         }
 
-        $validator = Validator::make($data, [
-            'appointed_member_ids' => 'required|array', 
-            'appointed_member_ids.*' => 'uuid|exists:members,id',
-            'work_description' => 'required|string', 
-            'issue_type' => 'required|uuid|exists:ticket_issue_types,id'
+        $validator = Validator::make($_request->all(), [
+            'data' => 'required|array',
+            'data.*.appointed_member_ids' => 'required|array',
+            'data.*.appointed_member_ids.*' => 'uuid|exists:members,id',
+            'data.*.work_description' => 'required|string',
+            'data.*.issue_type' => 'required|uuid|exists:ticket_issue_types,id',
+            'data.*.supportive_documents' => 'nullable|array',
+            'data.*.supportive_documents.*.resource_type' => 'required|string',
+            'data.*.supportive_documents.*.resource_name' => 'required|string',
+            'data.*.supportive_documents.*.resource_size' => 'required|numeric',
+            'data.*.supportive_documents.*.resource_content' => 'required|string',
         ]);
 
-        if($validator->fails())
-        {
-            return $this->apiResponseService->unprocessableEntity('Validation failed, please check the provided data', $validator->errors());
+        if ($validator->fails()) {
+            return $this->apiResponseService->unprocessableEntity(
+                'Validation failed, please check the provided data',
+                $validator->errors()
+            );
         }
 
-        try
-        {
+        try {
             $ticket = Ticket::find($_ticketId);
             $member_id = $_request->input('jwt_payload')['member_id'];
-
             $member = Member::find($member_id);
 
             $hasAssign = collect($member->capabilities)->contains('id', MemberCapabilityEnum::INVITE->id());
 
-            if(!$hasAssign)
-            {
+            if (!$hasAssign) {
                 return $this->apiResponseService->forbidden('You do not have permission to perform this action.');
             }
 
-            if(!$ticket)
-            {
+            if (!$ticket) {
                 return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
             }
 
-            $work_description = $data['work_description'];
-            $appointed_member_ids = $data['appointed_member_ids'];
-            $issue_type_id = $data['issue_type'];
+            foreach ($data as $item) {
+                $work_description = $item['work_description'];
+                $appointed_member_ids = $item['appointed_member_ids'];
+                $issue_type_id = $item['issue_type'];
 
-            $ticket_issue = $ticket->ticket_issues->firstWhere('issue_id', $issue_type_id);
+                $ticket_issue = $ticket->ticket_issues->firstWhere('issue_id', $issue_type_id);
 
-            if (!$ticket_issue) {
-                return $this->apiResponseService->unprocessableEntity('Ticket issue not found.');
+                if (!$ticket_issue) {
+                    return $this->apiResponseService->unprocessableEntity("Ticket issue with ID $issue_type_id not found.");
+                }
+
+                $ticket_issue->update([
+                    'work_description' => $work_description,
+                ]);
+
+                $ticket_issue->maintainers()->sync($appointed_member_ids);
+
+                $ticket_log = $ticket->logs()->create([
+                    'ticket_id' => $_ticketId,
+                    'member_id' => $member_id,
+                    'ticket_log_type_id' => TicketLogTypeEnum::ACTIVITY->id(),
+                    'news' => count($appointed_member_ids) . " maintainer(s) assigned to ticket issue $issue_type_id.",
+                ]);
+
+                $documents = $data['supportive_documents'] ?? [];
+
+                foreach ($documents as $document) {
+                    $filePath = $this->storageService->storeLogTicketDocument(
+                        $document['resource_content'],
+                        $document['resource_name'],
+                        $ticket->id
+                    );
+
+                    TicketLogDocument::create([
+                        'log_id' => $ticket_log->id,
+                        'resource_type' => $document['resource_type'],
+                        'resource_name' => $document['resource_name'],
+                        'resource_size' => $document['resource_size'],
+                        'previewable_on' => $filePath,
+                    ]);
+                }
+
+                
+                
             }
-
-            $ticket_issue->update([
-                'work_description' => $work_description,
-            ]);
-
-            $ticket_issue->maintainers()->sync($appointed_member_ids);
-
-            TicketLog::create([
-                'ticket_id' => $_ticketId,
-                'member_id' => $member_id,
-                'ticket_log_type_id' => TicketLogTypeEnum::ACTIVITY->id(),
-                'news' => count($appointed_member_ids) . ' maintainer(s) assigned to the ticket issue.',
-            ]);
 
             $updated_ticket = Ticket::find($_ticketId);
 
-            $response_data =  $updated_ticket->ticket_issues->flatMap(function ($issue) {
+            $response_data = $updated_ticket->ticket_issues->flatMap(function ($issue) {
                 return $issue->maintainers->map(function ($maintainer) {
                     return [
                         'id' => $maintainer->id,
                         'name' => $maintainer->name,
                         'role' => $maintainer->role,
                         'title' => $maintainer->title,
-                        'specialties' => $maintainer->specialities->map(function ($specialty){
+                        'specialties' => $maintainer->specialities->map(function ($specialty) {
                             return [
                                 'id' => $specialty->id,
                                 'name' => $specialty->name,
                                 'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
                             ];
                         }),
-                        'capabilities' => $maintainer->capabilities->map(function ($capability) {
-                            return $capability->name;
-                        }),
+                        'capabilities' => $maintainer->capabilities->map(fn($capability) => $capability->name),
                     ];
                 });
             });
 
-            return $this->apiResponseService->ok($response_data, 'Successfully added handler to the ticket');
-        }
-        catch (Throwable $e)
-        {
-            Log::error('Error assigns ticket handlers',  [
+            return $this->apiResponseService->ok($response_data, 'Successfully added handlers to the ticket');
+
+        } catch (Throwable $e) {
+            Log::error('Error assigning ticket handlers', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('An error occurred while assigns ticket handlers');
+            return $this->apiResponseService->internalServerError('An error occurred while assigning ticket handlers');
         }
-    }       
+    }
 }

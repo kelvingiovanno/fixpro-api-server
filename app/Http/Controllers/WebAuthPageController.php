@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\WebAuthTokenService;
+
 use Illuminate\Http\Request;
 
 class WebAuthPageController extends Controller

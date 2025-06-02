@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\SystemSetting;
+
 use App\Services\ApiResponseService;
 use App\Services\GoogleCalendarService;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -106,11 +108,13 @@ class GoogleCalenderController extends Controller
             if (isset($accessToken['error'])) {
                 return $this->apiResponseService->unauthorized('Failed to retrieve access token.');
             }
-
+            
             SystemSetting::put('google_access_token', $token_data['access_token']);
             SystemSetting::put('google_refresh_token', $token_data['refresh_token']);
 
-            return redirect('/');
+            return redirect()
+                ->route('settings.calender')
+                ->with('success', 'Settings updated successfully!');
         } 
         catch (Throwable $e) 
         {

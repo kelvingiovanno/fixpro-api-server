@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 
 use App\Enums\ApplicantStatusEnum;
 use App\Enums\AreaJoinPolicyEnum;
+use App\Enums\MemberRoleEnum;
+
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
 use App\Models\SystemSetting;
@@ -193,6 +195,17 @@ class EntryController extends Controller
             }
             
             $statusId = $applicant->status->id;
+
+            $first_member_login = SystemSetting::get('first_member_login');
+
+            if(!$first_member_login)
+            {
+                $applicant->member()->update([
+                    'role_id' => MemberRoleEnum::MANAGEMENT->id(),
+                ]);
+
+                SystemSetting::put('first_member_login', "1");
+            }
 
             switch ($statusId) {
                 case ApplicantStatusEnum::PENDING->id():

@@ -1,5 +1,6 @@
 <?php
 
+
 return [
 
     /*
@@ -59,7 +60,6 @@ return [
             'throw' => false,
             'report' => false,
         ],
-
     ],
 
     /*

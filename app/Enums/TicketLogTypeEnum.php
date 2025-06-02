@@ -7,13 +7,16 @@ use App\Models\Enums\TicketLogType;
 enum TicketLogTypeEnum : string
 {
     case ASSESSMENT = "Assessment";
-    case WORK_PROGRESS = "Work Progress";
-    case WORK_EVALUATION_REQUEST = "Work Evaluation Request";
-    case WORK_EVALUATION = "Work Evaluation";
-    case CLIENT_EVALUATION = "Client Evaluation";
-    case TIME_EXTENSION = "Time Extension";
-    case ACTIVITY = "Activity";
     case INVITATION = "Invitation";
+    case WORK_PROGRESS = "Work Progress";
+    case ACTIVITY = "Activity";
+    case WORK_EVALUATION = "Work Evaluation";
+    case TIME_EXTENSION = "Time Extension";
+    case WORK_EVALUATION_REQUEST = "Work Evaluation Request";
+    case OWNER_EVALUATION_REQUEST = "Owner Evaluation Request";
+    case REJECTION = "Rejection";
+    case APPROVAL = "Approval";
+    case FORCE_CLOSURE = "FORCE_CLOSURE";
 
     public function id(): ?string
     {

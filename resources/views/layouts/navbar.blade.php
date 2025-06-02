@@ -3,14 +3,14 @@
         <div class="flex items-center h-16 justify-between">
             <!-- Logo -->
             <div class="flex-shrink-0 flex items-center">
-                <a href="#" class="text-xl font-bold text-blue-600">Profix</a>
+                <a href="/" class="text-xl font-bold text-blue-600">FixPro</a>
             </div>
 
             <!-- Navbar Links (Desktop) -->
             <div class="hidden md:flex gap-4 justify-center">
                 
                 <button class="px-5 py-2.5 text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm text-center inline-flex items-center">
-                    <a href="/setup"> Setting </a>
+                    <a href="/settings"> Settings </a>
                 </button>
 
                 <form action="{{ route('auth.logout') }}" method="POST">

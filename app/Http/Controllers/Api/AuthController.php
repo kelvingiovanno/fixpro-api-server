@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\AuthenticationCode;
 use App\Models\RefreshToken;
-use App\Models\Applicant;
 
 use App\Services\ApiResponseService;
 
