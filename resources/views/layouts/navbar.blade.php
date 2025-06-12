@@ -9,10 +9,8 @@
             <!-- Navbar Links (Desktop) -->
             <div class="hidden md:flex gap-4 justify-center">
                 
-                <button class="px-5 py-2.5 text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm text-center inline-flex items-center">
-                    <a href="/settings"> Settings </a>
-                </button>
-
+                <a href="/settings" class="px-5 py-2.5 text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm text-center inline-flex items-center"> Settings </a>
+                
                 <form action="{{ route('auth.logout') }}" method="POST">
                     @csrf
                     <button type="submit" class="px-5 py-2.5 text-gray-900 bg-white hover:bg-gray-100 border border-gray-200 font-medium rounded-lg text-sm text-center inline-flex items-center">

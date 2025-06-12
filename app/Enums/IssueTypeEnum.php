@@ -6,11 +6,9 @@ use App\Models\Enums\TicketIssueType;
 
 enum IssueTypeEnum : string
 {
-    case PLUMBING = "Plumbing";
-    case HOUSEKEEPING = "Housekeeping";
-    case SOCIAL = "Social";
-    case FACILITY = "Facility";
     case ENGINEERING = "Engineering";
+    case HOUSEKEEPING = "Housekeeping";
+    case HSE = "HSE";
     case SECURITY = "Security";
     
     public function id(): ?string

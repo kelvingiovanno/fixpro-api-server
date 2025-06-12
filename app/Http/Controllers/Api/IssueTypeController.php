@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-
+use App\Models\Calender;
 use App\Models\Enums\TicketIssueType;
 
 use App\Services\ApiResponseService;
+use App\Services\GoogleCalendarService;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -18,11 +19,15 @@ use Throwable;
 class IssueTypeController extends Controller
 {
     private ApiResponseService $apiResponseService;
+    private GoogleCalendarService $googleCalendarService;
 
     public function __construct(
         ApiResponseService $_apiResponseService,
+        GoogleCalendarService $_googleCalendarService,
+        
     ) {
         $this->apiResponseService = $_apiResponseService;
+        $this->googleCalendarService = $_googleCalendarService;
     }
 
     public function getAllIssueType() 
@@ -76,6 +81,12 @@ class IssueTypeController extends Controller
             ]);
 
             $new_issue_type = TicketIssueType::find($issue_type->id);
+
+            $new_calender = $this->googleCalendarService->createCalendar($data['name']);
+            Calender::create([
+                'id' => $new_calender->getId(), 
+                'name' => $new_calender->getSummary(),
+            ]);
 
             $response_data = [
                 'id' => $new_issue_type->id,

@@ -107,7 +107,7 @@ class GoogleCalendarService
                 'summary' => $calendarName,
                 'timeZone' => 'Asia/Jakarta'
             ]);
-
+            
             return $service->calendars->insert($calendar);
         } 
         catch (Exception $e) 
@@ -122,4 +122,38 @@ class GoogleCalendarService
             throw new Exception('Unable to create calendar.');
         }
     }
+
+    public function getEvents(string $calendarId = 'primary', array $params = [])
+    {
+        try {
+            $client = $this->getClient();
+            $this->refreshAccessToken($client);
+
+            $service = new Calendar($client);
+
+            $defaultParams = [
+                'singleEvents' => true,
+                'orderBy' => 'startTime',
+                'timeMin' => date('c'), 
+            ];
+
+            $options = array_merge($defaultParams, $params);
+
+            $events = $service->events->listEvents($calendarId, $options);
+
+            return $events->getItems();
+        } 
+        catch (Exception $e) 
+        {
+            Log::error('Google Calendar Event Fetch Error', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new Exception('Unable to fetch events.');
+        }
+    }
+
 }

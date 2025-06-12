@@ -44,9 +44,9 @@
         
             <div class="text-xs bg-gray-100 mt-4 w-96 rounded-md p-2">
                 <div class=" space-y-1">    
-                    <p><strong>Open:</strong> Anyone can join.</p>
-                    <p><strong>Approval Needed:</strong> Admin approval required.</p>
-                    <p><strong>Closed:</strong> Members are added manually.</p>
+                    <p><strong>Open:</strong> Anyone can join as member.</p>  
+                    <p><strong>Approval Needed:</strong> Management approval required.</p>
+                    <p><strong>Closed:</strong> Nobody can apply.</p>
                 </div>
             </div>
 

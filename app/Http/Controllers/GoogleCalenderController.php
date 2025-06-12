@@ -3,6 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+
+use App\Enums\IssueTypeEnum;
+use App\Models\Calender;
+use App\Models\Enums\TicketIssueType;
 use App\Models\SystemSetting;
 
 use App\Services\ApiResponseService;
@@ -82,7 +86,7 @@ class GoogleCalenderController extends Controller
             }
 
             $authUrl = $client->createAuthUrl();
-
+            
             return redirect($authUrl);
         } 
         catch (Throwable $e) 
@@ -111,6 +115,18 @@ class GoogleCalenderController extends Controller
             
             SystemSetting::put('google_access_token', $token_data['access_token']);
             SystemSetting::put('google_refresh_token', $token_data['refresh_token']);
+
+            $issues = TicketIssueType::all();
+
+            foreach ($issues as $issue)
+            {
+                $new_calender = $this->googleCalendarService->createCalendar($issue->name);
+
+                Calender::create([
+                    'id' => $new_calender->getId(), 
+                    'name' => $new_calender->getSummary(),
+                ]);
+            }
 
             return redirect()
                 ->route('settings.calender')

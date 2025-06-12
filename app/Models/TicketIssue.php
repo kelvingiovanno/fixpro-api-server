@@ -25,6 +25,7 @@ class TicketIssue extends Model
         'ticket_id',
         'wo_id',
         'work_description',
+        'resolved_on',
     ];
 
     protected $hidden = [

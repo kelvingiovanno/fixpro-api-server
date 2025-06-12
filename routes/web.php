@@ -61,26 +61,18 @@ Route::get('/pdf-layout/service-request-form', function () {
     $leftTable = $chunks[0];
     $rightTable = $chunks[1];
 
-    $pdf = Pdf::loadView('pdf.service_request_form', compact('leftTable', 'rightTable'))->setPaper('a4', 'portrait');;
+    $pdf = Pdf::loadView('pdf.service_request_form', compact('leftTable', 'rightTable'))->setPaper('a4', 'portrait');
     return $pdf->stream('report.pdf');
 });
 
 Route::get('/pdf-layout/ticket-report', function () {
 
     $data = [
-        ['name' => 'NAMA A', 'title' => 'TITLE A'],
-        ['name' => 'NAMA B', 'title' => 'TITLE B'],
-        ['name' => 'NAMA C', 'title' => 'TITLE C'],
-        ['name' => 'NAMA D', 'title' => 'TITLE D'],
-        ['name' => 'NAMA E', 'title' => 'TITLE E'],
-        ['name' => 'NAMA F', 'title' => 'TITLE F'],
+        'customFooterText' => 'Ticket ID: 123456',
     ];
 
-    $chunks = array_chunk($data, ceil(count($data) / 2));
-    $leftTable = $chunks[0];
-    $rightTable = $chunks[1];
 
-    $pdf = Pdf::loadView('pdf.ticket_report', compact('leftTable', 'rightTable'))->setPaper('a4', 'portrait');;
+    $pdf = Pdf::loadView('pdf.ticket_report',$data)->setPaper('a4', 'portrait');;
     return $pdf->stream('report.pdf');
 });
 
@@ -91,17 +83,11 @@ Route::get('/pdf-layout/work-order', function () {
         ['name' => 'NAMA B', 'title' => 'TITLE B'],
         ['name' => 'NAMA C', 'title' => 'TITLE C'],
         ['name' => 'NAMA D', 'title' => 'TITLE D'],
-        ['name' => 'NAMA E', 'title' => 'TITLE E'],
-        ['name' => 'NAMA F', 'title' => 'TITLE F'],
+        ['name' => 'NAMA E', 'title' => 'TITLE E'], 
     ];
 
-    $chunks = array_chunk($members, ceil(count($members) / 2));
-    $leftTable = $chunks[0];
-    $rightTable = $chunks[1];
-
     $data = [
-        'leftTable' => $leftTable,
-        'rightTable' => $rightTable,
+        'table_data' => $members,
     ];
 
     $pdf = Pdf::loadView('pdf.work_order', $data)->setPaper('a4', 'portrait');
@@ -110,6 +96,103 @@ Route::get('/pdf-layout/work-order', function () {
 
 Route::get('/pdf-layout/periodic-report', function () {
 
-    $pdf = Pdf::loadView('pdf.periodic_report')->setPaper('a4', 'portrait');
+    $this_month_piechart_url = 'https://quickchart.io/chart?c=' . urlencode(json_encode([
+        'type' => 'outlabeledPie',
+        'data' => [
+            'labels' => ['Engineering', 'Housekeeping', 'HSE', 'Security'],
+            'datasets' => [[
+                'backgroundColor' => ['#FF3784', '#36A2EB', '#4BC0C0', '#F77825', '#9966FF'],
+                'data' => [22, 14, 12, 5],
+            ]]
+        ],
+        'options' => [
+            'plugins' => [
+                'legend' => false,
+                'outlabels' => [
+                    'text' => '%l %p',
+                    'color' => 'white',
+                    'stretch' => 35,
+                    'font' => [
+                        'resizable' => true,
+                        'minSize' => 14,
+                        'maxSize' => 15
+                    ]
+                ]
+            ]
+        ]
+    ]));
+
+
+    $overall_piechart_url = 'https://quickchart.io/chart?c=' . urlencode(json_encode([
+        'type' => 'outlabeledPie',
+        'data' => [
+            'labels' => ['Engineering', 'Housekeeping', 'HSE', 'Security'],
+            'datasets' => [[
+                'backgroundColor' => ['#FF3784', '#36A2EB', '#4BC0C0', '#F77825', '#9966FF'],
+                'data' => [22, 14, 12, 5],
+            ]]
+        ],
+        'options' => [
+            'plugins' => [
+                'legend' => false,
+                'outlabels' => [
+                    'text' => '%l %p',
+                    'color' => 'white',
+                    'stretch' => 35,
+                    'font' => [
+                        'resizable' => true,
+                        'minSize' => 14,
+                        'maxSize' => 15
+                    ]
+                ]
+            ]
+        ]
+    ]));
+
+    
+    // Function to simplify doughnut chart creation
+    function generateDoughnut($value, $total, $color, $percent) {
+        return 'https://quickchart.io/chart?c=' . urlencode(json_encode([
+            'type' => 'doughnut',
+            'data' => [
+                'datasets' => [[
+                    'data' => [$value, $total - $value],
+                    'backgroundColor' => [$color, '#e8e8e8'],
+                    'borderWidth' => 0
+                ]]
+            ],
+            'options' => [
+                'plugins' => [
+                    'legend' => false,
+                    'doughnutlabel' => [
+                        'labels' => [[
+                            'text' => $percent,
+                            'font' => ['size' => 60]
+                        ]]
+                    ],
+                    'datalabels' => ['display' => false]
+                ],
+                'cutoutPercentage' => 70
+            ]
+        ]));
+    }
+
+    // Doughnut chart URLs
+    $engineering = generateDoughnut(9, 22, '#4CAF50', '40.9%');
+    $housekeeping = generateDoughnut(4, 14, '#2196F3', '28.5%');
+    $hse = generateDoughnut(8, 12, '#FFC107', '66.6%');
+    $security = generateDoughnut(2, 5, '#F44336', '40%');
+
+    // Pass to view
+    $charts = [
+        'this_month_piechart' => $this_month_piechart_url,
+        'overall_piechart' => $overall_piechart_url,
+        'engineering_chart' => $engineering,
+        'housekeeping_chart' => $housekeeping,
+        'hse_chart' => $hse,
+        'security_chart' => $security,
+    ];
+
+    $pdf = Pdf::loadView('pdf.periodic_report', $charts)->setPaper('a4', 'portrait');
     return $pdf->stream('report.pdf');
 });

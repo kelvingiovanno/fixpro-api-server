@@ -1,9 +1,9 @@
 services:
     apiserver:
         build:
-            context: ./vendor/laravel/sail/runtimes/8.4
+            context: .    
             dockerfile: Dockerfile
-            args:
+            args:   
                 WWWGROUP: '${WWWGROUP}'
         image: sail-8.4/app
         extra_hosts:

@@ -12,7 +12,7 @@ class FileUploadController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|max:10240', 
+            'file' => 'required|file|max:10240', // 10MB max
         ]);
 
         try {
@@ -26,23 +26,21 @@ class FileUploadController extends Controller
             $bucketName = 'fixpro-backend';
             $bucket = $storage->bucket($bucketName);
 
-            $bucket->upload(
-                fopen($file->getRealPath(), 'r'),
-                [
-                    'name' => $filename,
-                ]
+            $object = $bucket->upload(
+                fopen($file->getRealPath(), 'r'), // stream content
+                ['name' => $filename]
             );
 
-            $object = $bucket->object($filename);
-            $url = $object->signedUrl(new \DateTime('+10 minutes'));
+            $publicUrl = "https://storage.googleapis.com/{$bucketName}/{$filename}";
+
+            $ip = $request->server('SERVER_ADDR');
 
             return response()->json([
                 'success' => true,
-                'filename' => $filename,
-                'url' => $url,
+                'filename' => $ip,
+                'url' => $publicUrl,
             ]);
-        } 
-        catch (Exception $e) {
+        } catch (Exception $e) {
             Log::error('GCS Upload Error: ' . $e->getMessage());
 
             return response()->json([
@@ -52,6 +50,7 @@ class FileUploadController extends Controller
             ], 500);
         }
     }
+
     public function getFile($filename)
     {
         try {

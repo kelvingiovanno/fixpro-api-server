@@ -1,176 +1,256 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <style>
-        body {
-            font-family: "Times New Roman", serif;
-            margin: 20px;
-        }
-        h1 {
-            font-size: 24px;
-            margin-bottom: 8px;
-        }
-        
-        h3 {
-            margin-top: 30px;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+  <title>Document</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
+    body {
+      padding: 70px;
+      font-family: "Morphe", sans-serif;
+      font-size: 11px;
+      line-height: 1.5;
+      background-image: url('storage/document-background.jpg');
+      background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-attachment: fixed;
+    }
 
-        td, th {
-            padding: 4px;
-            vertical-align: top;
-            font-size: 12px;
-            text-align: left;
-        }
+    h1 {
+      font-size: 18px;
+      margin-bottom: 4px;
+    }
 
-        .container-1 {
-            margin-top: 20px;
-        }
+    h3 {
+      font-size: 13px;
+      margin: 8px 0;
+    }
 
-        .container-1, .container-2 {
-            margin-bottom: 50px;
-        }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
 
-        .container-2 {
-            border: 1px solid rgb(155, 155, 155);
-        }
+    td {
+      padding: 1px 0;
+      vertical-align: top;
+    }
 
-        pre {
-            margin-left: 20px;
-            font-family: "Times New Roman", serif;
-            font-size: 12px;
-        }
+    .section {
+      margin-top: 12px;
+      page-break-inside: avoid;
+    }
 
-        .tables th{
-            background: #0078e9;
-            color: white;
-            border: 1px solid rgb(155, 155, 155);
-        }
+    .report-header {
+      margin-bottom: 10px;
+    }
+    .ticket-details td {
+      width: 100px;
+    }
 
-        .tables td{
-            border: 1px solid rgb(155, 155, 155);
-        }
+    .ticket-details .section-1 td:first-child, .ticket-details .section-2 td:first-child {
+      width: 30px;  
+      font-weight: bold;
+      color: #555;
+    }
 
-        .p-area-name {
-            font-family: "Times New Roman", serif;
-            font-size: 12px;
-            color: #5f5f5f;
-        }
-    </style>
+    .ticket-details td:nth-child(2) {
+      width: 10px;
+      padding: 0 5px;
+    }
+
+    .issue-complain .content {
+      background-color: #f2f2f2;
+      min-height: 50px;
+      padding: 10px;
+    }
+
+    .supportive-documents img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+      margin: 5px;
+    }
+
+    .documents {
+      margin-top: 40px;
+    }
+
+    .chronology-heading {
+        background-color: #ebebeb;
+        border: 1px solid black;
+        border-bottom: 0;
+        padding: 15px;
+    }
+
+    .logs {
+        width: 100%;
+    }
+
+    .logs .log-rows {
+        border: 1px solid black;
+    }
+
+    .logs .column {
+        width: 50%;
+    }
+
+    .log-images {
+        margin-top: 40px;
+        padding: 20px;
+    }
+    .log-details {
+        margin-top: 20px;
+        padding: 20px;
+    }
+
+    .log-images img {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+    }
+
+    .log-details td:first-child {
+        width: 100px;
+    }
+
+    .log-details td:nth-child(2) {
+        padding: 0 8px;
+    }
+    
+  </style>
 </head>
 <body>
-    <h1>Ticket Report</h1>
-    <p class="p-area-name"> Area, 12 Oktokber 2020</p>
 
+  <div class="report-header">
+    <h1>Ticket Print View</h1>
+    <p class="work-order-id">WO0123102-1293192/12</p>
+    <p class="work-order-area">PT XYZ  •  Thu, 05-06-2025</p>
+  </div>
 
-    <div class="container-1">
-        <table>
-            <tbody>
-                <tr><td style="font-weight: bold; width: 170px;">No. Ticket:</td><td>xxx</td></tr>
-                <tr><td style="font-weight: bold;">Diangkat pada:</td><td>xxx</td></tr>
-                <tr><td style="font-weight: bold;">Diselesaikan pada:</td><td>xxx</td></tr>
-                <tr><td style="font-weight: bold;"> Diperiksa oleh:</td><td>xxx</td></tr>
-                <tr><td style="font-weight: bold;">Status tiket:</td><td>xxx</td></tr>
-                <tr><td style="font-weight: bold;">Nama peminta:</td><td>xxx</td></tr>
-                <tr><td style="font-weight: bold;">No. pengenal peminta:</td><td>xxx</td></tr>
-                <tr><td style="font-weight: bold;">Tipe pekerjaan:</td><td>xxx</td></tr>
-                <tr><td style="font-weight: bold;">Tingkat penanganan:</td><td>xxx</td></tr>
-                <tr><td style="font-weight: bold;">Lokasi:</td><td>xxx</td></tr>
-            </tbody>
-        </table>
+  <div class="section ticket-details">
+    <h3>Details</h3>
+    <table>
+      <tr>
+        <td>
+          <table class="section-1">
+            <tr><td>Ticket No.</td><td>:</td><td>e4c7f3c2-bc2b-4f90-82f5-8a2a1c4b9e19</td></tr>
+            <tr><td>Created At</td><td>:</td><td>2025-06-01 10:45</td></tr>
+            <tr><td>Completed At</td><td>:</td><td>2025-06-03 15:20</td></tr>
+            <tr><td>Reviewed By</td><td>:</td><td>Asep Nugraha</td></tr>
+            <tr><td>Ticket Status</td><td>:</td><td>Closed</td></tr>
+          </table>
+        </td>
+        <td>
+          <table class="section-2">
+            <tr><td>Requester Name</td><td>:</td><td>John Doe</td></tr>
+            <tr><td>Identifier No.</td><td>:</td><td>9b2e7e61-d4a4-4e2c-b94c-7f942fa5a28c</td></tr>
+            <tr><td>Work Type</td><td>:</td><td>Preventive Maintenance</td></tr>
+            <tr><td>Handling Priority</td><td>:</td><td>Urgent</td></tr>
+            <tr><td>Location</td><td>:</td><td>Building B, 3rd Floor, Server Room</td></tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section issue-complain">
+    <h3>Issues and complaints</h3>
+    <div class="content">
+      <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Tempore repellat aspernatur hic vero...</p>
     </div>
+  </div>
 
-
-    <h3>Temuan/keluhan</h3>
-    <div class="container-2">
-        <pre>
-            Lorem ipsum dolor sit amet consectetur adipisicing elit. Quos 
-            commodi illum laborum enim asperiores esse, sed corporis magni quae libero.
-        </pre>
+  <div class="section supportive-documents">
+    <h3>Supportive Document</h3>
+    <div class="documents">
+      <img src="storage/dummy-image-building-issue-1.jpg" alt="">
+      <img src="storage/dummy-image-building-issue-2.jpg" alt="">
+      <img src="storage/dummy-image-building-issue-3.jpg" alt="">
+      <img src="storage/dummy-image-building-issue-4.jpg" alt="">
     </div>
+  </div>
 
-    <h3>Dokumen pendukung</h3>
-    <div class="container-3">
-        <table class="tables">
-            <thead>
-                <tr>
-                    <th>Nama File</th>
-                    <th>Link</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Gambar 1 keramik pecah</td>
-                    <td>
-                        <img 
-                            src="https://pbs.twimg.com/media/C9yiWbLUAAIyiRg?format=jpg&name=medium"
-                            width="120"
-                            style="margin-top: 8px;"
-                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>Gambar 2 pipa bocor</td>
-                    <td>
-                        <img 
-                            src="https://i0.wp.com/selayarnews.com/wp-content/uploads/2022/02/IMG-20220219-WA0034.jpg?fit=721%2C1280&ssl=1"
-                            width="120"
-                            style="margin-top: 8px;"
-                        />
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+  <div class="section chronology">
+    <div class="chronology-heading">
+        <h3>Chronology</h3>
     </div>
+    <table class="logs">
+        <tr class="log-rows">
+            <td class="column">
+                <div class="log-images">
+                    <img src="storage/dummy-image-building-issue-2.jpg" alt="">
+                </div>
+            </td>
+            <td class="column">
+                <table class="log-details">
+                    <tr><td>Name</td><td>:</td><td>Jane Smith</td></tr>
+                    <tr><td>ID Number</td><td>:</td><td>JS-00123</td></tr>
+                    <tr><td>Log Type</td><td>:</td><td>Investigation</td></tr>
+                    <tr><td>Raised On</td><td>:</td><td>2025-06-01 14:30</td></tr>
+                    <tr><td>News</td><td>:</td><td>Water leak detected in Server Room 3B. Maintenance team dispatched to resolve issue.</td></tr>
+                </table>
+            </td>
+        </tr>
+        <tr class="log-rows">
+            <td class="column">
+                <div class="log-images">
+                </div>
+            </td>
+            <td class="column">
+                <table class="log-details">
+                    <tr><td>Name</td><td>:</td><td>Jane Smith</td></tr>
+                    <tr><td>ID Number</td><td>:</td><td>JS-00123</td></tr>
+                    <tr><td>Log Type</td><td>:</td><td>Investigation</td></tr>
+                    <tr><td>Raised On</td><td>:</td><td>2025-06-01 14:30</td></tr>
+                    <tr><td>News</td><td>:</td><td>Water leak detected in Server Room 3B. Maintenance team dispatched to resolve issue.</td></tr>
+                </table>
+            </td>
+        </tr>
+        <tr class="log-rows">
+            <td class="column">
+                <div class="log-images">
+                    <img src="storage/dummy-image-building-issue-1.jpg" alt="">
+                    <img src="storage/dummy-image-building-issue-2.jpg" alt="">
+                    <img src="storage/dummy-image-building-issue-2.jpg" alt="">
+                </div>
+            </td>
+            <td class="column">
+                <table class="log-details">
+                    <tr><td>Name</td><td>:</td><td>Jane Smith</td></tr>
+                    <tr><td>ID Number</td><td>:</td><td>JS-00123</td></tr>
+                    <tr><td>Log Type</td><td>:</td><td>Investigation</td></tr>
+                    <tr><td>Raised On</td><td>:</td><td>2025-06-01 14:30</td></tr>
+                    <tr><td>News</td><td>:</td><td>Water leak detected in Server Room 3B. Maintenance team dispatched to resolve issue.</td></tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+  </div>
+<script type="text/php">
+    if (isset($pdf)) {
+        $w = $pdf->get_width();
+        $h = $pdf->get_height();
 
-    <h3>Kronologi</h3>
-    <div class="container-4">
-        <table class="tables">
-            <thead>
-                <tr>
-                    <th>Tanggal</th>
-                    <th>Log Type</th>
-                    <th>News</th>
-                    <th>UUID Pengangkat</th>
-                    <th>Nama Pengangkat</th>
-                    <th>Documen Pendukung</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>2025-05-01</td>
-                    <td>Work Progress</td>
-                    <td>Proses memperbaiki.</td>
-                    <td>c9b1e123-4d3a-4e3c-b1f0-88e91aee6d52</td>
-                    <td>Ahmad Santoso</td>
-                    <td>
-                        <img 
-                            src="https://dokterpipa.com/wp-content/uploads/2020/01/pipa-bocor-sambungan-Small.jpg"
-                            width="100"
-                            style="margin-top: 8px;"
-                        />
-                    </td>
-                </tr>
-                <tr>
-                    <td>2025-05-01</td>
-                    <td>Work Progress</td>
-                    <td>Proses memperbaiki.</td>
-                    <td>c9b1e123-4d3a-4e3c-b1f0-88e91aee6d52</td>
-                    <td>Moona Hoshinova</td>
-                    <td>
-                        <img 
-                            src="https://aquaproof.co.id/storage/images/newsrooms/TCzGIhjW4IgF5dRiNL2cf8GZwQ91KKuxsG4GDF7B.png"
-                            width="100"
-                            style="margin-top: 8px;"
-                        />
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
+        $pageText = "Page {PAGE_NUM} of {PAGE_COUNT}";
+        $customText = "Made available to KELVIN GIOVANNO"; 
+
+        $fullText = $pageText . " | " . $customText;
+        $font = null;
+        $size = 8;
+        $x = ($w - 200) / 2;
+        $y = $h - 30;
+
+        $pdf->page_text($x + 15 , $y, $fullText, $font, $size, array(0, 0, 0));
+    }
+</script>
 </body>
 </html>

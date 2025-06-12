@@ -13,6 +13,7 @@ use App\Models\Enums\TicketLogType;
 use App\Models\Enums\TicketResponseType;
 use App\Models\Enums\TicketStatusType;
 use App\Models\Member;
+use App\Models\SystemSetting;
 use App\Models\Ticket;
 use App\Models\TicketLog;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +28,6 @@ class TicketControllerTest extends TestCase
     public function setUp() : void
     {
         parent::setUp();
-
         $this->artisan('db:seed');
     }
 
@@ -99,6 +99,8 @@ class TicketControllerTest extends TestCase
 
     public function test_post_ticket()
     {
+        SystemSetting::put('storage_type', 'LOCAL');
+     
         $auth_code = AuthenticationCode::factory()->create(); 
 
         $response_exchange = $this->postJson('/api/auth/exchange', [
@@ -1260,7 +1262,7 @@ class TicketControllerTest extends TestCase
                             'resource_type' => 'image/png',
                             'resource_name' => 'screenshot.png',
                             'resource_size' => 456.78,
-                            'resource_content' => base64_encode('another-content'),
+                            'resource_content' => base64_encode('another-c ontent'),
                         ],
                     ],
                 ],

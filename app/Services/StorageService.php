@@ -2,96 +2,88 @@
 
 namespace App\Services;
 
+use App\Models\SystemSetting;
+use Google\Cloud\Storage\StorageClient;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class StorageService
 {
-    /**
-     * Store a base64 document under ticket-documents/{ticket_id}/
-     *
-     * @param string $base64Content
-     * @param string $originalName
-     * @param int $ticketId
-     * @return string Relative path to the stored file
-     */
+
+    // === PUBLIC STORE METHODS ===
+
     public function storeTicketDocument(string $base64Content, string $originalName, string $ticketId): string
     {
-        $fileContent = base64_decode($base64Content);
-
-        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
-        $fileName = Str::uuid() . '.' . $extension;
-
-        $filePath = "ticket-documents/{$ticketId}/{$fileName}";
-
-        Storage::disk('public')->put($filePath, $fileContent);
-
-        return $filePath;
+        $filePath = "ticket-documents/{$ticketId}/" . $this->generateFileName($originalName);
+        return $this->store($base64Content, $filePath);
     }
 
-    /**
-     * Store a base64 document under ticket-log-documents/{logTicketId}/
-     *
-     * @param string $base64Content
-     * @param string $originalName
-     * @param int $logTicketId
-     * @return string Relative path to the stored file
-     */
     public function storeLogTicketDocument(string $base64Content, string $originalName, string $logTicketId): string
     {
-        $fileContent = base64_decode($base64Content);
-
-        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
-        $fileName = Str::uuid() . '.' . $extension;
-
-        $filePath = "ticket-log-documents/{$logTicketId}/{$fileName}";
-
-        Storage::disk('public')->put($filePath, $fileContent);
-
-        return $filePath;
+        $filePath = "ticket-log-documents/{$logTicketId}/" . $this->generateFileName($originalName);
+        return $this->store($base64Content, $filePath);
     }
 
-    /**
-     * Store a base64 document under work-order-documents/{ticketIssueId}/
-     *
-     * @param string $base64Content
-     * @param string $originalName
-     * @param int $ticketIssueId
-     * @return string Relative path to the stored file
-     */
-    public function storeWoDocument(string $base64Content, string $originalName, string $ticketIssueId)
+    public function storeWoDocument(string $base64Content, string $originalName, string $ticketIssueId): string
     {
-        $fileContent = base64_decode($base64Content);
-
-        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
-        $fileName = Str::uuid() . '.' . $extension;
-
-        $filePath = "work-order-documents/{$ticketIssueId}/{$fileName}";
-
-        Storage::disk('public')->put($filePath, $fileContent);
-
-        return $filePath;
+        $filePath = "work-order-documents/{$ticketIssueId}/" . $this->generateFileName($originalName);
+        return $this->store($base64Content, $filePath);
     }
 
-    /**
-     * Store a base64-encoded user profile document under users/{user_id}/
-     *
-     * @param string $base64Content
-     * @param string $originalName
-     * @param int $userId
-     * @return string Relative path to the stored file
-     */
     public function storeUserProfileImage(string $base64Content, string $originalName, string $userId): string
     {
+        $filePath = "users/{$userId}/profile-images/" . $this->generateFileName($originalName);
+        return $this->store($base64Content, $filePath);
+    }
+
+    // === CORE STORE LOGIC ===
+
+    protected function store(string $base64Content, string $filePath): string
+    {
+        $storageType = SystemSetting::get('storage_type');
+        
+
         $fileContent = base64_decode($base64Content);
 
-        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
-        $fileName = Str::uuid() . '.' . $extension;
+        if ($storageType === 'CLOUD') {
+            return $this->storeToCloud($fileContent, $filePath);
+        } 
 
-        $filePath = "users/{$userId}/profile-images/{$fileName}";
+        return  $this->storeToLocal($fileContent, $filePath);
+    }
 
+    protected function storeToLocal(string $fileContent, string $filePath): string
+    {
         Storage::disk('public')->put($filePath, $fileContent);
 
-        return $filePath;
+        return env('APP_URL') . '/storage/' . $filePath;
+    }
+
+    protected function storeToCloud(string $fileContent, string $filePath): string
+    {
+        $bucketName = SystemSetting::get('google_cloud_bucket_name');
+       
+        $gcsClient = new StorageClient([
+            'keyFilePath' => storage_path('app/private/gcs-key.json'),
+        ]);
+
+        $bucket = $gcsClient->bucket($bucketName);
+
+        $object = $bucket->upload($fileContent, [
+            'name' => $filePath,
+        ]);
+
+        $object->update(['acl' => []], ['predefinedAcl' => 'PUBLICREAD']);
+
+        return "https://storage.googleapis.com/{$bucketName}/{$filePath}";
+    }
+
+
+    // === UTILS ===
+
+    protected function generateFileName(string $originalName): string
+    {
+        $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+        return Str::uuid() . '.' . $extension;
     }
 }

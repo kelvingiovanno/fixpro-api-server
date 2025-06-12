@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\IssueTypeEnum;
 use App\Http\Controllers\Controller;
 
 use App\Enums\MemberCapabilityEnum;
@@ -9,20 +10,24 @@ use App\Enums\MemberRoleEnum;
 use App\Enums\TicketResponseTypeEnum;
 use App\Enums\TicketLogTypeEnum;
 use App\Enums\TicketStatusEnum;
-
+use App\Models\Enums\TicketIssueType;
 use App\Models\Ticket;
 use App\Models\Location;
 use App\Models\Member;
+use App\Models\SystemSetting;
 use App\Models\TicketDocument;
+use App\Models\WODocument;
 use App\Models\TicketIssue;
 use App\Models\TicketLog;
 use App\Models\TicketLogDocument;
 
 use App\Services\ApiResponseService;
 use App\Services\StorageService;
-
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -155,6 +160,50 @@ class TicketController extends Controller
                     'previewable_on' => $filePath,
                 ]);
             }
+
+            $service_form_data = [
+                'header' => [
+                    'work_order_id' => 'WO-' . substr(Str::uuid(), -5),
+                    'area_name' => SystemSetting::get('area_name') ?? 'Area name not set yet',
+                    'date' => now()->translatedFormat('l, d F Y'),
+                ],
+                'requestor_identity' => array_merge(
+                    Arr::except($ticket->issuer->toArray(), ['id', 'role_id', 'member_since', 'member_until', 'title']),
+                    ['name' => $ticket->issuer->name . ' (' . substr($ticket->issuer->id, -5) . ')']
+                ),
+                'formally_requests' => [
+                    'work_type' => TicketIssueType::whereIn('id', $data['issue_type_ids'])->pluck('name')->toArray(),
+                    'response_level' => $data['response_level'],
+                    'location' => $data['location']['stated_location'],
+                    'that_can_be_described_by' => $data['stated_issue'],
+                ],
+                'supportive_documents' => $ticket->documents->map(function ($document) {
+                    return [
+                        'resource_name' => $document->resource_name,
+                        'image_src' => $document->previewable_on,
+                    ];
+                })->toArray()
+            ];
+
+
+            $ticketlog = TicketLog::create([
+                'ticket_id' => $ticket->id,
+                'member_id' => $member_id,
+                'type_id' => TicketLogTypeEnum::ACTIVITY->id(),
+                'news' => $data['stated_issue'],
+            ]);
+
+            $service_form = Pdf::loadView('pdf.service_form', $service_form_data)->setPaper('a4', 'portrait')->output();
+
+            $service_form_path = $this->storageService->storeTicketDocument(base64_encode($service_form), 'service_form.pdf', $ticketlog->id);
+
+            TicketLogDocument::create([
+                'log_id' => $ticketlog->id,
+                'resource_type' => 'pdf',
+                'resource_name' => 'service_form.pdf',
+                'resource_size' => '123',
+                'previewable_on' => $service_form_path,
+            ]);
 
             $reponse_data = [
                 'id' => $ticket->id,
@@ -649,7 +698,34 @@ class TicketController extends Controller
                 return $this->apiResponseService->forbidden('Action not allowed for the current ticket status.');
             }
 
-            $ticket->update(['status_id' => TicketStatusEnum::WORK_EVALUATION->id()]);
+            $ticket_issues = $ticket->ticket_issues;
+
+            $allResolved = true;
+
+            foreach ($ticket_issues as $ticket_issue) {
+                if ($ticket_issue->resolved_on === null) {
+                    $allResolved = false;
+                    break; 
+                }
+            }
+
+            if ($allResolved) {
+                $ticket->update(['status_id' => TicketStatusEnum::WORK_EVALUATION->id()]);
+            }
+
+            $ticket_issue = $ticket_issues->filter(function ($issue) use ($member_id) {
+                return $issue->maintainers->contains('id', $member_id);
+            });
+
+            if ($ticket_issue->isEmpty()) {
+                return $this->apiResponseService->forbidden('This member is not assigned to any issue in this ticket.');
+            }
+
+            $ticket_issue->each(function ($issue) {
+                $issue->update([
+                    'resolved_on' => now(),
+                ]);
+            });
 
             $ticket_log = $ticket->logs()->create([
                 'member_id' => $member_id,
@@ -1086,11 +1162,11 @@ class TicketController extends Controller
                 'type_id' => $log_type_id,
                 'news' => $data['news'],
             ]);
-
+            
             $statusMap = [
                 TicketLogTypeEnum::ASSESSMENT->id() => TicketStatusEnum::IN_ASSESSMENT->id(),
                 TicketLogTypeEnum::INVITATION->id() => TicketStatusEnum::ON_PROGRESS->id(),
-                TicketLogTypeEnum::WORK_PROGRESS->id() => TicketStatusEnum::ON_PROGRESS->id(),
+                TicketLogTypeEnum::WORK_PROGRESS->id() => TicketStatusEnum::ON_PROGRESS->id(),  
                 TicketLogTypeEnum::WORK_EVALUATION_REQUEST->id() => TicketStatusEnum::WORK_EVALUATION->id(),
                 TicketLogTypeEnum::WORK_EVALUATION->id() => TicketStatusEnum::QUIALITY_CONTROL->id(),
                 TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id() => TicketStatusEnum::OWNER_EVALUATION->id(),
@@ -1282,20 +1358,58 @@ class TicketController extends Controller
 
                 $ticket_issue->maintainers()->sync($appointed_member_ids);
 
-                $ticket_log = $ticket->logs()->create([
+                $ticket_log = TicketLog::create([
                     'ticket_id' => $_ticketId,
                     'member_id' => $member_id,
-                    'ticket_log_type_id' => TicketLogTypeEnum::ACTIVITY->id(),
+                    'ticket_log_type_id' => TicketLogTypeEnum::INVITATION->id(),
                     'news' => count($appointed_member_ids) . " maintainer(s) assigned to ticket issue $issue_type_id.",
                 ]);
 
-                $documents = $data['supportive_documents'] ?? [];
+                $wo_id = Str::uuid();
+
+                $work_order_data = [
+                    'header' => [
+                        'work_order_id' => 'WO-'. substr($wo_id, -5),
+                        'area_name' => SystemSetting::get('area_name') ?? 'Area name not set yet',
+                        'date' => now()->translatedFormat('l, d F Y'),
+                    ],
+                    'to_perform' => [
+                        'work_type' => TicketIssueType::find($issue_type_id)->name,
+                        'response_level' => $ticket->response->name,
+                        'location' => $ticket->location->stated_location,
+                        'as_a_follow_up_for' => $ticket->id,
+                        'work_directive' => $work_description,
+                    ],
+                    'upon_the_request_of' => array_merge(
+                        Arr::except($ticket->issuer->toArray(), ['id', 'role_id', 'member_since', 'member_until', 'title']),
+                        ['on' => $ticket->raised_on, 'name' => $ticket->issuer->name . ' (' . substr($ticket->issuer->id, -5) . ')']
+                    ),
+                    'to be carried out by' => Member::whereIn('id', $appointed_member_ids)
+                        ->get()
+                        ->map(function ($member) {
+                            return $member->only(['name', 'title']); 
+                    }),
+                ];
+                    
+                $pdf = Pdf::loadView('pdf.work_order', ['work_order_data' => $work_order_data])->setPaper('a4', 'portrait')->output();
+
+                $wo_path = $this->storageService->storeLogTicketDocument(base64_encode($pdf), 'work_order.pdf', $ticket_log->id);
+
+                TicketLogDocument::create([
+                    'log_id' => $ticket_log->id,
+                    'resource_type' => 'pdf',
+                    'resource_name' => $wo_id,
+                    'resource_size' => '123',
+                    'previewable_on' => $wo_path,
+                ]);
+
+                $documents = $item['supportive_documents'] ?? [];
 
                 foreach ($documents as $document) {
                     $filePath = $this->storageService->storeLogTicketDocument(
                         $document['resource_content'],
                         $document['resource_name'],
-                        $ticket->id
+                        $ticket_log->id
                     );
 
                     TicketLogDocument::create([
@@ -1305,10 +1419,7 @@ class TicketController extends Controller
                         'resource_size' => $document['resource_size'],
                         'previewable_on' => $filePath,
                     ]);
-                }
-
-                
-                
+                }                
             }
 
             $updated_ticket = Ticket::find($_ticketId);
@@ -1334,7 +1445,8 @@ class TicketController extends Controller
 
             return $this->apiResponseService->ok($response_data, 'Successfully added handlers to the ticket');
 
-        } catch (Throwable $e) {
+        } 
+        catch (Throwable $e) {
             Log::error('Error assigning ticket handlers', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
