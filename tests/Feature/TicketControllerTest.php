@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\ApplicantStatusEnum;
 use App\Enums\MemberCapabilityEnum;
 use App\Enums\MemberRoleEnum;
 use App\Enums\TicketLogTypeEnum;
@@ -1309,5 +1310,305 @@ class TicketControllerTest extends TestCase
                 $this->assertNotEmpty($specialty['service_level_agreement_duration_hour']);
             }
         }
+    }
+
+    public function test_ticket_print_view(): void
+    {
+        $member_auth_code = AuthenticationCode::factory()->create();
+        $management_auth_code = AuthenticationCode::factory()->create();
+        $crew_auth_code = AuthenticationCode::factory()->create();
+
+        $member_auth_code->applicant->member->update([
+            'role_id' => MemberRoleEnum::MEMBER->id(),
+        ]);
+
+        $management_auth_code->applicant->member->update([
+            'role_id' => MemberRoleEnum::MANAGEMENT->id(),
+        ]);
+
+        $crew_auth_code->applicant->member->update([
+            'role_id' => MemberRoleEnum::CREW->id(),
+        ]);
+
+        $member_exhcange_token = $this->postJson('/api/auth/exchange', [
+            'data' => [
+                'authentication_code' => $member_auth_code->id,
+            ],
+        ]);
+
+        $management_exhcange_token = $this->postJson('/api/auth/exchange', [
+            'data' => [
+                'authentication_code' => $management_auth_code->id,
+            ],
+        ]);
+
+        $crew_exhcange_token = $this->postJson('/api/auth/exchange', [
+            'data' => [
+                'authentication_code' => $crew_auth_code->id,
+            ],
+        ]);
+
+        $member_exhcange_token->assertStatus(200);
+        $management_exhcange_token->assertStatus(200);
+        $crew_exhcange_token->assertStatus(200);
+
+        $member_access_token =  $member_exhcange_token->json('data')['access_token'];
+        $management_access_token =  $management_exhcange_token->json('data')['access_token'];
+        $crew_access_token =  $management_exhcange_token->json('data')['access_token'];
+
+
+        $create_ticket_payload = [
+            'data' => [
+                'issue_type_ids' => TicketIssueType::inRandomOrder()->take(rand(1,4))->pluck('id')->toArray(),
+                'response_level' => TicketResponseType::inRandomOrder()->first()->name,
+                'stated_issue' => $this->faker->sentence(rand(1,3)),
+                'executive_summary' => $this->faker->paragraph(),
+                'location' => [
+                    'stated_location' => $this->faker->address(),
+                    'gps_location' => [
+                        'latitude' => -6.201637,
+                        'longitude' => 106.782636,
+                    ],
+                ],
+                'supportive_documents' => [
+                    [
+                        'resource_type' => $this->faker->fileExtension, 
+                        'resource_name' => $this->faker->name(),
+                        'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0), 
+                        'resource_content' => base64_encode($this->faker->text(100)), 
+                    ],
+                    [
+                        'resource_type' => $this->faker->fileExtension,
+                        'resource_name' => $this->faker->name(),
+                        'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0),
+                        'resource_content' => base64_encode($this->faker->text(100)),
+                    ],
+                ],
+            ]
+        ];
+
+        $create_ticket = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $member_access_token,
+        ])->postJson('/api/tickets', $create_ticket_payload);
+        
+        $create_ticket->assertStatus(201);
+
+        $create_ticket_log_assessment_payload = [
+            'data' => [
+                'type' => TicketLogTypeEnum::ASSESSMENT->value,
+                'news' => $this->faker->sentence(),
+                'supportive_documents' => [
+                    [
+                        'resource_type' => $this->faker->fileExtension, 
+                        'resource_name' => $this->faker->name(),
+                        'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0), 
+                        'resource_content' => base64_encode($this->faker->text(100)), 
+                    ],
+                    [
+                        'resource_type' => $this->faker->fileExtension,
+                        'resource_name' => $this->faker->name(),
+                        'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0),
+                        'resource_content' => base64_encode($this->faker->text(100)),
+                    ],
+                ],
+            ],
+        ];
+
+        $ticket = Ticket::first();
+
+        $create_ticket_log_assessment = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $management_access_token,
+        ])->postJson('/api/ticket/' . $ticket->id . '/logs', $create_ticket_log_assessment_payload);
+
+        $create_ticket_log_assessment->assertStatus(201);
+
+        $issues = $ticket->ticket_issues->map(function ($ticket_issue) {
+            return $ticket_issue->issue->id;
+        });
+
+        $invitation_crew_payload = [
+            'data' => $issues->map(function ($issue) {
+                return [
+                    'appointed_member_ids' => Member::factory(rand(2, 3))->create(['role_id' => MemberRoleEnum::CREW->id()])->pluck('id')->toArray(),
+                    'work_description' => fake()->paragraph(),
+                    'issue_type' => $issue, 
+                    'supportive_documents' => [
+                        [
+                            'resource_type' => 'application/pdf',
+                            'resource_name' => 'manual.pdf',
+                            'resource_size' => 123.45,
+                            'resource_content' => base64_encode('dummy-content'),
+                        ],
+                        [
+                            'resource_type' => 'image/png',
+                            'resource_name' => 'screenshot.png',
+                            'resource_size' => 456.78,
+                            'resource_content' => base64_encode('another-content'),
+                        ],
+                    ],
+                ];
+            })->toArray(),
+        ];
+
+        $invitation_crew = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $management_access_token,
+        ])->postJson('/api/ticket/' . $ticket->id . '/handlers', $invitation_crew_payload);
+
+        $invitation_crew->assertStatus(200);
+
+        foreach (range(1, 6) as $i) {
+
+            $create_ticket_log_work_progress_payload = [
+                'data' => [
+                    'type' => TicketLogTypeEnum::WORK_PROGRESS->value,
+                    'news' => $this->faker->sentence(),
+                    'supportive_documents' => [
+                        [
+                            'resource_type' => $this->faker->fileExtension, 
+                            'resource_name' => $this->faker->name(),
+                            'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0), 
+                            'resource_content' => base64_encode($this->faker->text(100)), 
+                        ],
+                        [
+                            'resource_type' => $this->faker->fileExtension,
+                            'resource_name' => $this->faker->name(),
+                            'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0),
+                            'resource_content' => base64_encode($this->faker->text(100)),
+                        ],
+                    ],
+                ],
+            ];
+
+            $ticket = Ticket::first();
+
+            $create_ticket_work_progress = $this->withHeaders([
+                'Authorization' => 'Bearer ' . $crew_access_token,
+            ])->postJson('/api/ticket/' . $ticket->id . '/logs', $create_ticket_log_work_progress_payload);
+
+            $create_ticket_work_progress->assertStatus(201);
+        }
+
+        foreach ($issues as $issue) {
+
+            $ticket_issue = $ticket->ticket_issues->firstWhere('issue_id', $issue);
+
+            if (!$ticket_issue || $ticket_issue->maintainers->isEmpty()) {
+                continue;
+            }
+
+            $crew = $ticket_issue->maintainers->first();
+
+            $crew->update([
+                'role_id' => MemberRoleEnum::CREW->id(),
+            ]);
+
+            $applicant = $crew->applicant()->create([
+                'status_id' => ApplicantStatusEnum::ACCEPTED->id(),
+            ]);
+
+            $crew_auth_code = $applicant->authentication_code()->create();
+
+            $exchange_payload = [
+                'data' => [
+                    'authentication_code' => $crew_auth_code->id, 
+                ],
+            ];
+
+            $response_exchange = $this->postJson('/api/auth/exchange', $exchange_payload);
+
+            $response_exchange->assertStatus(200);
+
+            $crew_access_token = $response_exchange->json('data')['access_token'];
+
+            $evaluate_request_payload = [
+                'data' => [
+                    'remark' => 'ini remark',
+                    'supportive_documents' => [
+                        [
+                            'resource_type' => $this->faker->fileExtension(),
+                            'resource_name' => $this->faker->name(),
+                            'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0),
+                            'resource_content' => base64_encode($this->faker->text(100)),
+                        ],
+                        [
+                            'resource_type' => $this->faker->fileExtension(),
+                            'resource_name' => $this->faker->name(),
+                            'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0),
+                            'resource_content' => base64_encode($this->faker->text(100)),
+                        ],
+                    ],
+                ],
+            ];
+
+            $evaluate_request = $this->withHeaders([
+                'Authorization' => 'Bearer ' . $crew_access_token,
+            ])->postJson('/api/ticket/' . $ticket->id . '/evaluate/request', $evaluate_request_payload);
+
+            $evaluate_request->assertStatus(201);
+
+
+            $evaluate_payload = [
+                'data' => [
+                    'resolveToApprove' => false,
+                    'issue_type' => $issue,
+                    'reason' => $this->faker->sentence(),
+                    'supportive_documents' => [
+                        [
+                            'resource_type' => $this->faker->fileExtension, 
+                            'resource_name' => $this->faker->name(),
+                            'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0), 
+                            'resource_content' => base64_encode($this->faker->text(100)), 
+                        ],
+                        [
+                            'resource_type' => $this->faker->fileExtension,
+                            'resource_name' => $this->faker->name(),
+                            'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0),
+                            'resource_content' => base64_encode($this->faker->text(100)),
+                        ],
+                    ],
+                ],
+            ];
+
+            $evaluate_ticket = $this->withHeaders([
+                'Authorization' => 'Bearer ' . $management_access_token,
+            ])->postJson('/api/ticket/' . $ticket->id .'/evaluate', $evaluate_payload);
+
+            $evaluate_ticket->assertStatus(201);
+        }
+
+
+         $create_ticket_log_approval_payload = [
+            'data' => [
+                'type' => TicketLogTypeEnum::ASSESSMENT->value,
+                'news' => $this->faker->sentence(),
+                'supportive_documents' => [
+                    [
+                        'resource_type' => $this->faker->fileExtension, 
+                        'resource_name' => $this->faker->name(),
+                        'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0), 
+                        'resource_content' => base64_encode($this->faker->text(100)), 
+                    ],
+                    [
+                        'resource_type' => $this->faker->fileExtension,
+                        'resource_name' => $this->faker->name(),
+                        'resource_size' => $this->faker->randomFloat(2, 0.1, 10.0),
+                        'resource_content' => base64_encode($this->faker->text(100)),
+                    ],
+                ],
+            ],
+        ];
+
+        $create_ticket_log_approval = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $management_access_token,
+        ])->postJson('/api/ticket/' . $ticket->id . '/logs', $create_ticket_log_approval_payload);
+
+        $create_ticket_log_approval->assertStatus(201);
+
+
+        $create_ticket_log_approval = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $member_access_token,
+        ])->getJson('/api/ticket/' . $ticket->id . '/print-view');
+
+        $create_ticket_log_approval->assertStatus(200);
     }
 }

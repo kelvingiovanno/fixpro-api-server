@@ -10,7 +10,9 @@ use App\Enums\MemberRoleEnum;
 use App\Enums\TicketResponseTypeEnum;
 use App\Enums\TicketLogTypeEnum;
 use App\Enums\TicketStatusEnum;
+use App\Models\Enums\MemberRole;
 use App\Models\Enums\TicketIssueType;
+use App\Models\Enums\TicketStatusType;
 use App\Models\Ticket;
 use App\Models\Location;
 use App\Models\Member;
@@ -678,7 +680,7 @@ class TicketController extends Controller
         }
 
         $member_id = $_request->input('jwt_payload')['member_id'];
-        $member_role_id = $_request->input('jwt_payload')['role_id'];
+        $member_role_id = $_request->input('jwt_payload')['member_role_id'];
 
         if ($member_role_id != MemberRoleEnum::CREW->id()) {
             return $this->apiResponseService->forbidden('You are not authorized to perform this action.');
@@ -781,6 +783,7 @@ class TicketController extends Controller
 
         $validator = Validator::make($data, [
             'resolveToApprove' => 'required|boolean',
+            'issue_type' => 'required|uuid|exists:ticket_issue_types,id',
             'reason' => 'required|string',    
             'supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
             'supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
@@ -794,7 +797,7 @@ class TicketController extends Controller
         }
 
         $member_id = $_request->input('jwt_payload')['member_id'];
-        $member_role_id = $_request->input('jwt_payload')['role_id'];
+        $member_role_id = $_request->input('jwt_payload')['member_role_id'];
 
         if($member_role_id != MemberRoleEnum::MANAGEMENT->id())
         {
@@ -822,6 +825,7 @@ class TicketController extends Controller
                 {
                     $ticket->update([
                         'status_id' => TicketStatusEnum::QUIALITY_CONTROL->id(),
+                        'evaluated_by' => $member_id,   
                     ]);
                 }
                 else if($ticket->status->id == TicketStatusEnum::QUIALITY_CONTROL->id())
@@ -830,9 +834,17 @@ class TicketController extends Controller
                         'status_id' => TicketStatusEnum::CLOSED->id(),
                     ]);
                 }
-                else {
-                    return $this->apiResponseService->forbidden('Action not allowed for the current ticket status.');
-                }
+            }
+
+            if(!$data['resolveToApprove'])
+            {
+                $ticket->ticket_issues
+                ->where('issue_id', $data['issue_type'])
+                ->each(function ($ticket_issue) {
+                    $ticket_issue->update([
+                        'resolved_on' => now(),
+                    ]);
+                });
             }
 
             $ticket_log = $ticket->logs()->create([
@@ -1154,6 +1166,8 @@ class TicketController extends Controller
             }
 
             $member_id = $_request->input('jwt_payload')['member_id'];
+            $member_role_id = $_request->input('jwt_payload')['member_role_id'];
+
             $log_type_id = TicketLogTypeEnum::idFromName($data['type']);
             
             $ticket_log = TicketLog::create([
@@ -1173,6 +1187,21 @@ class TicketController extends Controller
             ];
 
             if (isset($statusMap[$log_type_id])) {
+                
+                if($log_type_id == TicketLogTypeEnum::ASSESSMENT->id())
+                {
+
+                    if($member_role_id != MemberRoleEnum::MANAGEMENT->id())
+                    {
+                        return $this->apiResponseService->forbidden('You are not authorized to perform this action.');
+                    }
+
+                    $ticket->update([
+                        'status_id' => $statusMap[$log_type_id],
+                        'assessed_by' => $member_id,
+                    ]);
+                }
+                
                 $ticket->update(['status_id' => $statusMap[$log_type_id]]);
             }
                 
@@ -1329,12 +1358,18 @@ class TicketController extends Controller
         try {
             $ticket = Ticket::find($_ticketId);
             $member_id = $_request->input('jwt_payload')['member_id'];
+            $member_role_id = $_request->input('jwt_payload')['member_role_id'];
             $member = Member::find($member_id);
 
-            $hasAssign = collect($member->capabilities)->contains('id', MemberCapabilityEnum::INVITE->id());
+        
 
-            if (!$hasAssign) {
-                return $this->apiResponseService->forbidden('You do not have permission to perform this action.');
+            if($member_role_id != MemberRoleEnum::MANAGEMENT->id())
+            {
+                $hasAssign = collect($member->capabilities)->contains('id', MemberCapabilityEnum::INVITE->id());
+
+                if (!$hasAssign) {
+                    return $this->apiResponseService->forbidden('You do not have permission to perform this action.');
+                }
             }
 
             if (!$ticket) {
@@ -1361,7 +1396,7 @@ class TicketController extends Controller
                 $ticket_log = TicketLog::create([
                     'ticket_id' => $_ticketId,
                     'member_id' => $member_id,
-                    'ticket_log_type_id' => TicketLogTypeEnum::INVITATION->id(),
+                    'type_id' => TicketLogTypeEnum::INVITATION->id(),
                     'news' => count($appointed_member_ids) . " maintainer(s) assigned to ticket issue $issue_type_id.",
                 ]);
 
@@ -1455,6 +1490,82 @@ class TicketController extends Controller
             ]);
 
             return $this->apiResponseService->internalServerError('An error occurred while assigning ticket handlers');
+        }
+    }
+
+    public function printView(Request $_request, string $_ticketId)
+    {
+        if (!Str::isUuid($_ticketId)) {
+            return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
+        }
+
+        try
+        {
+            $ticket = Ticket::find($_ticketId);
+
+            if(!$ticket)
+            {
+                return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
+            }
+
+            $member_id = $_request->input('jwt_payload')['member_id'];
+
+            $print_view_data = [
+                'header' => [
+                    'document_id' => 'TK-' . substr(Str::uuid(), -5),
+                    'area_name' => SystemSetting::get('area_name') ?? 'Area name not set yet',
+                    'date' => now()->translatedFormat('l, d F Y'),
+                ],
+                'details' => [
+                    'ticket_no' => substr($ticket->id, -5),
+                    'created_at' => $ticket->raised_on,
+                    'completed_at' => $ticket->closed_on ?? 'Not completed',
+                    'assessed_by' => $ticket->assessed->name ?? 'Not assessed', 
+                    'ticket_status' => $ticket->status->name,
+                    'requester_name' => $ticket->issuer->name,
+                    'identifier_no' => substr($ticket->issuer->id, -5),
+                    'work_type' => $ticket->ticket_issues->map(function ($ticket_issue) {
+                        return $ticket_issue->issue->name;
+                    }),
+                    'handling_priority' => $ticket->response->name,
+                    'location' => $ticket->location->stated_location,
+                    'evaluated_by' => $ticket->evaluated->name ?? 'Not evaluated',
+                ],
+                'complaints' => $ticket->stated_issue,
+                'supportive_documents' => $ticket->documents->map(function ($document){
+                    return $document->previewable_on;
+                }),
+                'logs' => $ticket->logs->values()->map(function ($log, $index) {
+                    return [,
+                        'name' => $log->issuer->name,
+                        'id_number' => substr($log->issuer->id, -5),
+                        'log_type' => $log->type->name,
+                        'raised_on' => $log->recorded_on,
+                        'news' => $log->news,
+                        'supportive_documents' => $log->documents->map(function ($document) {
+                            return $document->previewable_on;
+                        }),
+                    ];
+                }),
+                'print_view_requested_by' => Member::find($member_id)->name,
+            ];
+
+            $ticket_print_view = Pdf::loadView('pdf.ticket_print_view',$print_view_data)->setPaper('a4', 'portrait')->output();
+            
+            $this->storageService->storeWoDocument(base64_encode($ticket_print_view), 'ticket_print_view.pdf', 'testing');
+
+            return $this->apiResponseService->ok('ok');
+        }
+        catch (Throwable $e)
+        {
+            Log::error('', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return $this->apiResponseService->internalServerError('');
         }
     }
 }

@@ -55,7 +55,7 @@ class AuthController extends Controller
             $customClaims = [
                 'sub' => 'profix_api_service',
                 'member_id' => $authCodeRecord->applicant->member->id,
-                'role_id' => $authCodeRecord->applicant->member->role->id,
+                'member_role_id' => $authCodeRecord->applicant->member->role->id,
                 'iat' => $now->timestamp,
                 'exp' => $accessExpiry->timestamp,
             ];
@@ -132,8 +132,8 @@ class AuthController extends Controller
     
             $customClaims = [
                 'sub' => 'profix_api_service',
-                'user_id' => $new_refresh_token->member->id,
-                'role' => $new_refresh_token->member->role->id,
+                'member_id' => $new_refresh_token->member->id,
+                'member_role_id' => $new_refresh_token->member->role->id,
                 'iat' => $now->timestamp,
                 'exp' => $accessExpiry->timestamp,
             ];

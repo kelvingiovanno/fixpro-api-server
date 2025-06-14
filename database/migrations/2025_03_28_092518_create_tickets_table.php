@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('tickets', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->uuid('member_id')->nullable();
+            $table->uuid('assessed_by')->nullable();
+            $table->uuid('evaluated_by')->nullable();
             $table->uuid('status_id')->nullable();
             $table->uuid('response_id')->nullable();
             $table->uuid('location_id')->nullable();        
@@ -24,6 +26,8 @@ return new class extends Migration
             $table->dateTime('closed_on')->nullable();
             
             $table->foreign('member_id')->references('id')->on('members')->onDelete('set null');
+            $table->foreign('assessed_by')->references('id')->on('members')->onDelete('set null');
+            $table->foreign('evaluated_by')->references('id')->on('members')->onDelete('set null');
             $table->foreign('status_id')->references('id')->on('ticket_status_types')->onDelete('set null');
             $table->foreign('response_id')->references('id')->on('ticket_response_types')->onDelete('set null');
             $table->foreign('location_id')->references('id')->on('locations')->onDelete('set null');

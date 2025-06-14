@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 
+use App\Models\Ticket;
+
 class DummyDataSeed extends Seeder
 {
     /**

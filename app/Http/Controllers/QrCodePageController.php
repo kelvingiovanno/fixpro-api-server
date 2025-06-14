@@ -30,8 +30,8 @@ class QrCodePageController extends Controller
         $host = env('APP_URL'); 
 
         $data = [
-            'endpoint' => $host,
-            'referralTrackingIdentifier' => $code,
+            "endpoint" => $host,
+            "referralTrackingIdentifier" => $code,
         ];
 
         $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);

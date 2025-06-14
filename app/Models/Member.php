@@ -12,7 +12,6 @@ use App\Models\Applicant;
 use App\Models\RefreshToken;
 use App\Models\TicketLog;
 use App\Models\TicketIssue;
-use App\Models\AuthenticationCode;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -64,6 +63,16 @@ class Member extends Model
     {
         return $this->hasMany(Ticket::class, 'member_id', 'id');
     }
+
+    public function assessed_tickets() 
+    {
+        return $this->hasMany(Ticket::class, 'assessed_by', 'id');
+    }
+
+    public function evaluated_tickets()
+    {
+        return $this->hasMany(Ticket::class, 'evaluated_by', 'id');
+    }
     
     public function maintained_tickets()
     {
@@ -98,9 +107,5 @@ class Member extends Model
     public function refresh_token()
     {
         return $this->hasOne(RefreshToken::class, 'member_id', 'id');
-    }
-    public function auth_code()
-    {
-        return $this->hasOne(AuthenticationCode::class, 'member_id', 'id');
     }
 }

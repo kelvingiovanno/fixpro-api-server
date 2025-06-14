@@ -57,7 +57,7 @@ class EntryController extends Controller
             $nonceToken = $this->nonceCodeService->generateNonce();
             $area_name = SystemSetting::get('area_name');
     
-            $form = array_merge(['name'],json_decode(SystemSetting::get('area_join_form'),true));
+            $form = array_merge(['name'], json_decode(SystemSetting::get('area_join_form'),true) ?? [] );
             $form_fields = collect($form)->map(function ($field) {
                 return ['field_label' => ucfirst(str_replace('_', ' ', $field))];
             })->values();
@@ -100,7 +100,7 @@ class EntryController extends Controller
             return $this->apiResponseService->forbidden('');
         }
 
-        $form_labels = array_merge(['name'],json_decode(SystemSetting::get('area_join_form'),true));
+        $form_labels = array_merge(['name'], json_decode(SystemSetting::get('area_join_form'),true) ?? []);
 
         $formattedFormLabels = array_map(function ($form_label) {
             return ucwords(str_replace('_', ' ', $form_label));
@@ -147,7 +147,7 @@ class EntryController extends Controller
 
             $response_data = [
                 'application_id' => $applicant->id,
-                'application_expiry_date' => $applicant->expires_on,
+                'application_expiry_date' => "2025-08-01T12:30:45+07:00",
             ];
             
             $this->nonceCodeService->deleteNonce($nonce_code);

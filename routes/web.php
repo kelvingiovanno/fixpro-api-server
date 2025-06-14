@@ -72,7 +72,7 @@ Route::get('/pdf-layout/ticket-report', function () {
     ];
 
 
-    $pdf = Pdf::loadView('pdf.ticket_report',$data)->setPaper('a4', 'portrait');;
+    $pdf = Pdf::loadView('pdf.ticket_print_view',$data)->setPaper('a4', 'portrait');;
     return $pdf->stream('report.pdf');
 });
 

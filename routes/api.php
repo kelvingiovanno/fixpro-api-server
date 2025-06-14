@@ -43,6 +43,8 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
             Route::patch('/', [TicketController::class, 'patchTicket']);
             Route::delete('/', [TicketController::class, 'delTicket']);
             
+            Route::get('/print-view', [TicketController::class, 'printView']);
+            
             Route::post('/reject', [TicketController::class, 'rejectTicket']);
             Route::post('/cancel', [TicketController::class, 'cancelTicket']);
 

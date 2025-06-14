@@ -25,6 +25,8 @@ class Ticket extends Model
 
     protected $fillable = [
         'member_id',
+        'assessed_by',
+        'evaluated_by',
         'status_id',
         'response_id',
         'location_id',
@@ -64,6 +66,16 @@ class Ticket extends Model
     public function issuer()
     {
         return $this->belongsTo(Member::class, 'member_id', 'id');
+    }
+
+    public function assessed()
+    {
+        return $this->belongsTo(Member::class, 'assessed_by', 'id');
+    }
+
+    public function evaluated()
+    {
+        return $this->belongsTo(Member::class, 'evaluated_by', 'id');
     }
 
     public function ticket_issues()
