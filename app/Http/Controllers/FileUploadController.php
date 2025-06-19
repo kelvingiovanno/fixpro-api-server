@@ -76,7 +76,7 @@ class FileUploadController extends Controller
                 'success' => true,
                 'url' => $url,
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Log::error('GCS Get File Error: ' . $e->getMessage());
 
             return response()->json([
