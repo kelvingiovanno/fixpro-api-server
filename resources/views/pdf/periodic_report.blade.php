@@ -182,40 +182,6 @@
         .staffs-database .department-title {
             margin: 20px 0;
         }
-
-        /* tickets */
-
-        .tickets {
-            width: 100%;
-        }
-
-        .tickets .tickets-table {
-            margin-top: 20px;
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .tickets th {
-            border: 1px solid black;
-            text-align: left;
-            padding: 10px;
-            background: rgb(226, 226, 226);s
-        }
-
-        .tickets td {
-            border: 1px solid black;
-            padding: 10px;
-        }
-
-        .tickets .issue {
-            padding: 3px 4px;
-            background: rgb(255, 183, 183);
-            margin: 2px;
-            border: 1px solid black;
-            display: inline-block;
-            border-radius: 2px;
-        }
-
     </style>
 </head>
 <body>
@@ -223,10 +189,10 @@
         <tr>
             <td class="report-title">
                 <h1 class="report-title">Periodic Report</h1>
-                <h1 class="report-date">May 2025</h1>
+                <h1 class="report-date">{{ $header['date'] }}</h1>
             </td>
             <td class="report-location">
-                <h1 class="report-location">Bali Beach Indah</h1>
+                <h1 class="report-location">{{ $header['area'] }}</h1>
             </td>
         </tr>
     </table>
@@ -237,22 +203,22 @@
             <td class="ticket-summary-cell">
                 <p class="summary-label">This month’s</p>
                 <p class="summary-title">Nº of Opened Tickets</p>
-                <p class="summary-value">123</p>
+                <p class="summary-value">{{ $opened_this_month }}</p>
             </td>
             <td class="ticket-summary-cell">
                 <p class="summary-label">This month’s</p>
                 <p class="summary-title">Nº of Closed Tickets</p>
-                <p class="summary-value">101</p>
+                <p class="summary-value"> {{ $closed_this_month }} </p>
             </td>
             <td class="ticket-summary-cell">
                 <p class="summary-label">Total</p>
                 <p class="summary-title">Nº of Opened Tickets</p>
-                <p class="summary-value">24</p>
+                <p class="summary-value"> {{ $opened_total }} </p>
             </td>
             <td class="ticket-summary-cell">
                 <p class="summary-label">Total</p>
                 <p class="summary-title">Nº of Closed Tickets</p>
-                <p class="summary-value">15</p>
+                <p class="summary-value"> {{ $closed_total }} </p>
             </td>
         </tr>
     </table>
@@ -262,68 +228,40 @@
             <td class="metric-cell">
                 <p class="metric-label">This month’s</p>
                 <p class="metric-title">Average response duration</p>
-                <p class="metric-value" style="width: 120px;">12 mins 30 secs</p>
+                <p class="metric-value" style="width: 120px;">{{ $avg_response_time }}</p>
             </td>
             <td class="metric-cell">
                 <p class="metric-label">This month’s</p>
                 <p class="metric-title">SLA Compliance Rate</p>
-                <p class="metric-value" style="font-size: 55px;">62%</p>
+                <p class="metric-value" style="font-size: 55px;">{{ $compliance_rate }}</p>
             </td>
             <td rowspan="3" class="department-performance-cell">
                 <table class="department-performance-table">
-                    <tr>
-                        <td class="chart-cell">
-                            <img src="{{ $engineering_chart }}" alt="Engineering Chart" width="150">
-                        </td>
-                        <td class="department-info">
-                            <p class="department-name">Engineering</p>
-                            <p class="ticket-stats">9 solved tickets / 22 total.</p>
-                            <p class="staff-count">19 staffs</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="chart-cell">
-                            <img src="{{ $housekeeping_chart }}" alt="Housekeeping Chart" width="150">
-                        </td>
-                        <td class="department-info">
-                            <p class="department-name">Housekeeping</p>
-                            <p class="ticket-stats">4 solved tickets / 14 total.</p>
-                            <p class="staff-count">5 staffs</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="chart-cell">
-                            <img src="{{ $hse_chart }}" alt="HSE Chart" width="150">
-                        </td>
-                        <td class="department-info">
-                            <p class="department-name">HSE</p>
-                            <p class="ticket-stats">8 solved tickets / 12 total.</p>
-                            <p class="staff-count">8 staffs</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="chart-cell">
-                            <img src="{{ $security_chart }}" alt="Security Chart" width="150">
-                        </td>
-                        <td class="department-info">
-                            <p class="department-name">Security</p>
-                            <p class="ticket-stats">2 solved tickets / 5 total.</p>
-                            <p class="staff-count">11 staffs</p>
-                        </td>
-                    </tr>
+                    @foreach ($issues as $issue)
+                        <tr>
+                            <td class="chart-cell">
+                                <img src="{{ $issue['doughnut_chart'] }}" alt="Engineering Chart" width="150">
+                            </td>
+                            <td class="department-info">
+                                <p class="department-name">{{$issue['name']}}</p>
+                                <p class="ticket-stats">{{$issue['resolved_count']}} solved tickets / {{$issue['ticket_count']}} total.</p>
+                                <p class="staff-count">{{$issue['maintainer_count']}} staffs</p>
+                            </td>
+                        </tr>
+                    @endforeach
                 </table>
             </td>
         </tr>
         <tr>
             <td colspan="2" class="monthly-chart-cell">
                 <p class="metric-title">This month’s</p>
-                <img src="{{ $this_month_piechart }}" alt="This Month Pie Chart" width="350">
+                <img src="{{ $chart_pie_issues['montly'] }}" alt="This Month Pie Chart" width="350">
             </td>
         </tr>
         <tr>
             <td colspan="2" class="overall-chart-cell">
                 <p class="metric-title">Overall</p>
-                <img src="{{ $overall_piechart }}" alt="Overall Pie Chart" width="350">
+                <img src="{{ $chart_pie_issues['overall'] }}" alt="Overall Pie Chart" width="350">
             </td>
         </tr>
     </table>
@@ -344,32 +282,21 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>e3a12f</td>
-                        <td>John Doe</td>
-                        <td>Janitor</td>
-                        <td>HSE, Housekeeping</td>
-                        <td>17</td>
-                    </tr>
-                    <tr>
-                        <td>b129j</td>
-                        <td>Andika</td>
-                        <td>Janitor</td>
-                        <td>Housekeeping</td>
-                        <td>4</td>
-                    </tr>
-                    <tr>
-                        <td>e2k2f</td>
-                        <td>Rika</td>
-                        <td>Janitor</td>
-                        <td>Engineering</td>
-                        <td>1</td>
-                    </tr>
+                    
+                    @foreach ($crew_statistic as $crew)
+                        <tr>
+                            <td>{{$crew['id']}}</td>
+                            <td> {{$crew['name']}} </td>
+                            <td>{{$crew['title']}}</td>
+                            <td> {{ collect($crew['specialties'])->map(fn($s) => Str::title($s))->implode(', ') }} </td>
+                            <td>{{$crew['HTC']}}</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
             <div style="margin-top: 15px;">
                 <p style="color: gray">
-                    <b>ATC</b>
+                    <b>HTC</b>
                     The number of tickets to which the staff contributed to.
                 </p>
             </div>
@@ -388,20 +315,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>81ASD</td>
-                        <td>Lina fien</td>
-                        <td>TR Receptionist</td>
-                        <td>51</td>
-                        <td>12</td>
-                    </tr>
-                    <tr>
-                        <td>f1d29j</td>
-                        <td>Byalat</td>
-                        <td>Building Manager</td>
-                        <td>0</td>
-                        <td>9</td>
-                    </tr>
+                    @foreach ($management_statistics as $management)
+                        <tr>
+                            <td>{{$management['id']}}</td>
+                            <td>{{$management['name']}}</td>
+                            <td>{{$management['title']}}</td>
+                            <td>{{$management['assessed_count']}}</td>
+                            <td>{{$management['evaluated_count']}}</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
             
@@ -418,7 +340,7 @@
         </div>
 
         <div class="department-block">
-            <h2 class="department-title">Crew Statistics</h2>
+            <h2 class="department-title">Member Statistics</h2>
             <table class="staff-table">
                 <thead>
                     <tr>
@@ -430,20 +352,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>1k12f</td>
-                        <td>Moona</td>
-                        <td>LZ12 19/12</td>
-                        <td>2</td>
-                        <td>HSE, Engineering</td>
-                    </tr>
-                    <tr>
-                        <td>b529j</td>
-                        <td>Kaela</td>
-                        <td>L123 11/2</td>
-                        <td>9</td>
-                        <td>Security</td>
-                    </tr>
+                    @foreach ($member_statistics as $member)
+                        <tr>
+                            <td>{{$member['id']}}</td>
+                            <td>{{$member['name']}}</td>
+                            <td>{{$member['title']}}</td>
+                            <td>{{$member['ticket_opened']}}</td>
+                            <td>{{ collect($member['issues'])->map(fn($issue) => Str::title($issue))->implode(', ') }}</td>
+                        </tr>
+                    @endforeach
                 </tbody>
             </table>
 
@@ -454,125 +371,6 @@
                 </p>
             </div>
         </div>
-    </div>
-
-    <div class="page-break"></div>
-
-
-    <div class="sections tickets">
-
-        <h1 class="section-title">All Tickets</h1>
-        <h3 class="section-subtitle">Recorded for May 2025</h3> 
-
-        <table class="tickets-table">
-            <thead>
-                <tr>
-                    <th >Id</th>
-                    <th style="width: 70px">Raised</th>
-                    <th style="width: 70px">Closed</th>
-                    <th>Issue types</th>
-                    <th>Before</th>
-                    <th>After</th>
-                    <th>Handlers</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>c1a5d1e9-b82f-4f89-a6d1-34d6d9bfa511</td>
-                    <td>2025-05-01</td>
-                    <td>2025-05-03</td>
-                    <td>
-                        <div class="issue">
-                            Plumbing    
-                        </div>
-                        <div class="issue">
-                             Facility
-                        </div>
-                    </td>
-                    <td>
-                        <img src="#" alt="" width="100px" height="100px">
-                    </td>
-                    <td>
-                        <img src="#" alt="" width="100px" height="100px">
-                    </td>
-                    <td>John, Ali</td>
-                </tr>
-                <tr>
-                    <td>1e3b2a94-9d8b-4fe6-a0a1-7adf652b029d</td>
-                    <td>2025-05-05</td>
-                    <td>2025-05-06</td>
-                    <td>
-                        <div class="issue">
-                            Housekeeping    
-                        </div>
-                    </td>
-                    <td>
-                        <img src="#" alt="" width="100px" height="100px">
-                    </td>
-                    <td>
-                        <img src="#" alt="" width="100px" height="100px">
-                    </td>
-                    <td>Siti</td>
-                </tr>
-                <tr>
-                    <td>5f7c0b2e-21a1-4cb4-923e-20454dc1d442</td>
-                    <td>2025-05-08</td>
-                    <td>2025-05-09</td>
-                    <td>
-                        <div class="issue">
-                            Social    
-                        </div>
-                        <div class="issue">
-                            Security    
-                        </div>
-                    </td>
-                    <td>
-                        <img src="#" alt="" width="100px" height="100px">
-                    </td>
-                    <td>
-                        <img src="#" alt="" width="100px" height="100px">
-                    </td>
-                    <td>Rico, Wulan</td>
-                </tr>
-                <tr>
-                    <td>3bc3fda2-68a4-4e3e-9c33-9bb4623aeb21</td>
-                    <td>2025-05-12</td>
-                    <td>2025-05-13</td>
-                    <td>
-                        <div class="issue">
-                            Engineering    
-                        </div>
-                    </td>
-                    <td>
-                        <img src="#" alt="" width="100px" height="100px">
-                    </td>
-                    <td>
-                        <img src="#" alt="" width="100px" height="100px">
-                    </td>
-                    <td>Dimas</td>
-                </tr>
-                <tr>
-                    <td>8d29ef8f-6b95-4ff4-81cc-e43e1a09b0e9</td>
-                    <td>2025-05-15</td>
-                    <td>2025-05-17</td>
-                    <td>
-                        <div class="issue">
-                            Security    
-                        </div>
-                        <div class="issue">
-                            Facility
-                        </div>    
-                    </td>
-                    <td>
-                        <img src="#" alt="" width="100px" height="100px">
-                    </td>
-                    <td>
-                        <img src="#" alt="" width="100px" height="100px">
-                    </td>
-                    <td>Putra, Toni</td>
-                </tr>
-            </tbody>
-        </table>
     </div>
     
 <script type="text/php">

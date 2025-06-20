@@ -19,7 +19,7 @@ Route::get('/user', function (Request $request) {
 
 Route::get('/hello', function (Request $request) {
     $serverIp = $serverIp = gethostbyname(gethostname());
-    return response('The server IP address is: ' . $serverIp);
+    return response('The server anj IP address is: ' . $serverIp);
 });
 
 Route::prefix('/auth')->group(function() {
@@ -110,6 +110,12 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
 });
 
 
+Route::prefix('/statistics')->group(function () {
+    Route::prefix('/{_month}')->group(function (){
+        Route::get('/report', [AreaController::class, 'get_periodic_report']);
+    });
+
+});
 
 Route::post('/upload', [FileUploadController::class, 'upload']);
 Route::get('/file/{filename}', [FileUploadController::class, 'getFile']);

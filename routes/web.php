@@ -45,55 +45,6 @@ Route::middleware(WebAuthMiddleware::class)->group(function () {
     });
 });
 
-
-Route::get('/pdf-layout/service-request-form', function () {
-
-    $data = [
-        ['name' => 'NAMA A', 'title' => 'TITLE A'],
-        ['name' => 'NAMA B', 'title' => 'TITLE B'],
-        ['name' => 'NAMA C', 'title' => 'TITLE C'],
-        ['name' => 'NAMA D', 'title' => 'TITLE D'],
-        ['name' => 'NAMA E', 'title' => 'TITLE E'],
-        ['name' => 'NAMA F', 'title' => 'TITLE F'],
-    ];
-
-    $chunks = array_chunk($data, ceil(count($data) / 2));
-    $leftTable = $chunks[0];
-    $rightTable = $chunks[1];
-
-    $pdf = Pdf::loadView('pdf.service_request_form', compact('leftTable', 'rightTable'))->setPaper('a4', 'portrait');
-    return $pdf->stream('report.pdf');
-});
-
-Route::get('/pdf-layout/ticket-report', function () {
-
-    $data = [
-        'customFooterText' => 'Ticket ID: 123456',
-    ];
-
-
-    $pdf = Pdf::loadView('pdf.ticket_print_view',$data)->setPaper('a4', 'portrait');;
-    return $pdf->stream('report.pdf');
-});
-
-Route::get('/pdf-layout/work-order', function () {
-
-    $members = [
-        ['name' => 'NAMA A', 'title' => 'TITLE A'],
-        ['name' => 'NAMA B', 'title' => 'TITLE B'],
-        ['name' => 'NAMA C', 'title' => 'TITLE C'],
-        ['name' => 'NAMA D', 'title' => 'TITLE D'],
-        ['name' => 'NAMA E', 'title' => 'TITLE E'], 
-    ];
-
-    $data = [
-        'table_data' => $members,
-    ];
-
-    $pdf = Pdf::loadView('pdf.work_order', $data)->setPaper('a4', 'portrait');
-    return $pdf->stream('report.pdf');
-});
-
 Route::get('/pdf-layout/periodic-report', function () {
 
     $this_month_piechart_url = 'https://quickchart.io/chart?c=' . urlencode(json_encode([

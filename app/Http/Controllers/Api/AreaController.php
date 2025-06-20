@@ -7,23 +7,31 @@ use App\Http\Controllers\Controller;
 use App\Enums\ApplicantStatusEnum;
 use App\Enums\IssueTypeEnum;
 use App\Enums\MemberRoleEnum;
-
+use App\Enums\TicketLogTypeEnum;
+use App\Enums\TicketStatusEnum;
 use App\Models\Enums\MemberCapability;
 use App\Models\Enums\TicketIssueType;
 
 use App\Models\Applicant;
+use App\Models\Enums\MemberRole;
 use App\Models\Member;
-use App\Models\SystemSetting;
+use App\Models\Ticket;
 
+use App\Models\SystemSetting;
+use App\Models\TicketIssue;
 use App\Services\ApiResponseService;
 use App\Services\ReferralCodeService;
-
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\CarbonInterval;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 use Throwable;
+
+use function Termwind\parse;
 
 class AreaController extends Controller
 {
@@ -154,7 +162,7 @@ class AreaController extends Controller
 
             return $this->apiResponseService->internalServerError('Failed to retrieve join code');
         }
-    }
+    } 
 
     public function delJoinCode()
     {
@@ -174,6 +182,327 @@ class AreaController extends Controller
             ]);
            
             return $this->apiResponseService->internalServerError('Failed to delete join code');
+        }
+    }
+
+    public function get_periodic_report(string $_month)
+    {
+        try {
+
+            $validator = Validator::make(['month' => $_month], [
+                'month' => 'required|string|in:january,february,march,april,may,june,july,august,september,october,november,december',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->apiResponseService->badRequest('Invalid month.');
+            }
+
+            $month_in_number = Carbon::parse('1 ' . ucfirst($_month))->month;
+            $year = now()->year;
+
+            $this_month_tickets = Ticket::with('logs') 
+                                    ->whereMonth('raised_on', $month_in_number)
+                                    ->whereYear('raised_on', $year)
+                                    ->get();
+
+            $this_month_closed_tickets = $this_month_tickets->where('status_id', TicketStatusEnum::CLOSED->id());
+
+            $ttw_ticket = 0;
+
+            foreach ($this_month_closed_tickets as $ticket) {
+                $assessment_log = $ticket->logs->where('type_id', TicketLogTypeEnum::ASSESSMENT->id())->first();
+                $evaluation_log = $ticket->logs->where('type_id', TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id())->first();
+                $work_progress_log = $ticket->logs->where('type_id', TicketLogTypeEnum::WORK_PROGRESS->id())->first();
+
+                if (!$assessment_log || !$evaluation_log || !$work_progress_log) {
+                    continue;
+                }
+
+                $ptl_response = $ticket->raised_on->diffInMinutes($assessment_log->recorded_on);
+                $ptl_resolved = $work_progress_log->recorded_on->diffInMinutes($evaluation_log->recorded_on);
+                $total_ptl = $ptl_response + $ptl_resolved;
+
+                $duration_ticket = $ticket->raised_on->diffInMinutes($ticket->closed_on);
+
+                if ($duration_ticket <= $total_ptl) {
+                    $ttw_ticket++;
+                }
+            }
+
+            $total_ticket = $this_month_closed_tickets->count();
+
+            $compliance_rate = $total_ticket > 0 ? round(($ttw_ticket / $total_ticket) * 100, 2) : 0;
+
+
+            $total_response_seconds = 0;
+            $response_count = 0;
+
+            foreach ($this_month_tickets as $ticket) {
+                $assessment_log = $ticket->logs
+                    ->where('type_id', TicketLogTypeEnum::ASSESSMENT->id())
+                    ->first();
+
+                if (!$assessment_log) {
+                    continue;
+                }
+
+                $response_time = $ticket->raised_on->diffInSeconds($assessment_log->recorded_on);
+
+                $total_response_seconds += $response_time;
+                $response_count++;
+            }
+
+
+            if ($response_count > 0) {
+                $avg_seconds = (int) round($total_response_seconds / $response_count);
+                $avg_response_time = CarbonInterval::seconds($avg_seconds)->cascade()->format('%i minutes %s seconds');
+            } else {
+                $avg_response_time = '0 minutes 0 seconds';
+            }
+
+
+            $issue_stats = [];
+
+            foreach (IssueTypeEnum::cases() as $issueEnum) {
+                $issue_id = $issueEnum->id();
+
+                $related_ticket_issues = TicketIssue::with('maintainers') 
+                    ->whereHas('ticket', function ($query) use ($month_in_number, $year) {
+                        $query->whereMonth('raised_on', $month_in_number)
+                            ->whereYear('raised_on', $year);
+                    })
+                    ->where('issue_id', $issue_id)
+                    ->get();
+
+                $ticket_ids = $related_ticket_issues->pluck('ticket_id')->unique();
+                $resolved_ticket_ids = $related_ticket_issues
+                    ->whereNotNull('resolved_on')
+                    ->pluck('ticket_id')
+                    ->unique();
+                $distinct_maintainers = $related_ticket_issues
+                    ->flatMap(fn($ti) => $ti->maintainers->pluck('id'))
+                    ->unique();
+
+                $total = $ticket_ids->count();
+                $resolved = $resolved_ticket_ids->count();
+                $percent = $total > 0 ? round(($resolved / $total) * 100, 2) : 0;
+
+                $color = sprintf("#%02x%02x%02x", random_int(0, 255), random_int(0, 255), random_int(0, 255));
+
+                $chart_url = 'https://quickchart.io/chart?c=' . urlencode(json_encode([
+                    'type' => 'doughnut',
+                    'data' => [
+                        'datasets' => [[
+                            'data' => [$resolved, max(0, $total - $resolved)],
+                            'backgroundColor' => [$color, '#e8e8e8'],
+                            'borderWidth' => 0
+                        ]]
+                    ],
+                    'options' => [
+                        'plugins' => [
+                            'legend' => false,
+                            'doughnutlabel' => [
+                                'labels' => [[
+                                    'text' => $percent . '%',
+                                    'font' => ['size' => 60]
+                                ]]
+                            ],
+                            'datalabels' => ['display' => false]
+                        ],
+                        'cutoutPercentage' => 70
+                    ]
+                ]));
+
+                $issue_stats[] = [
+                    'name' => $issueEnum->name,
+                    'ticket_count' => $total,
+                    'resolved_count' => $resolved,
+                    'maintainer_count' => $distinct_maintainers->count(),
+                    'doughnut_chart' => $chart_url
+                ];
+            }
+
+            $this_month_piechart = 'https://quickchart.io/chart?c=' . urlencode(json_encode([
+                'type' => 'outlabeledPie',
+                'data' => [
+                    'labels' => collect(IssueTypeEnum::cases())->map(fn($issue) => $issue->name)->values(),
+                    'datasets' => [[
+                        'backgroundColor' => [
+                            '#FF3784', 
+                            '#36A2EB',
+                            '#4BC0C0',
+                            '#F77825',
+                            '#9966FF',
+                            '#00C49F',
+                            '#FFBB28',
+                            '#C71585', 
+                            '#0088FE', 
+                            '#A52A2A'  
+                        ],
+                        'data' => collect(IssueTypeEnum::cases())->map(function ($issue) use ($month_in_number, $year) {
+                            return TicketIssue::where('issue_id', $issue->id())
+                                ->whereHas('ticket', function ($query) use ($month_in_number, $year) {
+                                    $query->whereMonth('raised_on', $month_in_number)
+                                        ->whereYear('raised_on', $year);
+                                })
+                                ->count();
+                        })->values(),
+                    ]]
+                ],
+                'options' => [
+                    'plugins' => [
+                        'legend' => false,
+                        'outlabels' => [
+                            'text' => '%l %p',
+                            'color' => 'white',
+                            'stretch' => 35,
+                            'font' => [
+                                'resizable' => true,
+                                'minSize' => 14,
+                                'maxSize' => 15
+                            ]
+                        ]
+                    ]
+                ]
+            ]));
+
+            
+
+            $overall_piechart_url = 'https://quickchart.io/chart?c=' . urlencode(json_encode([
+                'type' => 'outlabeledPie',
+                'data' => [
+                    'labels' => collect(IssueTypeEnum::cases())->map(fn($issue) => $issue->name)->values(),
+                    'datasets' => [[
+                        'backgroundColor' => [
+                            '#FF3784', 
+                            '#36A2EB',
+                            '#4BC0C0',
+                            '#F77825',
+                            '#9966FF',
+                            '#00C49F',
+                            '#FFBB28',
+                            '#C71585', 
+                            '#0088FE', 
+                            '#A52A2A'  
+                        ],
+                        'data' => collect(IssueTypeEnum::cases())->map(function ($issue) {
+                            return TicketIssue::where('issue_id', $issue->id())
+                                ->whereHas('ticket', function ($q) {}) // ✅ required
+                                ->count();
+                        })->values(),
+                    ]]
+                ],
+                'options' => [
+                    'plugins' => [
+                        'legend' => false,
+                        'outlabels' => [
+                            'text' => '%l %p',
+                            'color' => 'white',
+                            'stretch' => 35,
+                            'font' => [
+                                'resizable' => true,
+                                'minSize' => 14,
+                                'maxSize' => 15
+                            ]
+                        ]
+                    ]
+                ]
+            ]));
+
+            $document_data = [
+                'header' => [
+                    'date' => ucfirst($_month) . ' ' . now()->format('Y'),
+                    'area' => SystemSetting::get('area_name') ?? 'Area name not set yet',
+                ],
+                'opened_this_month' => $this_month_tickets->count(),
+                'closed_this_month' => $total_ticket,
+                'opened_total' => Ticket::count(),
+                'closed_total' => Ticket::where('status_id', TicketStatusEnum::CLOSED->id())->count(),
+                'compliance_rate' => $compliance_rate,
+                'avg_response_time' => $avg_response_time,
+                'issues' => $issue_stats,
+                'chart_pie_issues' => [
+                    'montly' => $this_month_piechart,
+                    'overall' => $overall_piechart_url,
+                ],
+                'crew_statistic' => Member::with('specialties')
+                    ->where('role_id', MemberRoleEnum::CREW->id())
+                    ->get()
+                    ->map(function ($member) use ($month_in_number, $year) {
+                        return [
+                            'id' => substr($member->id,-5),
+                            'name' => $member->name,
+                            'title' => $member->title,
+                            'specialties' => $member->specialties->pluck('name'),
+                            'HTC' => TicketIssue::whereHas('maintainers', function ($q) use ($member) {
+                                    $q->where('member_id', $member->id);
+                                })
+                                ->whereHas('ticket', function ($q) use ($month_in_number, $year) {
+                                    $q->whereMonth('raised_on', $month_in_number)
+                                        ->whereYear('raised_on', $year);
+                                })
+                                ->distinct('ticket_id')
+                                ->count()
+                        ];
+                    }),
+                'management_statistics' => Member::where('role_id', MemberRoleEnum::MANAGEMENT->id())
+                    ->get()
+                    ->map(function ($member) use ($month_in_number, $year) {
+                        return [
+                            'id' => substr($member->id,-5),
+                            'name' => $member->name,
+                            'title' => $member->title,
+                            'assessed_count' => $member->assessed_tickets()
+                                ->whereMonth('raised_on', $month_in_number)
+                                ->whereYear('raised_on', $year)
+                                ->count(),
+                            'evaluated_count' => $member->evaluated_tickets()
+                                ->whereMonth('raised_on', $month_in_number)
+                                ->whereYear('raised_on', $year)
+                                ->count(),
+                        ];
+                    }),
+                'member_statistics' => Member::with(['tickets.ticket_issues.issue'])
+                    ->where('role_id', MemberRoleEnum::MEMBER->id())
+                    ->get()
+                    ->map(function ($member) use ($month_in_number, $year) {
+                        $tickets_in_month = $member->tickets
+                            ->filter(fn($ticket) =>
+                                $ticket->raised_on->month === $month_in_number &&
+                                $ticket->raised_on->year === $year
+                            );
+
+                        $issue_names = $tickets_in_month
+                            ->flatMap(fn($ticket) => $ticket->ticket_issues->map(fn($ti) => $ti->issue->name))
+                            ->unique()
+                            ->values();
+
+                        return [
+                            'id' => substr($member->id, -5),
+                            'name' => $member->name,
+                            'title' => $member->title,
+                            'ticket_opened' => $tickets_in_month->count(),
+                            'issues' => $issue_names,
+                        ];
+                    }),
+            ];
+
+
+            $document = Pdf::loadView('pdf.periodic_report', $document_data)
+                        ->setPaper('a4', 'portrait')
+                        ->output();
+
+            return response($document)->header('Content-Type', 'application/pdf');
+
+        } catch (Throwable $e) {
+            Log::error('Failed to generate periodic report', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        
+            return $this->apiResponseService->internalServerError('Failed to generate periodic report.');
         }
     }
 

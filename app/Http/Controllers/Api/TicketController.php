@@ -1536,7 +1536,7 @@ class TicketController extends Controller
                     return $document->previewable_on;
                 }),
                 'logs' => $ticket->logs->values()->map(function ($log, $index) {
-                    return [,
+                    return [
                         'name' => $log->issuer->name,
                         'id_number' => substr($log->issuer->id, -5),
                         'log_type' => $log->type->name,
