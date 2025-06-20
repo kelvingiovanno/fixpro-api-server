@@ -1,24 +1,23 @@
-.DS_Store
+# General
 .env
-.env.backup
 .git
-.gitattributes
-.github
-.idea
-.phpunit.result.cache
-.psysh.php
-.styleci.yml
+.gitignore
+node_modules
+vendor
+storage/*.key
+*.log
+*.sqlite
+
+# Docker stuff
+Dockerfile
+docker-compose.yml
+docker-compose*.yml
+
+# OS / IDE
+.DS_Store
+*.swp
+*.swo
+*.bak
+*.tmp
 .vscode
-Homestead.json
-Homestead.yaml
-npm-debug.log
-storage/logs/*.log
-storage/framework/cache/data/*
-storage/framework/sessions/*
-storage/framework/views/*
-node_modules/
-public/build/
-public/hot
-public/storage
-vendor/
-Thumbs.db
+.idea/
