@@ -4,9 +4,12 @@ namespace App\Providers;
 
 use App\Services\EncryptionService;
 use App\Services\QrCodeService;
+use App\Services\WebAuthTokenService;
 use App\Services\ReferralCodeService;
-use App\Services\ApiResponseService;
-use App\Services\AuthTokenService;
+use App\Services\NonceCodeService;
+use App\Services\StorageService;    
+use App\Services\GoogleCalendarService;
+
 
 use Illuminate\Support\ServiceProvider;
 
@@ -29,8 +32,16 @@ class AppServiceProvider extends ServiceProvider
             return new ReferralCodeService();
         });
 
-        $this->app->singleton(ApiResponseService::class, function () {
-            return new ApiResponseService();
+        $this->app->singleton(StorageService::class, function () {
+            return new StorageService();
+        });
+
+        $this->app->singleton(NonceCodeService::class, function () {
+            return new NonceCodeService();
+        });
+
+        $this->app->singleton(GoogleCalendarService::class, function () {
+            return new GoogleCalendarService();
         });
     }
 
@@ -38,18 +49,16 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot(): void
-    {
+    {   
         if (app()->runningInConsole() && php_sapi_name() === 'cli') {
             if (in_array($_SERVER['argv'][1] ?? '', ['serve'])) {
+                
                 // Remove old token to force renewal
-                cache()->forget('app_auth_token');
+                cache()->forget('web_auth_token');
                 
                 // Generate and store a new token
-                $authToken = AuthTokenService::generateAndStoreKey();
+                $authToken = WebAuthTokenService::generateAndStoreKey();
                 echo "\n[APP AUTH TOKEN]: $authToken\n";
-
-                // Store a flag in cache
-                cache()->forever('app_auth_token_initialized', true);
             }
         }
     }

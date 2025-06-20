@@ -1,54 +1,45 @@
-<?php 
+<?php
 
 namespace App\Services;
 
-use App\Models\ReferralCode;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class ReferralCodeService
 {
-    public function generateCode(): string
+    public function generateReferral() : string
     {
-        $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $new_referral = Str::random(5);
 
-        do {
-            $code = $this->generateRandomString(6, $characters);
-        } while ($this->isCodeExists($code));
-
-        return $code;
-    }
-
-    public function isCodeValid(string $_code): bool
-    {
-        if ($this->isCodeExists($_code)) 
+        if(Cache::has('referral'))
         {
-            return true;
+            Cache::forget('referral');
         }
 
-        return false;
+        Cache::forever('referral', $new_referral);
+
+        return $new_referral;
     }
 
-    public function deleteReferralCode(): bool 
+    public function getReferral() : string
     {
-        $deleted = ReferralCode::orderBy('created_at', 'desc')->first()?->delete();
 
-        return $deleted > 0;
-    }
-
-
-    private function generateRandomString(int $length, string $characters): string
-    {
-        $randomString = '';
-        $maxIndex = strlen($characters) - 1;
-
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[random_int(0, $maxIndex)];
+        if(Cache::has('referral'))
+        {
+            return Cache::get('referral', '');    
         }
 
-        return $randomString;
+        return $this->generateReferral();
     }
 
-    private function isCodeExists(string $_code): bool
+    public function deleteReferral() : void
     {
-        return ReferralCode::where('code', $_code)->exists();
+        Cache::forget('referral');
     }
-}
+
+
+    public function checkReferral($_referral) : bool
+    {
+        return Cache::get('referral') === $_referral;
+    }
+}   

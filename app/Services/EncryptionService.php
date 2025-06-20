@@ -2,42 +2,35 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Str;
-use App\Models\ReferralCode;
-
 class EncryptionService
 {
-    /**
-     * Generate a secure encryption key.
-     */
-    public function generateKey(): string
-    {
-        
-        do {
-            $key = base64_encode(Str::random(32));
-        } while ($this->isKeyExists($key));
+    private string $CIPHER = 'AES-256-CBC';
 
-        return base64_encode(Str::random(32));
+    public function encrypt(string $plaintext, string $key): string
+    {
+        $iv = random_bytes(openssl_cipher_iv_length($this->CIPHER));
+        $encrypted = openssl_encrypt($plaintext, $this->CIPHER, $key, 0, $iv);
+
+        if ($encrypted === false) {
+            throw new \Exception('Encryption failed');
+        }
+
+        return base64_encode($iv . $encrypted);
     }
 
-    /**
-     * Encrypt data.
-     */
-    public function encrypt($data): string
+    public function decrypt(string $ciphertext, string $key): string
     {
-        return Crypt::encryptString($data);
-    }
+        $data = base64_decode($ciphertext);
+        $ivLength = openssl_cipher_iv_length($this->CIPHER);
+        $iv = substr($data, 0, $ivLength);
+        $encrypted = substr($data, $ivLength);
 
-    /**
-     * Decrypt data.
-     */
-    public function decrypt($encryptedData): string
-    {
-        return Crypt::decryptString($encryptedData);
-    }
+        $decrypted = openssl_decrypt($encrypted, $this->CIPHER, $key, 0, $iv);
 
-    private function isKeyExists(string $_key) {
-        return ReferralCode::where('key', $_key)->exists();
+        if ($decrypted === false) {
+            throw new \Exception('Decryption failed');
+        }
+
+        return $decrypted;
     }
 }
