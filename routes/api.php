@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\EntryController;
@@ -9,18 +8,8 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\IssueTypeController;
 
-use App\Http\Controllers\FileUploadController;
 
 use App\Http\Middleware\ApiAuthMiddleware;
-
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
-Route::get('/hello', function (Request $request) {
-    $serverIp = $serverIp = gethostbyname(gethostname());
-    return response('The server anj IP address is: ' . $serverIp);
-});
 
 Route::prefix('/auth')->group(function() {
     Route::post('exchange', [AuthController::class, 'exchange']);
@@ -113,9 +102,6 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
 Route::prefix('/statistics')->group(function () {
     Route::prefix('/{_month}')->group(function (){
         Route::get('/report', [AreaController::class, 'get_periodic_report']);
+        Route::get('/tickets', [AreaController::class, 'get_ticket_report']);
     });
-
 });
-
-Route::post('/upload', [FileUploadController::class, 'upload']);
-Route::get('/file/{filename}', [FileUploadController::class, 'getFile']);

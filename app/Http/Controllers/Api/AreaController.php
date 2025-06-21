@@ -387,7 +387,7 @@ class AreaController extends Controller
                         ],
                         'data' => collect(IssueTypeEnum::cases())->map(function ($issue) {
                             return TicketIssue::where('issue_id', $issue->id())
-                                ->whereHas('ticket', function ($q) {}) // ✅ required
+                                ->whereHas('ticket', function ($q) {})
                                 ->count();
                         })->values(),
                     ]]
@@ -505,6 +505,73 @@ class AreaController extends Controller
             return $this->apiResponseService->internalServerError('Failed to generate periodic report.');
         }
     }
+
+    public function get_ticket_report(string $_month)
+    {
+        try
+        {
+            $validator = Validator::make(['month' => $_month], [
+                'month' => 'required|string|in:january,february,march,april,may,june,july,august,september,october,november,december',
+            ]);
+
+            if ($validator->fails()) {
+                return $this->apiResponseService->badRequest('Invalid month.');
+            }
+
+            $monthNumber = Carbon::parse('1 ' . $_month)->month;
+            $year = now()->year;
+
+            $tickets = Ticket::whereMonth('raised_on', $monthNumber)
+                            ->whereYear('raised_on', $year)
+                            ->get();
+
+            $document_data = [
+                'header' => [
+                    'date' => ucfirst($_month) . ' ' . now()->format('Y'),
+                    'area' => SystemSetting::get('area_name') ?? 'Area name not set yet',
+                ],
+                'tickets' => $tickets->map(function ($ticket) {
+                    return [
+                        'id' => $ticket->id,
+                        'raised' => $ticket->raised_on,
+                        'closed' => $ticket->closed_on ?? 'not closed yet',
+                        'issues' => $ticket->ticket_issues->map(fn($ti) => $ti->issue->name),
+                        'before' => optional(
+                            $ticket->documents->firstWhere('previewable_on', '!=', null)
+                        )->previewable_on,
+                        'after' => optional(
+                            $ticket->logs->firstWhere('type_id', TicketLogTypeEnum::WORK_EVALUATION->id())
+                        )->document,
+
+
+                        'handlers' => $ticket->ticket_issues
+                            ->flatMap(fn($ti) => $ti->maintainers->pluck('name'))
+                            ->unique()
+                            ->values(),
+                    ];
+                }),
+            ];
+
+            $document = Pdf::loadView('pdf.ticket_report', $document_data)
+                        ->setPaper('a4', 'portrait')
+                        ->output();
+
+            return response($document)->header('Content-Type', 'application/pdf');
+
+        }
+        catch (Throwable $e)
+        {
+            Log::error('Failed to generate tickets report', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        
+            return $this->apiResponseService->internalServerError('Failed to generate tickets report.');
+        }
+    }
+
 
     public function getMembers()
     {
