@@ -132,7 +132,10 @@ class EntryController extends Controller
 
         try 
         {
-            $member = Member::create($normalizedData);
+            $member = Member::create(array_merge([
+                'role_id' => MemberRoleEnum::MEMBER->id(),
+            ], $normalizedData));
+            
             $applicant = Applicant::create([
                 'member_id' => $member->id,
                 'status_id' => ApplicantStatusEnum::PENDING->id(),

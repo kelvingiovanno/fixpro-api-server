@@ -55,7 +55,6 @@ class Ticket extends Model
         static::creating(function ($model) {
 
             $model->raised_on = now();
-            $model->status_id = TicketStatusEnum::OPEN->id();
 
             if(! $model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();

@@ -25,6 +25,7 @@ class TicketLog extends Model
         'member_id',
         'type_id',
         'news',
+        'recorded_on',
     ];
 
     protected $casts = [
@@ -47,8 +48,6 @@ class TicketLog extends Model
             if (empty($model->id)) {
                 $model->id = Str::uuid();
             }
-            
-            $model->recorded_on = now();
         });
     }
 

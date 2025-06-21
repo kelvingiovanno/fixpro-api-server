@@ -131,6 +131,7 @@ class TicketController extends Controller
     
             $ticket = Ticket::create([
                 'member_id' => $member_id,
+                'status_id' => TicketStatusEnum::OPEN->id(),
                 'response_id' => $ticket_response_level,
                 'location_id' => $location->id,
                 'stated_issue' => $data['stated_issue'],

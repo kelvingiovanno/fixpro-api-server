@@ -10,6 +10,16 @@ enum IssueTypeEnum : string
     case HOUSEKEEPING = "Housekeeping";
     case HSE = "HSE";
     case SECURITY = "Security";
+
+    public function sla_hours(): float
+    {
+        return match($this) {
+            self::ENGINEERING => 4,
+            self::HOUSEKEEPING => 5,
+            self::HSE => 5,
+            self::SECURITY => 2,
+        };
+    }
     
     public function id(): ?string
     {

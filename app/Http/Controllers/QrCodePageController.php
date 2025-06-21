@@ -27,7 +27,7 @@ class QrCodePageController extends Controller
 
         $code = $this->referralCodeService->generateReferral();
 
-        $host = env('APP_URL'); 
+        $host = env('APP_URL') . '/api'; 
 
         $data = [
             "endpoint" => $host,

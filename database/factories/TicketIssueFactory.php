@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\MemberRoleEnum;
 use App\Models\Enums\TicketIssueType;
 use App\Models\Member;
 use App\Models\Ticket;
@@ -32,7 +33,11 @@ class TicketIssueFactory extends Factory
     public function configure()
     {
         return $this->afterCreating(function (TicketIssue $ticketIssue) {
-            $members = Member::factory()->count(rand(2, 4))->create();
+            
+            $members = Member::where('role_id', MemberRoleEnum::CREW->id())
+                ->inRandomOrder()
+                ->limit(rand(1,3))
+                ->get();
             $ticketIssue->maintainers()->syncWithoutDetaching($members->pluck('id')->toArray());
         });
     }      

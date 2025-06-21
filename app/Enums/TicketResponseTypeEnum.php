@@ -13,9 +13,9 @@ enum TicketResponseTypeEnum : string
     public function slaModifier(): float
     {
         return match($this) {
-            self::EMERGENCY => 0.6,
-            self::URGENT => 0.8,
-            self::NORMAL => 0.1,
+            self::EMERGENCY => 0.7,
+            self::URGENT => 0.5,
+            self::NORMAL => 1,
         };
     }
 

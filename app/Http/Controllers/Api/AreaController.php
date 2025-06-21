@@ -200,38 +200,59 @@ class AreaController extends Controller
             $month_in_number = Carbon::parse('1 ' . ucfirst($_month))->month;
             $year = now()->year;
 
-            $this_month_tickets = Ticket::with('logs') 
-                                    ->whereMonth('raised_on', $month_in_number)
-                                    ->whereYear('raised_on', $year)
-                                    ->get();
+            $this_month_tickets = Ticket::with('logs','response','ticket_issues.issue')->whereMonth('raised_on', $month_in_number)->whereYear('raised_on', $year)->get();
 
             $this_month_closed_tickets = $this_month_tickets->where('status_id', TicketStatusEnum::CLOSED->id());
 
             $ttw_ticket = 0;
 
             foreach ($this_month_closed_tickets as $ticket) {
+                
                 $assessment_log = $ticket->logs->where('type_id', TicketLogTypeEnum::ASSESSMENT->id())->first();
                 $evaluation_log = $ticket->logs->where('type_id', TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id())->first();
                 $work_progress_log = $ticket->logs->where('type_id', TicketLogTypeEnum::WORK_PROGRESS->id())->first();
+
+                $total_extension_seconds = 0;
+
+                $logs = $ticket->logs->sortBy('recorded_on')->values(); 
+
+                foreach ($logs as $i => $log) {
+                    if ($log->type_id === TicketLogTypeEnum::TIME_EXTENSION->id()) {
+                        $nextLog = $logs->get($i + 1);
+
+                        if ($nextLog) {
+                            $start = Carbon::parse($log->recorded_on);
+                            $end = Carbon::parse($nextLog->recorded_on);
+
+                            $total_extension_seconds += $end->diffInSeconds($start,true);
+                        }
+                    }
+                }
 
                 if (!$assessment_log || !$evaluation_log || !$work_progress_log) {
                     continue;
                 }
 
-                $ptl_response = $ticket->raised_on->diffInMinutes($assessment_log->recorded_on);
-                $ptl_resolved = $work_progress_log->recorded_on->diffInMinutes($evaluation_log->recorded_on);
-                $total_ptl = $ptl_response + $ptl_resolved;
+                $ticket_response_duration = $ticket->raised_on->diffInSeconds($assessment_log->recorded_on);
+                $ticket_resolved_duration = $work_progress_log->recorded_on->diffInSeconds($evaluation_log->recorded_on);
+                $ticket_total_duration = $ticket_response_duration + $ticket_resolved_duration - $total_extension_seconds;
 
-                $duration_ticket = $ticket->raised_on->diffInMinutes($ticket->closed_on);
+                $ptl_response_duration = $ticket->response->sla_modifier * (SystemSetting::get('sla_response') ?? 86400);
 
-                if ($duration_ticket <= $total_ptl) {
+                $ptl_resolved_duration = $ticket->ticket_issues
+                    ->map(function ($ticket_issue) {
+                        return $ticket_issue->issue->sla_hours * 3600;
+                    })->max(); 
+                $ptl_total_duration = $ptl_response_duration + $ptl_resolved_duration;
+
+                if ($ticket_total_duration <= $ptl_total_duration) {
                     $ttw_ticket++;
                 }
             }
 
             $total_ticket = $this_month_closed_tickets->count();
 
-            $compliance_rate = $total_ticket > 0 ? round(($ttw_ticket / $total_ticket) * 100, 2) : 0;
+            $compliance_rate = $total_ticket > 0 ? round(($ttw_ticket / $total_ticket) * 100, 1) : 0;
 
 
             $total_response_seconds = 0;
@@ -247,17 +268,20 @@ class AreaController extends Controller
                 }
 
                 $response_time = $ticket->raised_on->diffInSeconds($assessment_log->recorded_on);
-
+                
                 $total_response_seconds += $response_time;
                 $response_count++;
             }
 
+            logger('debug', [
+                'total_response_seconds' => $total_response_seconds,
+            ]);
 
             if ($response_count > 0) {
                 $avg_seconds = (int) round($total_response_seconds / $response_count);
-                $avg_response_time = CarbonInterval::seconds($avg_seconds)->cascade()->format('%i minutes %s seconds');
+                $avg_response_time = CarbonInterval::seconds($avg_seconds)->cascade()->format('%h hours %i minutes');
             } else {
-                $avg_response_time = '0 minutes 0 seconds';
+                $avg_response_time = '0 hours 0 minutes';
             }
 
 
@@ -425,7 +449,7 @@ class AreaController extends Controller
                     'montly' => $this_month_piechart,
                     'overall' => $overall_piechart_url,
                 ],
-                'crew_statistic' => Member::with('specialties')
+                'crew_statistic' => Member::with('specialities')
                     ->where('role_id', MemberRoleEnum::CREW->id())
                     ->get()
                     ->map(function ($member) use ($month_in_number, $year) {
@@ -433,7 +457,7 @@ class AreaController extends Controller
                             'id' => substr($member->id,-5),
                             'name' => $member->name,
                             'title' => $member->title,
-                            'specialties' => $member->specialties->pluck('name'),
+                            'specialties' => $member->specialities->pluck('name'),
                             'HTC' => TicketIssue::whereHas('maintainers', function ($q) use ($member) {
                                     $q->where('member_id', $member->id);
                                 })
@@ -532,7 +556,7 @@ class AreaController extends Controller
                 ],
                 'tickets' => $tickets->map(function ($ticket) {
                     return [
-                        'id' => $ticket->id,
+                        'id' => substr($ticket->id, -5),
                         'raised' => $ticket->raised_on,
                         'closed' => $ticket->closed_on ?? 'not closed yet',
                         'issues' => $ticket->ticket_issues->map(fn($ti) => $ti->issue->name),
@@ -540,9 +564,8 @@ class AreaController extends Controller
                             $ticket->documents->firstWhere('previewable_on', '!=', null)
                         )->previewable_on,
                         'after' => optional(
-                            $ticket->logs->firstWhere('type_id', TicketLogTypeEnum::WORK_EVALUATION->id())
-                        )->document,
-
+                            $ticket->logs->firstWhere('type_id', TicketLogTypeEnum::WORK_EVALUATION_REQUEST->id())->documents->firstWhere('previewable_on', '!=', null)
+                        )->previewable_on,
 
                         'handlers' => $ticket->ticket_issues
                             ->flatMap(fn($ti) => $ti->maintainers->pluck('name'))
@@ -571,7 +594,6 @@ class AreaController extends Controller
             return $this->apiResponseService->internalServerError('Failed to generate tickets report.');
         }
     }
-
 
     public function getMembers()
     {

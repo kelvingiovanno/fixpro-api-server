@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Periodic Report</title>
     <style>
         
         * {
@@ -44,6 +44,10 @@
         .page-break {
             page-break-before: always;
             break-before: page; 
+        }
+
+        thead {
+            display: table-header-group;
         }
 
         /* report header */
@@ -154,6 +158,10 @@
             font-size: 16px;
             font-weight: bold;
         }
+
+        .department-block {
+            margin-top: 20px;
+        }
         
         /* staffs database */
 
@@ -180,7 +188,7 @@
         }
 
         .staffs-database .department-title {
-            margin: 20px 0;
+            margin: 10px 0;
         }
     </style>
 </head>
@@ -228,7 +236,7 @@
             <td class="metric-cell">
                 <p class="metric-label">This month’s</p>
                 <p class="metric-title">Average response duration</p>
-                <p class="metric-value" style="width: 120px;">{{ $avg_response_time }}</p>
+                <p class="metric-value" style="width: 100px; font-size: 18px;">{{ $avg_response_time }}</p>
             </td>
             <td class="metric-cell">
                 <p class="metric-label">This month’s</p>
@@ -271,6 +279,12 @@
     <div class="sections staffs-database">
         <div class="department-block">
             <h2 class="department-title">Crew Statistics</h2>
+            <div style="margin-bottom: 10px;">
+                <p style="color: gray">
+                    <b>HTC</b>
+                    The number of tickets to which the staff contributed to.
+                </p>
+            </div>
             <table class="staff-table">
                 <thead>
                     <tr>
@@ -287,23 +301,27 @@
                         <tr>
                             <td>{{$crew['id']}}</td>
                             <td> {{$crew['name']}} </td>
-                            <td>{{$crew['title']}}</td>
+                            <td> {{$crew['title']}} </td>
                             <td> {{ collect($crew['specialties'])->map(fn($s) => Str::title($s))->implode(', ') }} </td>
                             <td>{{$crew['HTC']}}</td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
-            <div style="margin-top: 15px;">
-                <p style="color: gray">
-                    <b>HTC</b>
-                    The number of tickets to which the staff contributed to.
-                </p>
-            </div>
         </div>
 
         <div class="department-block">
             <h2 class="department-title">Management Statistics</h2>
+            <div style="margin-bottom: 10px;">
+                <p style="color: gray">
+                    <b>ATC</b>
+                    The number of tickets which were assessed by a give staff.
+                </p>
+                <p style="color: gray">
+                    <b>ETC</b>
+                    The number of work evaluation done by the given staff.
+                </p>
+            </div>
             <table class="staff-table">
                 <thead>
                     <tr>
@@ -326,21 +344,16 @@
                     @endforeach
                 </tbody>
             </table>
-            
-            <div style="margin-top: 15px;">
-                <p style="color: gray">
-                    <b>ATC</b>
-                    The number of tickets which were assessed by a give staff.
-                </p>
-                <p style="color: gray">
-                    <b>ETC</b>
-                    The number of work evaluation done by the given staff.
-                </p>
-            </div>
         </div>
 
         <div class="department-block">
             <h2 class="department-title">Member Statistics</h2>
+            <div style="margin-bottom: 10px;">
+                <p style="color: gray">
+                    <b>OTC</b>
+                    The number of tickets which were opened by given member.
+                </p>
+            </div>
             <table class="staff-table">
                 <thead>
                     <tr>
@@ -363,13 +376,6 @@
                     @endforeach
                 </tbody>
             </table>
-
-            <div style="margin-top: 15px;">
-                <p style="color: gray">
-                    <b>OTC</b>
-                    The number of tickets which were opened by given member.
-                </p>
-            </div>
         </div>
     </div>
     
@@ -378,7 +384,7 @@
         $w = $pdf->get_width();
         $h = $pdf->get_height();
 
-        $pageText = "Page {PAGE_NUM} of {PAGE_COUNT} | May 2025";
+        $pageText = "Page {PAGE_NUM} of {PAGE_COUNT} | Periodic Report May 2025";
         
 
         $fullText = $pageText;
@@ -387,7 +393,7 @@
         $x = ($w - 200) / 2;
         $y = $h - 30;
 
-        $pdf->page_text($x + 70 , $y, $fullText, $font, $size, array(0, 0, 0));
+        $pdf->page_text($x + 45 , $y, $fullText, $font, $size, array(0, 0, 0));
     }
 </script>
 </body>

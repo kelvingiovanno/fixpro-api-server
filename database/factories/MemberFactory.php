@@ -42,9 +42,6 @@ class MemberFactory extends Factory
             $issueTypeIds = TicketIssueType::inRandomOrder()->take(rand(1, 3))->pluck('id')->toArray(); 
             $member->specialities()->attach($issueTypeIds);
 
-            $ticketIssueIds = TicketIssue::inRandomOrder()->take(rand(1, 3))->pluck('id')->toArray(); 
-            $member->maintained_tickets()->attach($ticketIssueIds);
-
             $capabilityIds = MemberCapability::inRandomOrder()->take(rand(0, 2))->pluck('id')->toArray();
             $member->capabilities()->attach($capabilityIds);
         });

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    <title>Ticket Report</title>
     <style>
 
         * {
@@ -104,7 +104,7 @@
     <table class="report-header">
         <tr>
             <td class="report-title">
-                <h1 class="report-title">Tickets Report</h1>
+                <h1 class="report-title">Ticket Report</h1>
                 <h1 class="report-date">{{ $header['date'] }}</h1>
             </td>
             <td class="report-location">
@@ -114,10 +114,6 @@
     </table>
 
      <div class="sections tickets">
-
-        <h1 class="section-title">All Tickets</h1>
-        <h3 class="section-subtitle">Recorded for May 2025</h3> 
-
         <table class="tickets-table">
             <thead>
                 <tr>
@@ -140,7 +136,7 @@
                         <td>{{ implode(', ', $ticket['issues']->toArray()) }}</td>
                         <td>
                             @if ($ticket['before'])
-                                <img src="{{ $ticket['before'] }}" alt="Before" width="100px" height="100px">
+                                <img src="{{$ticket['before']}}" width="100px" height="100px">
                             @else
                                 <span>No image</span>
                             @endif
@@ -158,5 +154,23 @@
             </tbody>
         </table>
     </div>
+
+    <script type="text/php">
+    if (isset($pdf)) {
+        $w = $pdf->get_width();
+        $h = $pdf->get_height();
+
+        $pageText = "Page {PAGE_NUM} of {PAGE_COUNT} | Ticket Report May 2025";
+        
+
+        $fullText = $pageText;
+        $font = null;
+        $size = 8;
+        $x = ($w - 200) / 2;
+        $y = $h - 30;
+
+        $pdf->page_text($x + 45 , $y, $fullText, $font, $size, array(0, 0, 0));
+    }
+</script>
 </body>
 </html>

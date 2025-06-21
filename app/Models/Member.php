@@ -48,7 +48,6 @@ class Member extends Model
 
         static::creating(function ($model) 
         {            
-            $model->role_id = MemberRoleEnum::MEMBER->id();
             $model->member_since = now();
             $model->member_until = now()->addYear();
 

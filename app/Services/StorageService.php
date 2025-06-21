@@ -55,8 +55,8 @@ class StorageService
     protected function storeToLocal(string $fileContent, string $filePath): string
     {
         Storage::disk('public')->put($filePath, $fileContent);
-
-        return env('APP_URL') . '/storage/' . $filePath;
+        $parsed_path = public_path('/storage/' . $filePath);
+        return $parsed_path;
     }
 
     protected function storeToCloud(string $fileContent, string $filePath): string

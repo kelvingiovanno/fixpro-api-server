@@ -18,7 +18,7 @@ class TicketIssueType extends Model
     protected $fillable = [
         'id',
         'name',
-        'sla_duration_hour',
+        'sla_hours',
     ];
 
     protected $hidden = [

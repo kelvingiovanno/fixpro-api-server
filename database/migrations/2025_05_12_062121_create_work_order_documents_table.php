@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('resource_type');
             $table->string('resource_name');
             $table->string('resource_size');
-            $table->string('previewable_on')->unique();
+            $table->string('previewable_on');
             
             $table->softDeletes();
         });

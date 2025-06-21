@@ -19,6 +19,8 @@ use App\Models\Enums\TicketResponseType;
 use App\Models\Enums\TicketStatusType;
 use App\Models\Enums\TicketIssueType;
 use App\Models\Enums\TicketLogType;
+use App\Models\Member;
+use App\Models\Ticket;
 
 class DatabaseSeeder extends Seeder
 {
@@ -51,12 +53,29 @@ class DatabaseSeeder extends Seeder
         }
 
         foreach (IssueTypeEnum::cases() as $case) {
-            TicketIssueType::create(['name' => $case->value]);
+            TicketIssueType::create([
+                'name' => $case->value,
+                'sla_hours' => $case->sla_hours(),
+            ]);
         }
 
         foreach (TicketLogTypeEnum::cases() as $case) {
             TicketLogType::create(['name' => $case->value]);
         }
+
+        Member::factory(10)->create([
+            'role_id' => MemberRoleEnum::MANAGEMENT->id(),
+        ]);
+
+        Member::factory(10)->create([
+            'role_id' => MemberRoleEnum::CREW->id(),
+        ]);
+
+        Member::factory(10)->create([
+            'role_id' => MemberRoleEnum::MEMBER->id(),
+        ]);
+
+        Ticket::factory(15)->create();
     }
 
 }

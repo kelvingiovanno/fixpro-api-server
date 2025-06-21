@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Member;
 use Illuminate\Database\Seeder;
 
 use App\Models\Ticket;
@@ -13,5 +14,6 @@ class DummyDataSeed extends Seeder
      */
     public function run(): void
     {
+
     }
 }
