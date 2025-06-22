@@ -7,8 +7,7 @@ use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\IssueTypeController;
-
-
+use App\Http\Controllers\Api\SlaController;
 use App\Http\Middleware\ApiAuthMiddleware;
 
 Route::prefix('/auth')->group(function() {
@@ -96,6 +95,12 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
             Route::put('/{member_id}', [AreaController::class, 'putMember']);
         });
     });
+
+    Route::prefix('/sla')->group(function (){
+        Route::get('/', [SlaController::class, 'get_sla']);
+        Route::put('/', [SlaController::class, 'put_sla']);
+    });
+    
 });
 
 

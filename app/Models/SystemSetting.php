@@ -39,12 +39,14 @@ class SystemSetting extends Model
         return static::where('key', $key)->value('value') ?? $default;
     }
 
-    public static function put(string $key, $value): void
+    public static function put(string $key, $value): mixed
     {
         static::updateOrCreate(
             ['key' => $key],
             ['value' => $value]
         );
+
+        return $value;
     }
 
     public static function remove(string $key): void

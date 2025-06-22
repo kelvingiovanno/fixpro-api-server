@@ -13,7 +13,6 @@ use App\Models\Enums\MemberCapability;
 use App\Models\Enums\TicketIssueType;
 
 use App\Models\Applicant;
-use App\Models\Enums\MemberRole;
 use App\Models\Member;
 use App\Models\Ticket;
 
@@ -21,8 +20,10 @@ use App\Models\SystemSetting;
 use App\Models\TicketIssue;
 use App\Services\ApiResponseService;
 use App\Services\ReferralCodeService;
+
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonInterval;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -30,8 +31,6 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 use Throwable;
-
-use function Termwind\parse;
 
 class AreaController extends Controller
 {
@@ -272,10 +271,6 @@ class AreaController extends Controller
                 $total_response_seconds += $response_time;
                 $response_count++;
             }
-
-            logger('debug', [
-                'total_response_seconds' => $total_response_seconds,
-            ]);
 
             if ($response_count > 0) {
                 $avg_seconds = (int) round($total_response_seconds / $response_count);
