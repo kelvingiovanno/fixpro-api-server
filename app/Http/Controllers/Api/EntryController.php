@@ -7,13 +7,17 @@ use App\Http\Controllers\Controller;
 use App\Enums\ApplicantStatusEnum;
 use App\Enums\AreaJoinPolicyEnum;
 use App\Enums\MemberRoleEnum;
-
+use App\Exceptions\InvalidNonceException;
+use App\Exceptions\InvalidReferralException;
+use App\Exceptions\JoinFormValidationException;
 use App\Models\Applicant;
 use App\Models\AuthenticationCode;
 use App\Models\SystemSetting;
 use App\Models\Member;
 
 use App\Services\ApiResponseService;
+use App\Services\JoinFormService;
+use App\Services\JoinPolicyService;
 use App\Services\ReferralCodeService;
 use App\Services\NonceCodeService;
 
@@ -29,45 +33,58 @@ class EntryController extends Controller
     private ApiResponseService $apiResponseService;
     private ReferralCodeService $referralCodeService;
     private NonceCodeService $nonceCodeService;
+    private JoinFormService $joinFormService;
+    private JoinPolicyService $joinPolicyService;
 
     public function __construct (
         ApiResponseService $_apiResponseService, 
         ReferralCodeService $_referralCodeService,
         NonceCodeService $_nonceCodeService, 
+        JoinFormService $_joinFormService,
+        JoinPolicyService $_joinPolicyService,
     ) {
         $this->apiResponseService = $_apiResponseService;
         $this->referralCodeService = $_referralCodeService;
         $this->nonceCodeService = $_nonceCodeService;
+        $this->joinFormService = $_joinFormService;
+        $this->joinPolicyService = $_joinPolicyService;
     }
 
-    public function getForm(Request $_request)
+    public function index(Request $request)
     {
-        $referralCode = $_request->query('area_join_form_referral_tracking_identifier');
+        $validator = Validator::make($request->query(), [
+            'area_join_form_referral_tracking_identifier' => 'required|string',
+        ], 
+        [
+            'area_join_form_referral_tracking_identifier.required' => 'Referral tracking identifier is required.',
+            'area_join_form_referral_tracking_identifier.string' => 'Referral tracking identifier must be a valid string.',
+        ]);
 
-        if (!$referralCode) {
-            return $this->apiResponseService->badRequest('Referral code is required.');
-        }
-
-        if (!$this->referralCodeService->checkReferral($referralCode)) {
-            return $this->apiResponseService->forbidden('The provided referral code is invalid or has expired.');
-        }
+        if($validator->fails())
+        {
+            return $this->apiResponseService->badRequest('Validation failed.', $validator->errors());
+        }        
 
         try 
         {
-            $nonceToken = $this->nonceCodeService->generateNonce();
-            $area_name = SystemSetting::get('area_name');
-    
-            $form = array_merge(['name'], json_decode(SystemSetting::get('area_join_form'),true) ?? [] );
-            $form_fields = collect($form)->map(function ($field) {
-                return ['field_label' => ucfirst(str_replace('_', ' ', $field))];
-            })->values();
+            $this->referralCodeService->check($request->query('area_join_form_referral_tracking_identifier'));
 
-            return $this->apiResponseService->ok([
+            $area_name = SystemSetting::get('area_name');
+            $form_fields = $this->joinFormService->form();
+            $nonce = $this->nonceCodeService->generate();
+
+            $response_data = [
                 'area_name' => $area_name,
                 'form_fields' => $form_fields,
-                'nonce' => $nonceToken,
-            ], 'All the required fields and a nonce to be used for submission.');
+                'nonce' => $nonce,
+            ];
+
+            return $this->apiResponseService->ok($response_data, 'All the required fields and a nonce to be used for submission.');
         } 
+        catch (InvalidReferralException $e)
+        {
+            return $this->apiResponseService->badRequest($e->getMessage());
+        }
         catch (Throwable $e) 
         {
             Log::error('Error occurred while retrieving form data', [
@@ -77,99 +94,74 @@ class EntryController extends Controller
                 'trace' => $e->getTraceAsString(), 
             ]);
 
-            return $this->apiResponseService->internalServerError('Failed to get form data', 500);
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 
-    public function submit(Request $_request)
+    public function store(Request $request)
     {
-        $nonce_code = $_request->query('area_join_form_submission_nonce');
 
-        if (!$nonce_code) {
-            return $this->apiResponseService->badRequest('Nonce code is required.');
-        }
+        $validator = Validator::make($request->all(),
+            [
+                'area_join_form_submission_nonce' => 'required|string',
+                'data' => 'required|array',
+                'data.*.field_label' => 'required|string',
+                'data.*.field_value' => 'required|string',
+            ],
+            [
+                'area_join_form_submission_nonce.required' => 'Submission nonce is required.',
+                'area_join_form_submission_nonce.string' => 'Submission nonce must be a valid string.',
 
-        if (!$this->nonceCodeService->checkNonce($nonce_code)) {
-            return $this->apiResponseService->forbidden('The provided referral code is invalid or has expired.');
-        }
+                'data.required' => 'The data field is required.',
+                'data.array' => 'The data field must be an array of field entries.',
 
-        $join_policy = SystemSetting::get('area_join_policy');
+                'data.*.field_label.required' => 'Each field must have a label.',
+                'data.*.field_label.string' => 'The field label must be a string.',
+             
+                'data.*.field_value.required' => 'Each field must have a value.',
+                'data.*.field_value.string' => 'The field value must be a string.',
+            ]
+        );
 
-        if($join_policy == AreaJoinPolicyEnum::CLOSED->value) {
-            $this->nonceCodeService->deleteNonce($nonce_code);
-            return $this->apiResponseService->forbidden('');
-        }
-
-        $form_labels = array_merge(['name'], json_decode(SystemSetting::get('area_join_form'),true) ?? []);
-
-        $formattedFormLabels = array_map(function ($form_label) {
-            return ucwords(str_replace('_', ' ', $form_label));
-        }, $form_labels);
-
-        $form_data = collect($_request->input('data'))
-            ->pluck('field_value', 'field_label')
-            ->toArray();
-
-        $rules = [];
-        foreach ($formattedFormLabels as $label) {
-            $rules[$label] = ['required'];
-        }
-
-        $validator = Validator::make($form_data, $rules);
-
-        if ($validator->fails()) {
-            return $this->apiResponseService->badRequest(
-                'Validation failed',
-                $validator->errors()
-            );
-        }
-
-        $normalizedData = [];
-        foreach ($form_data as $label => $value) {
-            $normalizedKey = strtolower(str_replace(' ', '_', $label));
-            $normalizedData[$normalizedKey] = $value;
+        if($validator->fails()) {
+            return $this->apiResponseService->badRequest('Validator failed.', $validator->errors());
         }
 
         try 
         {
-            $member = Member::create(array_merge([
-                'role_id' => MemberRoleEnum::MEMBER->id(),
-            ], $normalizedData));
+            $form = $request['data'];
+            $nonce = $request->query('area_join_form_submission_nonce');
             
-            $applicant = Applicant::create([
-                'member_id' => $member->id,
-                'status_id' => ApplicantStatusEnum::PENDING->id(),
-            ]);
-
-            if($join_policy == AreaJoinPolicyEnum::OPEN->value)
-            {
-                $applicant->update([
-                    'status_id' => ApplicantStatusEnum::ACCEPTED->id(),
-                ]);
-            }
+            $applicant = $this->joinPolicyService->request($form, $nonce);
 
             $response_data = [
                 'application_id' => $applicant->id,
-                'application_expiry_date' => "2025-08-01T12:30:45+07:00",
+                'application_expiry_date' => $applicant->expires_on,
             ];
-            
-            $this->nonceCodeService->deleteNonce($nonce_code);
-            
+
             return $this->apiResponseService->ok(
                 $response_data, 
                 'Successfully submitted an application. Use the following string to check periodically of your application status.'
             );
         } 
+        catch (InvalidNonceException $e)
+        {
+            return $this->apiResponseService->forbidden($e->getMessage());
+        }
+        catch (JoinFormValidationException $e)
+        {
+            return $this->apiResponseService->badRequest($e->getMessage());
+        }
         catch (Throwable $e) 
         {
-            Log::error('Error occurred while submitting the application', [
+            Log::error('Error occurred while submitting the form', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('Failed to submit application');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
     
@@ -240,7 +232,7 @@ class EntryController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
     
-            return $this->apiResponseService->internalServerError('Failed to process your application status.');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 }

@@ -4,10 +4,11 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use App\Exceptions\InvalidNonceException;
 
 class NonceCodeService 
 {
-    public function generateNonce() : string
+    public function generate(): string
     {
         do {
             $nonce = Str::random(64); 
@@ -18,22 +19,25 @@ class NonceCodeService
         return $nonce;
     }
 
-    public function checkNonce(string $nonce) : bool
+    /**
+     * @throws InvalidNonceException
+     */
+    public function check(string $nonce): void
     {
-        if (Cache::has("nonce:$nonce")) {
-            return true;
+        if (!Cache::has("nonce:$nonce")) {
+            throw new InvalidNonceException();
         }
-
-        return false;
     }
 
-    public function deleteNonce(string $nonce) : bool
+    /**
+     * @throws InvalidNonceException
+     */
+    public function delete(string $nonce): void
     {
-        if (Cache::has("nonce:$nonce")) {
-            Cache::forget("nonce:$nonce");
-            return true;
+        if (!Cache::has("nonce:$nonce")) {
+            throw new InvalidNonceException('Cannot delete nonce because it is invalid or already deleted.');
         }
 
-        return false;
+        Cache::forget("nonce:$nonce");
     }
 }

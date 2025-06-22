@@ -23,7 +23,7 @@ class SlaController extends Controller
         $this->apiResponseService = $_apiResponseService;
     }
 
-    public function get_sla()
+    public function index()
     {
         try
         {
@@ -58,7 +58,7 @@ class SlaController extends Controller
         }
     }
 
-    public function put_sla(Request $_request)
+    public function update(Request $_request)
     {
         $payload = $_request->input('data');    
 

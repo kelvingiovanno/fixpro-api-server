@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\AuthService;
 use App\Services\EncryptionService;
 use App\Services\QrCodeService;
 use App\Services\WebAuthTokenService;
@@ -9,7 +10,8 @@ use App\Services\ReferralCodeService;
 use App\Services\NonceCodeService;
 use App\Services\StorageService;    
 use App\Services\GoogleCalendarService;
-
+use App\Services\JoinFormService;
+use App\Services\JoinPolicyService;
 
 use Illuminate\Support\ServiceProvider;
 
@@ -42,6 +44,21 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(GoogleCalendarService::class, function () {
             return new GoogleCalendarService();
+        });
+
+        $this->app->singleton(AuthService::class, function () {
+            return new AuthService();
+        });
+
+        $this->app->singleton(JoinFormService::class, function () {
+            return new JoinFormService();
+        });
+
+        $this->app->singleton(JoinPolicyService::class, function () {
+            return new JoinPolicyService(
+                new NonceCodeService(),
+                new JoinFormService(),
+            );
         });
     }
 

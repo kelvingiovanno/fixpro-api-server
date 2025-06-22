@@ -6,6 +6,7 @@ use App\Models\SystemSetting;
 
 use App\Models\Enums\TicketIssueType;
 use App\Models\TicketIssue;
+use App\Services\JoinFormService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +17,12 @@ use Throwable;
 
 class SettingController extends Controller
 {
+    private JoinFormService $joinFormService;
+
+    public function __construct(JoinFormService $_joinFormService)
+    {
+        $this->joinFormService = $_joinFormService;
+    }
 
     public function index()
     {
@@ -121,22 +128,15 @@ class SettingController extends Controller
         {
             $forms = $request_data['forms'];
 
-            $formatted = array_map(function ($item) {
-                $item = trim($item);
-                $item = strtolower($item);
-                return preg_replace('/[^a-z0-9_]/', '', str_replace(' ', '_', $item));
-            }, $forms);
+            $member_columns = $this->joinFormService->set($forms);
 
-
-            Schema::table('members', function (Blueprint $table) use ($formatted) {
-                foreach ($formatted as $column) {
+            Schema::table('members', function (Blueprint $table) use ($member_columns) {
+                foreach ($member_columns as $column) {
                     if (!Schema::hasColumn('members', $column)) {
                         $table->string($column)->nullable();
                     }
                 }
             });
-
-            SystemSetting::put('area_join_form', json_encode($formatted));
 
             return redirect()->back()
                 ->with('success', 'Settings updated successfully!');

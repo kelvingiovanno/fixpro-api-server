@@ -30,7 +30,7 @@ class IssueTypeController extends Controller
         $this->googleCalendarService = $_googleCalendarService;
     }
 
-    public function getAllIssueType() 
+    public function index() 
     {
         try
         {
@@ -59,7 +59,7 @@ class IssueTypeController extends Controller
         }
     }
 
-    public function postIssueType(Request $_request)
+    public function store(Request $_request)
     {
         $data = $_request->input('data');
 
@@ -109,7 +109,7 @@ class IssueTypeController extends Controller
         }
     }
 
-    public function deleteIssueType(string $_issueTypeId)
+    public function destroy(string $_issueTypeId)
     {
         if(!Str::isUuid($_issueTypeId))
         {

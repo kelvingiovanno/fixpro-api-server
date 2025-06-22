@@ -2,167 +2,118 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Models\AuthenticationCode;
-use App\Models\RefreshToken;
-
-use App\Services\ApiResponseService;
-
 use App\Http\Controllers\Controller;
 
+use App\Exceptions\InvalidTokenException;
+
+use App\Services\ApiResponseService;
+use App\Services\AuthService;
+
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
-use Tymon\JWTAuth\Facades\JWTAuth;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 use Throwable;
 
 class AuthController extends Controller
 {
     private ApiResponseService $apiResponseService;
+    private AuthService $authService;
 
     public function __construct (
-        ApiResponseService $_apiResponseService
+        ApiResponseService $_apiResponseService,
+        AuthService $_authService,
     ) {
         $this->apiResponseService = $_apiResponseService;
+        $this->authService = $_authService;
     }
 
-    public function exchange(Request $_request)
+    public function exchange(Request $request)
     {
-        $authenticationCode = $_request->input('data.authentication_code');
+        $validator = Validator::make($request->all(), [
+            'data' => 'required|array',
+            'data.authentication_code' => 'required|string|uuid|exists:authentication_codes,id',
+        ],
+        [
+            'data.required' => 'The request must include a data object.',
+            'data.array' => 'The data field must be a valid object.',
+            
+            'data.authentication_code.required' => 'Authentication code is required.',
+            'data.authentication_code.string' => 'Authentication code must be a string.',
+            'data.authentication_code.uuid' => 'Authentication code format is invalid.',
+            'data.authentication_code.exists' => 'The authentication code provided is invalid',
+        ]);
         
-        if (!$authenticationCode) {
-            return $this->apiResponseService->forbidden('Authentication code is required');
-        }
 
-        if (!Str::isUuid($authenticationCode)) {
-            return $this->apiResponseService->forbidden('Invalid authentication code'); 
+        if ($validator->fails()) 
+        {
+            return $this->apiResponseService->badRequest('Validation failed.' ,$validator->errors());
         }
 
         try 
         {
-            $authCodeRecord = AuthenticationCode::find($authenticationCode);
-
-            if (!$authCodeRecord) {
-                return $this->apiResponseService->forbidden('Invalid authentication code');
-            }
-        
-            $now = Carbon::now();
-            $accessExpiry = $now->copy()->addDay();
-            $refreshExpiry = $now->copy()->addMonths(3);
-            
-        
-            $customClaims = [
-                'sub' => 'profix_api_service',
-                'member_id' => $authCodeRecord->applicant->member->id,
-                'member_role_id' => $authCodeRecord->applicant->member->role->id,
-                'iat' => $now->timestamp,
-                'exp' => $accessExpiry->timestamp,
-            ];
-        
-            $payload = JWTAuth::factory()->customClaims($customClaims)->make();
-            $accessToken = JWTAuth::encode($payload)->get();
-        
-            $refreshToken = Str::random(302);
- 
-            RefreshToken::create([
-                'member_id'    => $authCodeRecord->applicant->member->id,
-                'token'      => $refreshToken,
-                'expires_on' => $refreshExpiry,
-            ]);
-        
-            $response_data = [
-                "access_token"  => $accessToken,
-                "access_expiry_interval" => $accessExpiry->diffInMilliseconds($now),
-                "refresh_token" => $refreshToken,
-                "refresh_expiry_interval" => $refreshExpiry->diffInMilliseconds($now),
-                "token_type" => "Bearer",
-                "role_scope" => $authCodeRecord->applicant->member->role->name,
-            ];
-    
-            $authCodeRecord->delete();
-    
-            return $this->apiResponseService->ok($response_data, 'Authentication successful');
-            
+            $resposne_data = $this->authService->exchange_code($request['data']['authentication_code']);
+            return $this->apiResponseService->ok($resposne_data, 'Authentication code exchanged successfully.');   
         } 
+        catch (ModelNotFoundException)
+        {
+            return $this->apiResponseService->notFound('The authentication code provided is invalid.');
+        }
         catch (Throwable $e) 
         {
-            Log::error('Error occurred during authentication exchange', [
+            Log::error('An error occurred while exchanging the authentication code.', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(), 
             ]);
     
-            return $this->apiResponseService->internalServerError('Failed to exchange authentication code', 500);
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
     
-    public function refresh(Request $_request)
+    public function refresh(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'data' => 'required|array',
+            'data.refresh_token' => 'required|string|uuid|exists:refresh_tokens,token'
+        ], 
+        [
+            'data.required' => 'The request must include a data object.',
+            'data.array' => 'The data field must be a valid object.',
+            
+            'data.refresh_token.required' => 'The refresh token is required.',
+            'data.refresh_token.string' => 'The refresh token must be a string.',
+            'data.refresh_token.uuid' => 'The refresh token format is invalid.',
+            'data.refresh_token.exists' => 'The refresh token is invalid or has expired.',
+        ]);
+
+
+        if($validator->fails())
+        {
+            return $this->apiResponseService->badRequest('Validation failed.', $validator->errors());
+        }
+
         try 
         {
-            $refreshToken = $_request->input('data.refresh_token');
-    
-            if (!$refreshToken) {
-                return $this->apiResponseService->forbidden('Refresh token is required');
-            }
-    
-            $refreshTokenRecord = RefreshToken::where('token', $refreshToken)->first();
-    
-            if (!$refreshTokenRecord) {
-                return $this->apiResponseService->forbidden('Invalid refresh token');
-            }
-    
-            if ($refreshTokenRecord->expires_on < now()) {
-                return $this->apiResponseService->forbidden('Expired refresh token');
-            }
-
-            $refreshTokenRecord->delete();
-
-            $now = Carbon::now();
-            $accessExpiry = $now->copy()->addDay();
-            $refreshExpiry = $now->copy()->addMonths(3);
-
-            $new_refresh_token = RefreshToken::create([
-                'member_id'    => $refreshTokenRecord->member->id,
-                'token'      => Str::random(302),
-                'expires_at' => $refreshExpiry,
-            ]);
-    
-            $customClaims = [
-                'sub' => 'profix_api_service',
-                'member_id' => $new_refresh_token->member->id,
-                'member_role_id' => $new_refresh_token->member->role->id,
-                'iat' => $now->timestamp,
-                'exp' => $accessExpiry->timestamp,
-            ];
-    
-            $payload = JWTAuth::factory()->customClaims($customClaims)->make();
-            $accessToken = JWTAuth::encode($payload)->get();
-    
-            $response_data = [
-                "access_token"  => $accessToken,
-                "access_expiry_interval" => $accessExpiry->diffInMilliseconds($now),
-                "refresh_token" => $new_refresh_token->token,
-                "refresh_expiry_interval" => $refreshExpiry->diffInMilliseconds($now),
-                "token_type" => "Bearer",
-                "role_scope" => $new_refresh_token->member->role->name,
-            ];
-    
-            return $this->apiResponseService->ok($response_data, 'Access token successfully refreshed');
-            
+            $resposne_data = $this->authService->refresh_token($request['data']['refresh_token']);
+            return $this->apiResponseService->ok($resposne_data, 'Access token successfully refreshed.');
+        }
+        catch (InvalidTokenException $e) 
+        {
+            return $this->apiResponseService->forbidden($e->getMessage());
         } 
         catch (Throwable $e) 
         {
-            Log::error('Error occurred during token refresh', [
+            Log::error('An error occurred while refreshing the access token.', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
     
-            return $this->apiResponseService->internalServerError('Failed to refresh token', 500);
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 }

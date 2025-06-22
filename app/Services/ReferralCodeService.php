@@ -2,12 +2,14 @@
 
 namespace App\Services;
 
+use App\Exceptions\InvalidReferralException;
+
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 class ReferralCodeService
 {
-    public function generateReferral() : string
+    public function generate() : string
     {
         $new_referral = Str::random(5);
 
@@ -21,7 +23,7 @@ class ReferralCodeService
         return $new_referral;
     }
 
-    public function getReferral() : string
+    public function get() : string
     {
 
         if(Cache::has('referral'))
@@ -29,17 +31,25 @@ class ReferralCodeService
             return Cache::get('referral', '');    
         }
 
-        return $this->generateReferral();
+        return $this->generate();
     }
 
-    public function deleteReferral() : void
+    public function delete() : void
     {
         Cache::forget('referral');
     }
 
 
-    public function checkReferral($_referral) : bool
+    public function check($_referral) : void
     {
-        return Cache::get('referral') === $_referral;
+        $stored = Cache::get('referral');
+
+        if ($stored === null) {
+            throw new InvalidReferralException('No referral code has been generated.');
+        }
+
+        if ($stored !== $_referral) {
+            throw new InvalidReferralException();
+        }
     }
 }   

@@ -8,7 +8,7 @@ use App\Models\Enums\ApplicantStatus;
 
 use App\Models\Member;
 use App\Models\AuthenticationCode;
-
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -49,6 +49,11 @@ class Applicant extends Model
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             }
         });
+    }
+
+    protected function serializeDate(DateTimeInterface $date)
+    {
+        return $date->format('c');
     }
 
     public function member()
