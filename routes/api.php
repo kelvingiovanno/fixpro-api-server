@@ -70,7 +70,7 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
     Route::prefix('/area')->group(function() {
 
         Route::get('/', [AreaController::class, 'index']);
-        Route::get('/join-code', [AreaController::class, 'getJoinCode']);
+        Route::get('/join', [AreaController::class, 'getJoinCode']);
         Route::delete('/join-code', [AreaController::class, 'delJoinCode']);
 
         Route::prefix('/join-policy')->group(function () {

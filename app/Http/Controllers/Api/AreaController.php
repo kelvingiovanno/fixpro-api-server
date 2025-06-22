@@ -19,6 +19,7 @@ use App\Models\Ticket;
 use App\Models\SystemSetting;
 use App\Models\TicketIssue;
 use App\Services\ApiResponseService;
+use App\Services\QrCodeService;
 use App\Services\ReferralCodeService;
 
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -36,13 +37,17 @@ class AreaController extends Controller
 {
     private ReferralCodeService $referralCodeService;
     private ApiResponseService $apiResponseService;
-    
+    private QrCodeService $qrCodeService;
+
     public function __construct (
         ReferralCodeService $_referralCodeService, 
         ApiResponseService $_apiResponseService,
+        QrCodeService $_qrCodeService,
+        
     ) {
         $this->referralCodeService = $_referralCodeService;
         $this->apiResponseService = $_apiResponseService;
+        $this->qrCodeService = $_qrCodeService;
     }
     
     public function index()
@@ -140,7 +145,7 @@ class AreaController extends Controller
     {
         try 
         {
-            $endpoint = env('APP_URL');
+            $endpoint = env('APP_URL') . '/api';
             $refferal = $this->referralCodeService->getReferral();
 
             $data = [
@@ -148,7 +153,11 @@ class AreaController extends Controller
                 "referral_tracking_identifier" => $refferal,
             ];
 
-            return $this->apiResponseService->ok($data, "The string representation of the Area Join Code, which then can be transformed into a qr-code form.");
+            $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
+
+            $qrCode = $this->qrCodeService->generateBarcode($jsonData);
+
+            return response($qrCode)->header('Content-Type', 'image/png');
         } 
         catch (Throwable $e) 
         {
