@@ -25,7 +25,7 @@ class AuthService
         $customClaims = [
             'sub' => 'profix_api_service',
             'member_id' => $member->id,
-            'member_role_id' => $member->role->id,
+            'role_id' => $member->role->id,
             'iat' => $now->timestamp,
             'exp' => $accessExpiry->timestamp,
         ];
@@ -77,7 +77,7 @@ class AuthService
         $customClaims = [
             'sub' => 'profix_api_service',
             'member_id' => $newToken->member->id,
-            'member_role_id' => $newToken->member->role->id,
+            'role_id' => $newToken->member->role->id,
             'iat' => $now->timestamp,
             'exp' => $accessExpiry->timestamp,
         ];

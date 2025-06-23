@@ -4,11 +4,13 @@ namespace Tests\Feature;
 
 use App\Enums\ApplicantStatusEnum;
 use App\Enums\JoinPolicyEnum;
+
 use App\Models\Applicant;
-use App\Models\Member;
+
 use App\Services\AreaService;
 use App\Services\NonceCodeService;
 use App\Services\ReferralCodeService;
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;

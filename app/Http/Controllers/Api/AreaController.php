@@ -55,7 +55,6 @@ class AreaController extends Controller
             return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
-
     
     public function get_join_policy()
     {

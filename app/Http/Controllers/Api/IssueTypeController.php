@@ -36,7 +36,7 @@ class IssueTypeController extends Controller
                 return [
                     'id' => $issue->id,
                     'name' => $issue->name,
-                    'service_level_agreement_duration_hour' => $issue->sla_duration_hour,
+                    'service_level_agreement_duration_hour' => $issue->sla_hours,
                 ];
             });
 
@@ -55,13 +55,20 @@ class IssueTypeController extends Controller
         }
     }
 
-    public function store(Request $_request)
+    public function store(Request $request)
     {
-        $data = $_request->input('data');
-
-        $validator = Validator::make($data, [
-            'name' => 'required|string',
-            'service_level_agreement_duration_hour' => 'required|integer',
+        $validator = Validator::make($request->all(), [
+            'data' => 'required|array',
+            'data.name' => 'required|string',
+            'data.service_level_agreement_duration_hour' => 'required|integer',
+        ], 
+        [
+            'data.required' => 'The data field is required.',
+            'data.array' => 'The data field must be an array.',
+            'data.name.required' => 'The name field is required.',
+            'data.name.string' => 'The name must be a string.',
+            'data.service_level_agreement_duration_hour.required' => 'The SLA duration is required.',
+            'data.service_level_agreement_duration_hour.integer' => 'The SLA duration must be a number (in hours).',
         ]);
 
         if($validator->fails())
@@ -72,13 +79,13 @@ class IssueTypeController extends Controller
         try
         {
             $issue_type = TicketIssueType::create([
-                'name' => $data['name'],
-                'sla_duration_hour' => $data['service_level_agreement_duration_hour'],
+                'name' => $request['data']['name'],
+                'sla_duration_hour' => $request['data']['service_level_agreement_duration_hour'],
             ]);
 
             $new_issue_type = TicketIssueType::find($issue_type->id);
 
-            $new_calender = $this->googleCalendarService->createCalendar($data['name']);
+            $new_calender = $this->googleCalendarService->create_calender($request['data']['name']);
 
             Calender::create([
                 'id' => $new_calender->getId(), 

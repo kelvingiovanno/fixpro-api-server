@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\GoogleCalenderException;
 use App\Models\SystemSetting;
 
 use Google\Client;
@@ -12,57 +13,184 @@ use Google\Service\Calendar\Calendar as GoogleCalendar;
 use Illuminate\Support\Facades\Log;
 
 use Exception;
+use Illuminate\Support\Facades\Cache;
 
 class GoogleCalendarService
 {
-    public function getClient()
-    {
-        $googleClientId = SystemSetting::get('google_client_id');
-        $googleClientSecret = SystemSetting::get('google_client_secret');
-        $googleRedirectUri = SystemSetting::get('google_redirect_uri');
+    private Client $client;
 
-        if (!$googleClientId || !$googleClientSecret || !$googleRedirectUri) {
-            return null;
+    public function __construct()
+    {
+        $this->client = new Client();
+    }    
+
+    public function get_client()
+    {
+        return $this->client;
+    }
+
+    public function get_client_id()
+    {
+        $client_id = Cache::get('google_client_id');
+
+        if(!$client_id)
+        {
+            $client_id = SystemSetting::put('google_client_id', $client_id);
+            Cache::forever('google_client_id', $client_id);
         }
 
-        $client = new Client();
-        $client->setClientId($googleClientId);
-        $client->setClientSecret($googleClientSecret);
-        $client->setRedirectUri($googleRedirectUri);
+        return $client_id;
+    }
 
-        $client->addScope(Calendar::CALENDAR);
-        $client->setAccessType('offline');
-        $client->setPrompt('consent');
+    public function get_client_secret()
+    {
+        $client_secret = Cache::get('google_client_secret');
+
+        if(!$client_secret)
+        {
+            $client_secret = SystemSetting::put('google_client_secret', $client_secret);
+            Cache::forever('google_client_secret', $client_secret);
+        }
+
+        return $client_secret;
+    }
+
+    public function get_redirect_uri()
+    {
+        $redirect_uri = Cache::get('google_redirect_uri');
+
+        if(!$redirect_uri)
+        {
+            $redirect_uri = SystemSetting::put('google_redirect_uri', $redirect_uri);
+            Cache::forever('google_redirect_uri', $redirect_uri);
+        }
+
+        return $redirect_uri;
+    }
+
+    public function get_access_token()
+    {
+        $access_token = Cache::get('google_access_token');
+
+        if(!$access_token)
+        {
+            $access_token = SystemSetting::put('google_access_token', $access_token);
+            Cache::forever('google_access_token', $access_token);
+        }
+
+        return $access_token;
+    }
+
+    public function get_refresh_token()
+    {
+        $refresh_token = Cache::get('google_refresh_token');
+
+        if(!$refresh_token)
+        {
+            $refresh_token = SystemSetting::put('google_refresh_token', $refresh_token);
+            Cache::forever('google_refresh_token', $refresh_token);
+        }
+
+        return $refresh_token;
+    }
+
+    public function set_client_id(string $client_id)
+    {
+        SystemSetting::put('google_client_id', $client_id);
+        Cache::forever('google_client_id', $client_id);
+
+        return $client_id;
+    }
+
+    public function set_client_secret(string $client_secret)
+    {
+        SystemSetting::put('google_client_secret', $client_secret);
+        Cache::forever('google_client_secret', $client_secret);
+
+        return $client_secret;
+    }
+
+    public function set_redirect_uri(string $redirect_uri)
+    {
+        SystemSetting::put('google_redirect_uri', $redirect_uri);
+        Cache::forever('google_redirect_uri', $redirect_uri);
+
+        return $redirect_uri;
+    }
+
+    public function set_access_token(string $access_token)
+    {
+        SystemSetting::put('google_access_token', $access_token);
+        Cache::forever('google_access_token', $access_token);
+
+        return $access_token;
+    }
+
+    public function set_refresh_token(string $refresh_token)
+    {
+        SystemSetting::put('google_refresh_token', $refresh_token);
+        Cache::forever('google_refresh_token', $refresh_token);
+
+        return $refresh_token;
+    }
+
+    public function build_client()
+    {
+        $client_id = $this->get_client_id();
+        $client_secret = $this->get_client_secret();
+        $redirect_uri = $this->get_redirect_uri();
+
+        if (!$client_id || !$client_secret || !$redirect_uri) {
+            throw new GoogleCalenderException('Google Calendar credentials are missing.');
+        }
+        $this->client->setClientId($client_id);
+        $this->client->setClientSecret($client_secret);
+        $this->client->setRedirectUri($redirect_uri);
+
+        $this->client->addScope(Calendar::CALENDAR);
+        $this->client->setAccessType('offline');
+        $this->client->setPrompt('consent');
+
+        return $this->client;
+    }
+
+    public function client()
+    {
+
+        $client = $this->client;
+
+        $access_token = $this->get_access_token();
+
+        if(!$access_token)
+        {
+            throw new GoogleCalenderException('Google Calendar access token is missing.');
+        }
+
+        $client->setAccessToken($access_token);
+
+        if ($client->isAccessTokenExpired()) {
+
+            $refresh_token = $this->get_refresh_token();
+
+            $fetch_response = $client->fetchAccessTokenWithRefreshToken($refresh_token);
+
+            if (isset($fetch_response['error'])) {
+                throw new GoogleCalenderException('Failed to refresh access token.');
+            }
+
+            $new_access_token = $this->set_access_token($fetch_response['access_token']);
+            $this->set_refresh_token($fetch_response['refresh_token']);
+
+            $client->setAccessToken($new_access_token);
+        }
 
         return $client;
     }
 
-    private function refreshAccessToken(Client $client)
-    {
-        $access_token = SystemSetting::get('google_access_token');
-        $client->setAccessToken($access_token);
-
-        if ($client->isAccessTokenExpired()) {
-            $refresh_token = SystemSetting::get('google_refresh_token');
-            $token_data = $client->fetchAccessTokenWithRefreshToken($refresh_token);
-
-            if (isset($token_data['error'])) {
-                throw new Exception('Failed to refresh access token.');
-            }
-
-            SystemSetting::put('google_access_token', $token_data['access_token']); 
-
-            if (!empty($token_data['refresh_token'])) {
-                SystemSetting::put('google_refresh_token', $token_data['refresh_token']);
-            }
-        }
-    }
-
-    public function createEvent(array $eventData, string $calendarId = 'primary')
+    public function create_event(array $eventData, string $calendarId = 'primary')
     {
         try {
-            $client = $this->getClient();
-            $this->refreshAccessToken($client);
+            $client = $this->client();
 
             $service = new Calendar($client);
 
@@ -95,11 +223,10 @@ class GoogleCalendarService
         }
     }
 
-    public function createCalendar(string $calendarName)
+    public function create_calender(string $calendarName)
     {
         try {
-            $client = $this->getClient();
-            $this->refreshAccessToken($client);
+            $client = $this->client();
 
             $service = new Calendar($client);
 
@@ -123,11 +250,10 @@ class GoogleCalendarService
         }
     }
 
-    public function getEvents(string $calendarId = 'primary', array $params = [])
+    public function get_events(string $calendarId = 'primary', array $params = [])
     {
         try {
-            $client = $this->getClient();
-            $this->refreshAccessToken($client);
+            $client = $this->client();
 
             $service = new Calendar($client);
 

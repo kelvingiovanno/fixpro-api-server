@@ -8,7 +8,7 @@ use App\Models\Enums\TicketIssueType;
 use App\Models\SystemSetting;
 
 use App\Services\AreaService;
-
+use App\Services\GoogleCalendarService;
 use Illuminate\Http\Request;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Log;
@@ -21,6 +21,7 @@ class SettingController extends Controller
 {
     public function __construct(
         protected AreaService $areaService,
+        protected GoogleCalendarService $googleCalendarService,
     ) { }
 
     public function index()
@@ -317,15 +318,9 @@ class SettingController extends Controller
 
     }
 
-    public function submitSettingCalender(Request $_request) 
+    public function submitSettingCalender(Request $request) 
     {
-        $request_data = $_request->only([
-            'google_client_id',
-            'google_client_secret',
-            'google_callback',
-        ]);
-
-        $validator = Validator::make($request_data, [
+        $validator = Validator::make($request, [
             'google_client_id' => 'required|string',
             'google_client_secret' => 'required|string',
             'google_callback' => 'required|string|url',
@@ -349,9 +344,9 @@ class SettingController extends Controller
 
         try
         {
-            SystemSetting::put('google_client_id', $request_data['google_client_id']);
-            SystemSetting::put('google_client_secret', $request_data['google_client_secret']);
-            SystemSetting::put('google_redirect_uri', $request_data['google_callback']);
+            $this->googleCalendarService->set_client_id($request['google_client_id']);
+            $this->googleCalendarService->set_client_secret($request['google_client_secret']);
+            $this->googleCalendarService->set_redirect_uri($request['google_callback']);
 
             return redirect()->route('google.auth');
         }
