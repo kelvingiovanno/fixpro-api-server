@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+
 use App\Models\Calender;
 use App\Models\Enums\TicketIssueType;
 
@@ -12,23 +13,18 @@ use App\Services\GoogleCalendarService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
+
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 use Throwable;
 
 class IssueTypeController extends Controller
 {
-    private ApiResponseService $apiResponseService;
-    private GoogleCalendarService $googleCalendarService;
-
     public function __construct(
-        ApiResponseService $_apiResponseService,
-        GoogleCalendarService $_googleCalendarService,
+        protected ApiResponseService $apiResponseService,
+        protected GoogleCalendarService $googleCalendarService,
         
-    ) {
-        $this->apiResponseService = $_apiResponseService;
-        $this->googleCalendarService = $_googleCalendarService;
-    }
+    ) { }
 
     public function index() 
     {
@@ -40,7 +36,7 @@ class IssueTypeController extends Controller
                 return [
                     'id' => $issue->id,
                     'name' => $issue->name,
-                    'service_level_agreement_duration_hour' => $issue->sla_duration_hour ?? 'Not assigned yet',
+                    'service_level_agreement_duration_hour' => $issue->sla_duration_hour,
                 ];
             });
 
@@ -48,14 +44,14 @@ class IssueTypeController extends Controller
         }
         catch (Throwable $e)
         {
-            Log::error('Error retrieving issue types: ', [
+            Log::error('An error occurred while retrieving issue types: ', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
     
-            return $this->apiResponseService->internalServerError('An error occurred while retrieving issue types.');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 
@@ -83,6 +79,7 @@ class IssueTypeController extends Controller
             $new_issue_type = TicketIssueType::find($issue_type->id);
 
             $new_calender = $this->googleCalendarService->createCalendar($data['name']);
+
             Calender::create([
                 'id' => $new_calender->getId(), 
                 'name' => $new_calender->getSummary(),
@@ -98,27 +95,22 @@ class IssueTypeController extends Controller
         }
         catch (Throwable $e)
         {
-            Log::error('Error creating issue type: ', [
+            Log::error('An error occurred while creating issue type: ', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
     
-            return $this->apiResponseService->internalServerError('An error occurred while creating issue type.');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 
-    public function destroy(string $_issueTypeId)
+    public function destroy(string $issue_id)
     {
-        if(!Str::isUuid($_issueTypeId))
-        {
-            return $this->apiResponseService->badRequest('Issue type not found.');
-        }
-
         try
         {
-            $issue_type = TicketIssueType::find($_issueTypeId);
+            $issue_type = TicketIssueType::findOrFail($issue_id);
 
             if(!$issue_type)
             {
@@ -135,16 +127,20 @@ class IssueTypeController extends Controller
 
             return $this->apiResponseService->ok($response_data, 'Issue type deleted successfully.');
         }
+        catch (ModelNotFoundException $e)
+        {
+            return $this->apiResponseService->notFound('Issue type not found.');
+        }
         catch (Throwable $e)
         {
-            Log::error('Error deleting issue type: ', [
+            Log::error('An error occurred while deleting issue type: ', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
     
-            return $this->apiResponseService->internalServerError('An error occurred while deleting issue type.');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 }

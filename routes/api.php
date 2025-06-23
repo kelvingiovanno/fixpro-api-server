@@ -7,7 +7,9 @@ use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\IssueTypeController;
+use App\Http\Controllers\Api\JoinBarcodeController;
 use App\Http\Controllers\Api\SlaController;
+
 use App\Http\Middleware\ApiAuthMiddleware;
 
 Route::prefix('/auth')->group(function() {
@@ -62,20 +64,22 @@ Route::middleware(ApiAuthMiddleware::class)->group(function () {
     });    
    
     Route::prefix('/issue-types')->group(function () {
-        Route::get('/', [IssueTypeController::class, 'getAllIssueType']);
-        Route::post('/', [IssueTypeController::class, 'postIssueType']);
-        Route::delete('/{_issueTypeId}', [IssueTypeController::class, 'deleteIssueType']);
+        Route::get('/', [IssueTypeController::class, 'index']);
+        Route::post('/', [IssueTypeController::class, 'store']);
+        Route::delete('/{issue_id}', [IssueTypeController::class, 'destroy']);
     });    
 
     Route::prefix('/area')->group(function() {
 
         Route::get('/', [AreaController::class, 'index']);
-        Route::get('/join', [AreaController::class, 'getJoinCode']);
+
+        Route::get('/join', [JoinBarcodeController::class, 'index']);
+
         Route::delete('/join-code', [AreaController::class, 'delJoinCode']);
 
         Route::prefix('/join-policy')->group(function () {
-            Route::get('/', [AreaController::class, 'getJoinPolicy']);
-            Route::put('/', [AreaController::class, 'putJoinPolicy']); 
+            Route::get('/', [AreaController::class, 'get_join_policy']);
+            Route::put('/', [AreaController::class, 'update_join_policy']); 
         });
 
         Route::prefix('members')->group(function() {        

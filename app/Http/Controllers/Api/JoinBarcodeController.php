@@ -1,17 +1,31 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+
+use App\Services\ApiResponseService;
+use App\Services\QrCodeService;
+use App\Services\ReferralCodeService;
+
+use Illuminate\Support\Facades\Log;
+
+use Throwable;
 
 class JoinBarcodeController extends Controller
 {
+    public function __construct(
+        protected ApiResponseService $apiResponseService,
+        protected ReferralCodeService $referralCodeService,
+        protected QrCodeService $qrCodeService,
+    ) { }
+
     public function barcode()
     {
         try 
         {
             $endpoint = env('APP_URL') . '/api';
-            $refferal = $this->referralCodeService->getReferral();
+            $refferal = $this->referralCodeService->get();
 
             $data = [
                 "endpoint" => $endpoint,
@@ -26,35 +40,35 @@ class JoinBarcodeController extends Controller
         } 
         catch (Throwable $e) 
         {
-            Log::error('Failed to retrieve join code', [
+            Log::error('An error occurred while generating the join barcode', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('Failed to retrieve join code');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     } 
 
-    public function refresh()
+    public function renew()
     {
         try 
         {
-            $this->referralCodeService->deleteReferral();
+            $this->referralCodeService->delete();
             
-            return $this->apiResponseService->ok('Referral code successfully deleted.');
+            return $this->apiResponseService->ok('Join barcode renewed successfully.');
         } 
         catch (Throwable $e) 
         {
-            Log::error('Failed to delete join code', [
+            Log::error('An error occurred while renewing the join barcode', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
            
-            return $this->apiResponseService->internalServerError('Failed to delete join code');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 }

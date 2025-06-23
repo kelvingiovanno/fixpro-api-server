@@ -10,12 +10,11 @@ use Tests\TestCase;
 
 class AuthControllerTest extends TestCase
 {
-     use RefreshDatabase, WithFaker;
+    use RefreshDatabase, WithFaker;
 
     protected function setUp(): void
     {
         parent::setUp();
-
         $this->artisan('db:seed');
     }
 

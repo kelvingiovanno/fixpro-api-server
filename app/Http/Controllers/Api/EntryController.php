@@ -71,7 +71,7 @@ class EntryController extends Controller
         }
         catch (Throwable $e) 
         {
-            Log::error('Error occurred while retrieving form data', [
+            Log::error('An error occurred while retrieving form data', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -138,7 +138,7 @@ class EntryController extends Controller
         }
         catch (Throwable $e) 
         {
-            Log::error('Error occurred while submitting the form', [
+            Log::error('An error occurred while submitting the form', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
@@ -190,7 +190,7 @@ class EntryController extends Controller
         }
         catch (Throwable $e) 
         {
-            Log::error('Error occurred while retrieving authentication code', [
+            Log::error('An error occurred while retrieving authentication code', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),

@@ -41,7 +41,7 @@ class AreaService {
         $join_policy = Cache::get('area_join_policy');
         
         if (!$join_policy) {
-            $join_policy = SystemSetting::get('area_join_policy');
+            $join_policy = SystemSetting::get('area_join_policy') ?? JoinPolicyEnum::APPROVAL_NEEDED->value;
             Cache::forever('area_join_policy', $join_policy);
         }
 
