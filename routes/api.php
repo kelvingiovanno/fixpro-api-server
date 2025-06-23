@@ -17,8 +17,8 @@ Route::prefix('/auth')->group(function() {
 
 Route::prefix('entry')->group(function(){
     Route::post('/check', [EntryController::class, 'check']);
-    Route::get('/form', [EntryController::class, 'getForm']);
-    Route::post('/form',[EntryController::class, 'submit']);
+    Route::get('/form', [EntryController::class, 'index']);
+    Route::post('/form',[EntryController::class, 'store']);
 });
 
 Route::middleware(ApiAuthMiddleware::class)->group(function () {

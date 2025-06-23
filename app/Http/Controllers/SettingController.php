@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\JoinPolicyEnum;
+use App\Models\Enums\TicketIssueType;
+
 use App\Models\SystemSetting;
 
-use App\Models\Enums\TicketIssueType;
-use App\Models\TicketIssue;
-use App\Services\JoinFormService;
-use Illuminate\Database\Schema\Blueprint;
+use App\Services\AreaService;
+
 use Illuminate\Http\Request;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -17,12 +19,9 @@ use Throwable;
 
 class SettingController extends Controller
 {
-    private JoinFormService $joinFormService;
-
-    public function __construct(JoinFormService $_joinFormService)
-    {
-        $this->joinFormService = $_joinFormService;
-    }
+    public function __construct(
+        protected AreaService $areaService,
+    ) { }
 
     public function index()
     {
@@ -75,8 +74,8 @@ class SettingController extends Controller
 
         try
         {
-            SystemSetting::put('area_name', $request_data['area_name']);
-            SystemSetting::put('area_join_policy', $request_data['join_policy']);
+            $this->areaService->set_name($request_data['area_name']);
+            $this->areaService->set_join_policy(JoinPolicyEnum::from($request_data['join_policy']));
 
             return redirect()->back()
                 ->with('success', 'Settings updated successfully!')
@@ -128,7 +127,7 @@ class SettingController extends Controller
         {
             $forms = $request_data['forms'];
 
-            $member_columns = $this->joinFormService->set($forms);
+            $member_columns = $this->areaService->set_join_form($forms);
 
             Schema::table('members', function (Blueprint $table) use ($member_columns) {
                 foreach ($member_columns as $column) {

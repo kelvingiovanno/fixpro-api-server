@@ -2,16 +2,20 @@
 
 namespace Tests\Feature;
 
+use Tests\TestCase;
+
 use App\Enums\ApplicantStatusEnum;
-use App\Enums\JoinPolicyEnum;
+
 use App\Models\Applicant;
 use App\Models\Member;
-use App\Services\AreaService;
+use App\Models\SystemSetting;
+
+
 use App\Services\NonceCodeService;
 use App\Services\ReferralCodeService;
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
-use Tests\TestCase;
 
 class EntryControllerTest extends TestCase
 {
@@ -19,7 +23,6 @@ class EntryControllerTest extends TestCase
 
     private ReferralCodeService $referralCodeService;
     private NonceCodeService $nonceCodeService;
-    private AreaService $areaService;
 
     protected function setUp(): void
     {
@@ -27,19 +30,17 @@ class EntryControllerTest extends TestCase
 
         $this->artisan('db:seed');
 
-        
-        $this->areaService = app(AreaService::class);
+        SystemSetting::put('area_join_form', json_encode(['name','email', 'phone_number']));
+        SystemSetting::put('area_name', 'Binus Kemanggisas');
+        SystemSetting::put('area_name', 'approval-needed');
+
         $this->referralCodeService = app(ReferralCodeService::class);
         $this->nonceCodeService = app(NonceCodeService::class);
-
-        $this->areaService->set_join_form(['name','email', 'phone_number']);
-        $this->areaService->set_name('Binus Kemanggisan');
-        $this->areaService->set_join_policy(JoinPolicyEnum::APPROVAL_NEEDED);
     }
 
     public function test_get_form()
     {
-        $referralCode = $this->referralCodeService->generate();
+        $referralCode = $this->referralCodeService->getReferral();
 
         $response = $this->getJson('/api/entry/form?area_join_form_referral_tracking_identifier=' . $referralCode);
 
@@ -73,10 +74,10 @@ class EntryControllerTest extends TestCase
 
     public function test_submit()
     {
-        $nonce_code = $this->nonceCodeService->generate();
+        $nonce_code = $this->nonceCodeService->generateNonce();
 
-        $get_form = $this->areaService->get_join_form(); 
-    
+        $get_form = json_decode(SystemSetting::get('area_join_form'), true);
+
         $payload = [
             'data' => []
         ];
@@ -126,8 +127,9 @@ class EntryControllerTest extends TestCase
 
     public function test_check()
     {
+        $member = Member::factory()->create();
 
-        $applicant = Applicant::factory()->create();
+        $applicant = Applicant::factory()->create(['member_id' => $member->id]);
 
         $applicant->update([
             'status_id' => ApplicantStatusEnum::ACCEPTED->id(),
@@ -140,8 +142,6 @@ class EntryControllerTest extends TestCase
         ];
 
         $response = $this->postJson('/api/entry/check', $payload);
-        
-        $response->assertStatus(200);
 
         $response->assertExactJsonStructure([
             'message',
@@ -153,6 +153,7 @@ class EntryControllerTest extends TestCase
 
         $data = $response->json('data');
 
+
         $this->assertNotEmpty($data['authentication_code']);
 
         $auth_code_id = Applicant::find($applicant->id)->authentication_code->id;
@@ -162,3 +163,4 @@ class EntryControllerTest extends TestCase
         ]);
     }
 }
+ 

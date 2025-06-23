@@ -9,8 +9,8 @@ use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 
 class AuthControllerTest extends TestCase
-{
-     use RefreshDatabase, WithFaker;
+{    
+    use RefreshDatabase, WithFaker;
 
     protected function setUp(): void
     {

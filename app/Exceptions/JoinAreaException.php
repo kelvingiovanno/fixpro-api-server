@@ -4,7 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 
-class JoinPolicyException extends Exception
+class JoinAreaException extends Exception
 {
     protected $message = 'Join policy error.';
 

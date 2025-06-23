@@ -18,16 +18,10 @@ use Throwable;
 
 class AuthController extends Controller
 {
-    private ApiResponseService $apiResponseService;
-    private AuthService $authService;
-
     public function __construct (
-        ApiResponseService $_apiResponseService,
-        AuthService $_authService,
-    ) {
-        $this->apiResponseService = $_apiResponseService;
-        $this->authService = $_authService;
-    }
+        protected ApiResponseService $apiResponseService,
+        protected AuthService $authService,
+    ) {}
 
     public function exchange(Request $request)
     {
@@ -77,7 +71,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'data' => 'required|array',
-            'data.refresh_token' => 'required|string|uuid|exists:refresh_tokens,token'
+            'data.refresh_token' => 'required|string|exists:refresh_tokens,token'
         ], 
         [
             'data.required' => 'The request must include a data object.',
@@ -85,7 +79,6 @@ class AuthController extends Controller
             
             'data.refresh_token.required' => 'The refresh token is required.',
             'data.refresh_token.string' => 'The refresh token must be a string.',
-            'data.refresh_token.uuid' => 'The refresh token format is invalid.',
             'data.refresh_token.exists' => 'The refresh token is invalid or has expired.',
         ]);
 

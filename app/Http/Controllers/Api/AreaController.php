@@ -11,28 +11,26 @@ use App\Models\Applicant;
 use App\Models\SystemSetting;
 
 use App\Services\ApiResponseService;
-
+use App\Services\AreaService;
 use Illuminate\Support\Facades\Log;
 
 use Throwable;
 
 class AreaController extends Controller
 {
-    private ApiResponseService $apiResponseService;
 
     public function __construct (
-        ApiResponseService $_apiResponseService,        
-    ) {
-        $this->apiResponseService = $_apiResponseService;
-    }
+        protected ApiResponseService $apiResponseService, 
+        protected AreaService $areaService,       
+    ) {}
     
-    public function list()
+    public function index()
     {
         try     
         {
             $reponse_data = [
-                'name' => SystemSetting::get('area_name'),
-                'join_policy' => SystemSetting::get('area_join_policy'),
+                'name' => $this->areaService->get_name(),
+                'join_policy' => $this->areaService->get_join_policy(),
                 'member_count' => Applicant::where('status_id', ApplicantStatusEnum::ACCEPTED->id())->count(),
                 'pending_member_count' => Applicant::where('status_id', ApplicantStatusEnum::PENDING->id())->count(), 
                 'issue_type_count' => TicketIssueType::all()->count(),

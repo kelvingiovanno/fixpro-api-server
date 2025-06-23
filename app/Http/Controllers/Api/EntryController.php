@@ -4,51 +4,35 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 
-use App\Enums\ApplicantStatusEnum;
-use App\Enums\AreaJoinPolicyEnum;
-use App\Enums\MemberRoleEnum;
 use App\Exceptions\InvalidNonceException;
 use App\Exceptions\InvalidReferralException;
+use App\Exceptions\JoinAreaException;
 use App\Exceptions\JoinFormValidationException;
-use App\Models\Applicant;
-use App\Models\AuthenticationCode;
+
 use App\Models\SystemSetting;
-use App\Models\Member;
 
 use App\Services\ApiResponseService;
+use App\Services\JoinAreaService;
 use App\Services\JoinFormService;
-use App\Services\JoinPolicyService;
 use App\Services\ReferralCodeService;
 use App\Services\NonceCodeService;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 
 use Throwable;
 
 class EntryController extends Controller
 {
-    private ApiResponseService $apiResponseService;
-    private ReferralCodeService $referralCodeService;
-    private NonceCodeService $nonceCodeService;
-    private JoinFormService $joinFormService;
-    private JoinPolicyService $joinPolicyService;
-
     public function __construct (
-        ApiResponseService $_apiResponseService, 
-        ReferralCodeService $_referralCodeService,
-        NonceCodeService $_nonceCodeService, 
-        JoinFormService $_joinFormService,
-        JoinPolicyService $_joinPolicyService,
-    ) {
-        $this->apiResponseService = $_apiResponseService;
-        $this->referralCodeService = $_referralCodeService;
-        $this->nonceCodeService = $_nonceCodeService;
-        $this->joinFormService = $_joinFormService;
-        $this->joinPolicyService = $_joinPolicyService;
-    }
+        protected ApiResponseService $apiResponseService, 
+        protected ReferralCodeService $referralCodeService,
+        protected NonceCodeService $nonceCodeService, 
+        protected JoinFormService $joinFormService,
+        protected JoinAreaService $joinAreaService,
+    ) {}
 
     public function index(Request $request)
     {
@@ -132,7 +116,7 @@ class EntryController extends Controller
             $form = $request['data'];
             $nonce = $request->query('area_join_form_submission_nonce');
             
-            $applicant = $this->joinPolicyService->request($form, $nonce);
+            $applicant = $this->joinAreaService->request($form, $nonce);
 
             $response_data = [
                 'application_id' => $applicant->id,
@@ -167,62 +151,43 @@ class EntryController extends Controller
     
     public function check(Request $request)
     {
-        $application_id = $request->input('data.application_id');
-    
-        if (!$application_id) {
-            return $this->apiResponseService->badRequest('Application ID is required.');
-        }
-    
-        if (!Str::isUuid($application_id)) {
-            return $this->apiResponseService->badRequest('Application not found');
+
+        $validator = Validator::make($request->all(), [
+            'data' => 'required|array',
+            'data.application_id' => 'required|string|uuid'
+        ],
+        [
+            'data.required' => 'The data field is required.',
+            'data.array' => 'The data field must be an array.',
+            'data.application_id.required' => 'The application ID is required.',
+            'data.application_id.string' => 'The application ID must be a string.',
+            'data.application_id.uuid' => 'The application ID must be a valid UUID.',
+        ]);
+
+        if($validator->fails())
+        {
+            return $this->apiResponseService->badRequest('Validation failed.', $validator->errors());
         }
     
         try 
         {    
-            $applicant = Applicant::with('status')->find($application_id);
-        
-            if (!$applicant) {
-                return $this->apiResponseService->badRequest('Application not found.');
-            }
+            $application_id = $request['data']['application_id'];
+            $authentication_code = $this->joinAreaService->check($application_id);
             
-            if ($applicant->expires_on < now()) {
-                return $this->apiResponseService->forbidden('Your application has expired.');
-            }
-            
-            $statusId = $applicant->status->id;
+            $response_data = [
+                'authentication_code' => $authentication_code->id,
+            ];
 
-            $first_member_login = SystemSetting::get('first_member_login');
-
-            if(!$first_member_login)
-            {
-                $applicant->member()->update([
-                    'role_id' => MemberRoleEnum::MANAGEMENT->id(),
-                ]);
-
-                SystemSetting::put('first_member_login', "1");
-            }
-
-            switch ($statusId) {
-                case ApplicantStatusEnum::PENDING->id():
-                    return $this->apiResponseService->ok(null, 'Your application is still pending.');
-                
-                case ApplicantStatusEnum::REJECTED->id():
-                    return $this->apiResponseService->forbidden('Your application has been rejected.');
-                
-                case ApplicantStatusEnum::ACCEPTED->id():
-                    $authCode = AuthenticationCode::create([
-                        'application_id' => $application_id,
-                    ]);
-                    
-                    return $this->apiResponseService->ok(
-                        ['authentication_code' => $authCode->id],
-                        'Your application has been approved. Use the authentication code to proceed.'
-                    );
-            
-                default:
-                    return $this->apiResponseService->internalServerError('Unknown application status.');
-            }
+            return $this->apiResponseService->ok($response_data, 'Your application has been approved. Use the authentication code to proceed.');
         } 
+        catch (ModelNotFoundException)
+        {
+            return $this->apiResponseService->notFound('Applicant not found.');
+        }
+        catch (JoinAreaException $e)
+        {
+            return $this->apiResponseService->forbidden($e->getMessage());
+        }
         catch (Throwable $e) 
         {
             Log::error('Error occurred while retrieving authentication code', [

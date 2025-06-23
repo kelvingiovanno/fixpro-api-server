@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\AreaService;
 use App\Services\AuthService;
 use App\Services\EncryptionService;
 use App\Services\QrCodeService;
@@ -11,53 +12,39 @@ use App\Services\NonceCodeService;
 use App\Services\StorageService;    
 use App\Services\GoogleCalendarService;
 use App\Services\JoinFormService;
-use App\Services\JoinPolicyService;
+use App\Services\JoinAreaService;
 
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
+
+    public $singletons = [
+        EncryptionService::class => EncryptionService::class,
+        QrCodeService::class => QrCodeService::class,
+        StorageService::class => StorageService::class,
+        ReferralCodeService::class => ReferralCodeService::class,
+        NonceCodeService::class => NonceCodeService::class,
+        GoogleCalendarService::class => GoogleCalendarService::class,
+        AuthService::class => AuthService::class,
+    ];
+
     /**
      * Register any application services.
      */
     public function register(): void
     {
-        $this->app->singleton(EncryptionService::class, function () {
-            return new EncryptionService();
-        });
-
-        $this->app->singleton(QrCodeService::class, function () {
-            return new QrCodeService();
-        });
-
-        $this->app->singleton(ReferralCodeService::class, function () {
-            return new ReferralCodeService();
-        });
-
-        $this->app->singleton(StorageService::class, function () {
-            return new StorageService();
-        });
-
-        $this->app->singleton(NonceCodeService::class, function () {
-            return new NonceCodeService();
-        });
-
-        $this->app->singleton(GoogleCalendarService::class, function () {
-            return new GoogleCalendarService();
-        });
-
-        $this->app->singleton(AuthService::class, function () {
-            return new AuthService();
-        });
-
         $this->app->singleton(JoinFormService::class, function () {
-            return new JoinFormService();
+            return new JoinFormService(
+                $this->app->make(AreaService::class),
+            );
         });
 
-        $this->app->singleton(JoinPolicyService::class, function () {
-            return new JoinPolicyService(
-                new NonceCodeService(),
-                new JoinFormService(),
+        $this->app->singleton(JoinAreaService::class, function () {
+            return new JoinAreaService(
+                $this->app->make(NonceCodeService::class),
+                $this->app->make(JoinFormService::class),
+                $this->app->make(AreaService::class),
             );
         });
     }

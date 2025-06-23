@@ -2,10 +2,10 @@
 
 namespace App\Services;
 
+use App\Exceptions\InvalidTokenException;
+
 use App\Models\AuthenticationCode;
 use App\Models\RefreshToken;
-
-use App\Exceptions\InvalidTokenException;
 
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Illuminate\Support\Str;
