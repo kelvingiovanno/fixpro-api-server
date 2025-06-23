@@ -19,4 +19,6 @@ class Calender extends Model
     protected $hidden = [
         'deleted_at',
     ];
+
+    public $timestamps = false;
 }

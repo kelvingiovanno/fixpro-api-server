@@ -25,7 +25,7 @@ class QrCodePageController extends Controller
     public function showQrCode()
     {
 
-        $code = $this->referralCodeService->generateReferral();
+        $code = $this->referralCodeService->generate();
 
         $host = env('APP_URL') . '/api'; 
 
@@ -45,7 +45,7 @@ class QrCodePageController extends Controller
 
     public function refreshQrCode()
     {
-        $this->referralCodeService->generateReferral();
+        $this->referralCodeService->generate();
         return redirect()->route('qrcode.');
     }
 }

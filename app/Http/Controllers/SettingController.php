@@ -320,7 +320,7 @@ class SettingController extends Controller
 
     public function submitSettingCalender(Request $request) 
     {
-        $validator = Validator::make($request, [
+        $validator = Validator::make($request->all(), [
             'google_client_id' => 'required|string',
             'google_client_secret' => 'required|string',
             'google_callback' => 'required|string|url',

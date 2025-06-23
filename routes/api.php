@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\EntryController;
 use App\Http\Controllers\Api\TicketController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AreaController;
+use App\Http\Controllers\Api\GoogleCalendarTestController;
 use App\Http\Controllers\Api\IssueTypeController;
 use App\Http\Controllers\Api\JoinBarcodeController;
 use App\Http\Controllers\Api\SlaController;
@@ -155,4 +156,11 @@ Route::middleware(['api.auth'])->group(function () {
         });
           
     });
+});
+
+
+Route::prefix('calendar-test')->controller(GoogleCalendarTestController::class)->group(function () {
+    Route::post('create', 'createCalendar');
+    Route::post('event', 'createEvent');
+    Route::get('events', 'getEvents');
 });

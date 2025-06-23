@@ -80,7 +80,7 @@ class IssueTypeController extends Controller
         {
             $issue_type = TicketIssueType::create([
                 'name' => $request['data']['name'],
-                'sla_duration_hour' => $request['data']['service_level_agreement_duration_hour'],
+                'sla_hours' => $request['data']['service_level_agreement_duration_hour'],
             ]);
 
             $new_issue_type = TicketIssueType::find($issue_type->id);
@@ -95,7 +95,7 @@ class IssueTypeController extends Controller
             $response_data = [
                 'id' => $new_issue_type->id,
                 'name' => $new_issue_type->name,
-                'service_level_agreement_duration_hour' => $new_issue_type->sla_duration_hour,
+                'service_level_agreement_duration_hour' => $new_issue_type->sla_hours,
             ];
 
             return $this->apiResponseService->created($response_data, 'Issue type created successfully.');

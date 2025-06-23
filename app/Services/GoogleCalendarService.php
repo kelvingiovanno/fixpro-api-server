@@ -11,31 +11,19 @@ use Google\Service\Calendar\Event;
 use Google\Service\Calendar\Calendar as GoogleCalendar;
 
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 use Exception;
-use Illuminate\Support\Facades\Cache;
 
 class GoogleCalendarService
 {
-    private Client $client;
-
-    public function __construct()
-    {
-        $this->client = new Client();
-    }    
-
-    public function get_client()
-    {
-        return $this->client;
-    }
-
     public function get_client_id()
     {
         $client_id = Cache::get('google_client_id');
 
         if(!$client_id)
         {
-            $client_id = SystemSetting::put('google_client_id', $client_id);
+            $client_id = SystemSetting::get('google_client_id');
             Cache::forever('google_client_id', $client_id);
         }
 
@@ -48,7 +36,7 @@ class GoogleCalendarService
 
         if(!$client_secret)
         {
-            $client_secret = SystemSetting::put('google_client_secret', $client_secret);
+            $client_secret = SystemSetting::get('google_client_secret');
             Cache::forever('google_client_secret', $client_secret);
         }
 
@@ -61,7 +49,7 @@ class GoogleCalendarService
 
         if(!$redirect_uri)
         {
-            $redirect_uri = SystemSetting::put('google_redirect_uri', $redirect_uri);
+            $redirect_uri = SystemSetting::get('google_redirect_uri');
             Cache::forever('google_redirect_uri', $redirect_uri);
         }
 
@@ -74,7 +62,7 @@ class GoogleCalendarService
 
         if(!$access_token)
         {
-            $access_token = SystemSetting::put('google_access_token', $access_token);
+            $access_token = SystemSetting::get('google_access_token');
             Cache::forever('google_access_token', $access_token);
         }
 
@@ -87,7 +75,7 @@ class GoogleCalendarService
 
         if(!$refresh_token)
         {
-            $refresh_token = SystemSetting::put('google_refresh_token', $refresh_token);
+            $refresh_token = SystemSetting::get('google_refresh_token');
             Cache::forever('google_refresh_token', $refresh_token);
         }
 
@@ -143,21 +131,24 @@ class GoogleCalendarService
         if (!$client_id || !$client_secret || !$redirect_uri) {
             throw new GoogleCalenderException('Google Calendar credentials are missing.');
         }
-        $this->client->setClientId($client_id);
-        $this->client->setClientSecret($client_secret);
-        $this->client->setRedirectUri($redirect_uri);
+        
+        $client = new Client();
+        
+        $client->setClientId($client_id);
+        $client->setClientSecret($client_secret);
+        $client->setRedirectUri($redirect_uri);
 
-        $this->client->addScope(Calendar::CALENDAR);
-        $this->client->setAccessType('offline');
-        $this->client->setPrompt('consent');
+        $client->addScope(Calendar::CALENDAR);
+        $client->setAccessType('offline');
+        $client->setPrompt('consent');
 
-        return $this->client;
+        return $client;
     }
 
     public function client()
     {
 
-        $client = $this->client;
+        $client = $this->build_client();
 
         $access_token = $this->get_access_token();
 
