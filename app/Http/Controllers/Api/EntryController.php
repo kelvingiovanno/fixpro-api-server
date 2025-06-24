@@ -12,6 +12,7 @@ use App\Exceptions\JoinFormValidationException;
 use App\Models\SystemSetting;
 
 use App\Services\ApiResponseService;
+use App\Services\AreaService;
 use App\Services\JoinAreaService;
 use App\Services\JoinFormService;
 use App\Services\ReferralCodeService;
@@ -32,6 +33,7 @@ class EntryController extends Controller
         protected NonceCodeService $nonceCodeService, 
         protected JoinFormService $joinFormService,
         protected JoinAreaService $joinAreaService,
+        protected AreaService $areaService,
     ) {}
 
     public function index(Request $request)
@@ -53,7 +55,7 @@ class EntryController extends Controller
         {
             $this->referralCodeService->check($request->query('area_join_form_referral_tracking_identifier'));
 
-            $area_name = SystemSetting::get('area_name');
+            $area_name = $this->areaService->get_name();
             $form_fields = $this->joinFormService->form();
             $nonce = $this->nonceCodeService->generate();
 

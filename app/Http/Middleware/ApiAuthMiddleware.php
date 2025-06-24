@@ -29,8 +29,10 @@ class ApiAuthMiddleware
             $role_id = $payload->get('role_id');
 
             $request->merge([
-                'member_id' => $member_id, 
-                'role_id' => $role_id,
+                'client' => [
+                    'id' => $member_id, 
+                    'role_id' => $role_id,
+                ],
             ]);
         } 
         catch (TokenExpiredException $e) 

@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+use DateTimeInterface;
+
 class Member extends Model
 {
     use HasFactory;
@@ -56,6 +58,11 @@ class Member extends Model
             }
             
         });
+    }
+
+    protected function serializeDate(DateTimeInterface $date)
+    {
+        return $date->format('c');
     }
 
     public function tickets()
