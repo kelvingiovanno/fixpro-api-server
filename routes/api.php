@@ -122,7 +122,7 @@ Route::middleware(['api.auth'])->group(function () {
                 Route::put('/', [AreaController::class, 'update_join_policy']); 
             });
 
-            Route::get('/join', [JoinBarcodeController::class, 'index']);
+            Route::get('/join', [JoinBarcodeController::class, 'barcode']);
         });
 
         Route::prefix('/issue-types')->group(function () {

@@ -61,10 +61,6 @@ class GoogleCalenderController extends Controller
             if (isset($token_data['error'])) {
                 return $this->apiResponseService->unauthorized('Failed to retrieve access token.');
             }
-
-            logger('debug', [
-                'access_token' => $token_data['access_token'],
-            ]);
             
             $this->googleCalendarService->set_access_token($token_data['access_token']);
             $this->googleCalendarService->set_refresh_token($token_data['refresh_token']);

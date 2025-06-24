@@ -36,7 +36,7 @@ class JoinBarcodeController extends Controller
 
             $qrCode = $this->qrCodeService->generateBarcode($jsonData);
 
-            return response($qrCode)->header('Content-Type', 'image/png');
+            return response($qrCode)->header('Content-Type', 'image/svg+xml');
         } 
         catch (Throwable $e) 
         {

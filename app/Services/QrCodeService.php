@@ -9,7 +9,7 @@ class QrCodeService
 
     public function generateBarcode($data, $filePath = null)
     {
-        $qrCode = QrCode::format('png')
+        $qrCode = QrCode::format('svg')
             ->size(200)
             ->generate($data);
 
