@@ -16,6 +16,7 @@ class Location extends Model
     protected $table = 'locations';
     
     protected $fillable = [
+        'ticket_id',
         'stated_location',
         'latitude',
         'longitude',
@@ -44,6 +45,6 @@ class Location extends Model
 
     public function ticket()
     {
-        return $this->hasOne(Ticket::class,  'location_id', 'id');
+        return $this->belongsTo(Ticket::class,  'location_id', 'id');
     }
 }

@@ -13,9 +13,13 @@ return new class extends Migration
     {
         Schema::create('locations', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->uuid('ticket_id')->nullable();
             $table->string('stated_location');
             $table->string('latitude');
             $table->string('longitude');
+
+            $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('set null');
+
             $table->softDeletes();
         });
     }

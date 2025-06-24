@@ -43,7 +43,6 @@ Route::middleware(['api.auth'])->group(function () {
 
                 Route::get('/', [TicketController::class, 'getTicket']);
                 Route::patch('/', [TicketController::class, 'patchTicket']);
-                Route::post('/cancel', [TicketController::class, 'cancelTicket']);
                 Route::get('/print-view', [TicketController::class, 'printView']);
                 Route::post('/close', [TicketController::class, 'close']);
 
@@ -106,7 +105,6 @@ Route::middleware(['api.auth'])->group(function () {
         
             Route::prefix('/{_ticketId}')->group(function () {
 
-                Route::post('/reject', [TicketController::class, 'rejectTicket']);
                 Route::post('/force-close', [TicketController::class, 'forceClose']);
 
             }); 

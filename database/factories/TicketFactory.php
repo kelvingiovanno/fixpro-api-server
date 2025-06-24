@@ -35,7 +35,6 @@ class TicketFactory extends Factory
             'assessed_by' => Member::where('role_id', MemberRoleEnum::MANAGEMENT->id())->inRandomOrder()->value('id'),
             'evaluated_by'=> Member::where('role_id', MemberRoleEnum::MANAGEMENT->id())->inRandomOrder()->value('id'),
             'response_id' => TicketResponseType::inRandomOrder()->first()?->id,
-            'location_id' => Location::factory(),
             'stated_issue' => $this->faker->sentence(10),
             'executive_summary' => $this->faker->paragraph(),
         ];   
@@ -155,7 +154,11 @@ class TicketFactory extends Factory
                 TicketDocument::factory()->create([
                     'ticket_id' => $ticket->id,
                 ]);
-            }            
+            }   
+            
+            Location::factory()->create([
+                'ticket_id' => $ticket->id
+            ]);
         });
     }
 }

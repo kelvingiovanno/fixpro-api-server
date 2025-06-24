@@ -29,8 +29,6 @@ class Ticket extends Model
         'evaluated_by',
         'status_id',
         'response_id',
-        'location_id',
-        'stated_issue',
         'executive_summary',
         'closed_at',
     ];
@@ -94,7 +92,7 @@ class Ticket extends Model
 
     public function location()
     {
-        return $this->belongsTo(Location::class, 'location_id', 'id');
+        return $this->hasOne(Location::class, 'location_id', 'id');
     }
     
     public function documents() 

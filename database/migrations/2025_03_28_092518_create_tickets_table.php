@@ -18,10 +18,8 @@ return new class extends Migration
             $table->uuid('evaluated_by')->nullable();
             $table->uuid('status_id')->nullable();
             $table->uuid('response_id')->nullable();
-            $table->uuid('location_id')->nullable();        
-
-            $table->string('stated_issue');
-            $table->text('executive_summary')->nullable();
+            
+            $table->text('executive_summary');
             $table->dateTime('raised_on');
             $table->dateTime('closed_on')->nullable();
             
@@ -30,8 +28,7 @@ return new class extends Migration
             $table->foreign('evaluated_by')->references('id')->on('members')->onDelete('set null');
             $table->foreign('status_id')->references('id')->on('ticket_status_types')->onDelete('set null');
             $table->foreign('response_id')->references('id')->on('ticket_response_types')->onDelete('set null');
-            $table->foreign('location_id')->references('id')->on('locations')->onDelete('set null');
-
+            
             $table->softDeletes();
         });
     }
