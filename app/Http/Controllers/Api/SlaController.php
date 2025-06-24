@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\SystemSetting;
+
 use App\Models\Enums\TicketIssueType;
 
 use App\Services\ApiResponseService;
 use App\Services\AreaService;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -25,47 +26,44 @@ class SlaController extends Controller
     {
         try
         {
-            $sla_to_reponse = SystemSetting::get('sla_response') ?? 86400;
-            $sla_to_auto_close = SystemSetting::get('sla_auto_close') ?? 86400;
             $per_issue_types = TicketIssueType::all();
 
             $reponse_data = [
-                'sla_to_respond' => $sla_to_reponse,
-                'sla_to_auto_close' => $sla_to_auto_close,
+                'sla_to_respond' => $this->areaService->get_sla_response(),
+                'sla_to_auto_close' => $this->areaService->get_sla_close(),
                 'per_issue_types' => $per_issue_types->map(function ($issue) {
                     return [
                         'id' => $issue->id,
                         'name' => $issue->name,
-                        'duration' => $issue->sla_hours,
+                        'service_level_agreement_duration_hour' => $issue->sla_hours,
                     ];
                 }),
             ];
 
-            return $this->apiResponseService->ok($reponse_data, '');
+            return $this->apiResponseService->ok($reponse_data, 'SLA retrieved successfully.');
         }
         catch (Throwable $e)
         {
-            Log::error('Failed to retrieve sla data', [
+            Log::error('An error occurred while retrieving SLA', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('Failed to retrieve area data');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 
-    public function update(Request $_request)
+    public function update(Request $request)
     {
-        $payload = $_request->input('data');    
-
-        $validator = Validator::make($payload, [
-            'sla_to_respond' => 'required|integer',
-            'sla_to_auto_close' => 'required|integer',
-            'per_issue_types' => 'required|array',
-            'per_issue_types.*.id' => 'required|uuid|exists:ticket_issue_types,id',
-            'per_issue_types.*.duration' => 'required|integer',
+        $validator = Validator::make($request->all(), [
+            'data' => 'required|array',
+            'data.sla_to_respond' => 'required|string',
+            'data.sla_to_auto_close' => 'required|string',
+            'data.per_issue_types' => 'required|array',
+            'data.per_issue_types.*.id' => 'required|uuid|exists:ticket_issue_types,id',
+            'data.per_issue_types.*.duration' => 'required|integer',
         ]);
 
         if($validator->fails())
@@ -75,10 +73,10 @@ class SlaController extends Controller
 
         try
         {
-            $sla_to_reponse = SystemSetting::put('sla_response', $payload['sla_to_respond']);
-            $sla_to_auto_close = SystemSetting::put('sla_response', $payload['sla_to_auto_close']);
+            $sla_to_reponse = $this->areaService->set_sla_response($request->data['sla_to_respond']);
+            $sla_to_auto_close = $this->areaService->set_sla_close($request->data['sla_to_auto_close']);
 
-            foreach($payload['per_issue_types'] as $issue)
+            foreach($request->data['per_issue_types'] as $issue)
             {               
                 $find_issue = TicketIssueType::find($issue['id']);
                 $find_issue->update([
@@ -86,12 +84,12 @@ class SlaController extends Controller
                 ]);
             }
 
-            $per_issue_types = TicketIssueType::all();
+            $issues = TicketIssueType::all();
 
             $reponse_data = [
                 'sla_to_respond' => $sla_to_reponse,
                 'sla_to_auto_close' => $sla_to_auto_close,
-                'per_issue_types' => $per_issue_types->map(function ($issue) {
+                'per_issue_types' => $issues->map(function ($issue) {
                     return [
                         'id' => $issue->id,
                         'name' => $issue->name,
@@ -100,19 +98,18 @@ class SlaController extends Controller
                 }),
             ];
 
-            return $this->apiResponseService->ok($reponse_data, 'SLA updated successfully.');
-            
+            return $this->apiResponseService->ok($reponse_data, 'SLA updated successfully.');   
         }
         catch (Throwable $e)
         {
-            Log::error('Failed to update sla data', [
+            Log::error('An error occurred while updating SLA', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('Failed to retrieve area data');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 }

@@ -49,7 +49,7 @@ class AreaService {
         $sla_response = Cache::get('area_sla_response');
 
         if (!$sla_response) {
-            $sla_response = SystemSetting::get('area_sla_response');
+            $sla_response = SystemSetting::get('area_sla_response') ?? 86400;
             Cache::forever('area_sla_response', $sla_response);
         }
 
@@ -61,7 +61,7 @@ class AreaService {
         $sla_close = Cache::get('area_sla_close');
 
         if (!$sla_close) {
-            $sla_close = SystemSetting::get('area_sla_close');
+            $sla_close = SystemSetting::get('area_sla_close') ?? 172800;
             Cache::forever('area_sla_close', $sla_close);
         }
 
@@ -102,24 +102,20 @@ class AreaService {
         return $formatted_form;
     }
 
-    public function set_sla_response(int $sla_response) : int
+    public function set_sla_response(string $sla_response) : int
     {
-        $value = (string) $sla_response;
+        SystemSetting::put('area_sla_response', $sla_response);
+        Cache::forever('area_sla_response', $sla_response);
 
-        SystemSetting::put('area_sla_response', $value);
-        Cache::forever('area_sla_response', $value);
-
-        return $sla_response;
+        return (int) $sla_response;
     }
 
     public function set_sla_close(int $sla_close) : int
     {
-        $value = (string) $sla_close;
+        SystemSetting::put('area_sla_close', $sla_close);
+        Cache::forever('area_sla_close', $sla_close);
 
-        SystemSetting::put('area_sla_close', $value);
-        Cache::forever('area_sla_close', $value);
-
-        return $sla_close;
+        return (int) $sla_close;
     }
 
     public function is_first_joined() : ?string
