@@ -9,8 +9,6 @@ use App\Exceptions\InvalidReferralException;
 use App\Exceptions\JoinAreaException;
 use App\Exceptions\JoinFormValidationException;
 
-use App\Models\SystemSetting;
-
 use App\Services\ApiResponseService;
 use App\Services\AreaService;
 use App\Services\JoinAreaService;

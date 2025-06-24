@@ -115,6 +115,16 @@ class IssueTypeController extends Controller
 
     public function destroy(string $issue_id)
     {
+        $validator = Validator::make(['issue_id' => $issue_id], 
+        [
+            'issue_id' => 'required|uuid',
+        ]);
+
+        if($validator->fails())
+        {
+            return $this->apiResponseService->badRequest('Validation failed.', $validator->errors());
+        }
+
         try
         {
             $issue_type = TicketIssueType::findOrFail($issue_id);

@@ -7,7 +7,7 @@ use App\Models\SystemSetting;
 use App\Models\Enums\TicketIssueType;
 
 use App\Services\ApiResponseService;
-
+use App\Services\AreaService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -16,12 +16,10 @@ use Throwable;
 
 class SlaController extends Controller
 {
-    private ApiResponseService $apiResponseService;
-
-    public function __construct(ApiResponseService $_apiResponseService)
-    {
-        $this->apiResponseService = $_apiResponseService;
-    }
+    public function __construct(
+       protected ApiResponseService $apiResponseService,
+       protected AreaService $areaService,
+    ) { }
 
     public function index()
     {

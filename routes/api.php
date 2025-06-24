@@ -129,7 +129,7 @@ Route::middleware(['api.auth'])->group(function () {
             Route::post('/', [IssueTypeController::class, 'store']);
         });
 
-        Route::delete('/issue-types/{issue_id}', [IssueTypeController::class, 'destroy']);
+        Route::delete('/issue-type/{issue_id}', [IssueTypeController::class, 'destroy']);
 
         Route::prefix('/area')->group(function() {
 
