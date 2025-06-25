@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\TicketStatusEnum;
-
 use App\Models\Enums\TicketStatusType;
 use App\Models\Enums\TicketResponseType;
 
@@ -15,6 +13,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+
+use DateTimeInterface;
 
 class Ticket extends Model
 {   
@@ -29,7 +29,7 @@ class Ticket extends Model
         'evaluated_by',
         'status_id',
         'response_id',
-        'executive_summary',
+        'stated_issue',
         'closed_at',
     ];
 
@@ -58,6 +58,11 @@ class Ticket extends Model
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             }
         });
+    }
+
+    protected function serializeDate(DateTimeInterface $date)
+    {
+        return $date->format('c');
     }
 
     public function issuer()

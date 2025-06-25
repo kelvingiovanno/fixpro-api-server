@@ -126,6 +126,26 @@ class ApiResponseService
     }
 
     /**
+     * Return raw binary content (e.g., PDF or image from memory)
+     *
+     * @param string $content The binary content
+     * @param string $mimeType The MIME type (e.g., application/pdf)
+     * @param string|null $fileName Optional: force download with this filename
+     * @return \Illuminate\Http\Response
+     */
+    public function raw(string $content, string $mimeType, ?string $fileName = null)
+    {
+        $headers = ['Content-Type' => $mimeType];
+
+        if ($fileName) {
+            $headers['Content-Disposition'] = 'attachment; filename="' . $fileName . '"';
+        }
+
+        return response($content, 200, $headers);
+    }
+
+
+    /**
      * Custom Response - Can be used for any HTTP status
      *
      * @param string $message The message to send

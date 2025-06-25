@@ -2,8 +2,6 @@
 
 namespace App\Models;
 
-use App\Enums\MemberRoleEnum;
-
 use App\Models\Enums\MemberRole;
 use App\Models\Enums\TicketIssueType;
 use App\Models\Enums\MemberCapability;

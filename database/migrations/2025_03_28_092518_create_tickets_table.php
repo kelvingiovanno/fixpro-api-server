@@ -19,7 +19,7 @@ return new class extends Migration
             $table->uuid('status_id')->nullable();
             $table->uuid('response_id')->nullable();
             
-            $table->text('executive_summary');
+            $table->text('stated_issue');
             $table->dateTime('raised_on');
             $table->dateTime('closed_on')->nullable();
             

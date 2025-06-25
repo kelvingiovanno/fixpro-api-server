@@ -159,7 +159,7 @@
           <table class="section-2">
             <tr><td>Requester Name</td><td>:</td><td> {{$details['requester_name']}} </td></tr>
             <tr><td>Identifier No.</td><td>:</td><td> {{$details['identifier_no']}} </td></tr>
-            <tr><td>Work Type</td><td>:</td><td> {{ implode(', ', $details['work_type']->toArray()) }} </td></tr>
+            <tr><td>Work Type</td><td>:</td><td> {{ implode(', ', $details['work_type']) }} </td></tr>
             <tr><td>Handling Priority</td><td>:</td><td> {{$details['handling_priority']}} </td></tr>
             <tr><td>Location</td><td>:</td><td> {{$details['location']}} </td></tr>
           </table>

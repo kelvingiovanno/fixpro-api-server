@@ -2,36 +2,24 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\IssueTypeEnum;
 use App\Http\Controllers\Controller;
 
-use App\Enums\MemberCapabilityEnum;
-use App\Enums\MemberRoleEnum;
+use App\Exceptions\InvalidTicketStatusException;
+
 use App\Enums\TicketResponseTypeEnum;
-use App\Enums\TicketLogTypeEnum;
-use App\Enums\TicketStatusEnum;
-use App\Models\Enums\MemberRole;
-use App\Models\Enums\TicketIssueType;
-use App\Models\Enums\TicketStatusType;
+
 use App\Models\Ticket;
-use App\Models\Location;
 use App\Models\Member;
-use App\Models\SystemSetting;
-use App\Models\TicketDocument;
-use App\Models\WODocument;
-use App\Models\TicketIssue;
-use App\Models\TicketLog;
-use App\Models\TicketLogDocument;
 
 use App\Services\ApiResponseService;
+use App\Services\ReportService;
 use App\Services\StorageService;
 use App\Services\TicketService;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 use Throwable;
 
@@ -41,6 +29,7 @@ class TicketController extends Controller
         protected ApiResponseService $apiResponseService, 
         protected StorageService $storageService,
         protected TicketService $ticketService,
+        protected ReportService $reportService,
     ) { }
 
     public function index()
@@ -89,15 +78,14 @@ class TicketController extends Controller
             'data.issue_type_ids.*' => 'required|uuid|exists:ticket_issue_types,id',
             'data.response_level' => 'required|string|exists:ticket_response_types,name',
             'data.stated_issue' => 'required|string',
-            'data.executive_summary' => 'required|string',
             'data.location.stated_location' => 'required|string',
             'data.location.gps_location.latitude' => 'required|numeric',
             'data.location.gps_location.longitude' => 'required|numeric',
-            'data.supportive_documents' => 'nullable|array',
-            'data.supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
-            'data.supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
-            'data.supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
-            'data.supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
+            'data.supportive_documents' => 'required|array',
+            'data.supportive_documents.*.resource_type' => 'required|string',
+            'data.supportive_documents.*.resource_name' => 'required|string',
+            'data.supportive_documents.*.resource_size' => 'required|numeric',
+            'data.supportive_documents.*.resource_content' => 'required|string',
         ]);
     
         if ($validator->fails()) {
@@ -111,7 +99,6 @@ class TicketController extends Controller
                 [
                     'response_id' => TicketResponseTypeEnum::from($request->data['response_level']),
                     'stated_issue' => $request->data['stated_issue'],
-                    'executive_summary' => $request->data['executive_summary'],
                 ],
                 $request->data['issue_type_ids'],
                 [
@@ -134,7 +121,6 @@ class TicketController extends Controller
                 'response_level' => $ticket->response->name,
                 'raised_on' => $ticket->raised_on,
                 'status' => $ticket->status->name,
-                'executive_summary' =>  $ticket->executive_summary,
                 'closed_on' => $ticket->closed_on,
             ];
     
@@ -207,7 +193,6 @@ class TicketController extends Controller
             'data.issue_type.*' => 'required|uuid|exists:ticket_issue_types,id',
             'data.status' => 'required|string|exists:ticket_status_types,name',
             'data.stated_issue' => 'required|string',
-            'data.executive_summary' => 'required|string',
             'data.location' => 'required|array',
             'data.location.stated_location' => 'required|string',
             'data.location.gps_location' => 'required|array',
@@ -227,18 +212,22 @@ class TicketController extends Controller
                 $request->data['issue_type'],
                 $request->data['status'],
                 $request->data['statstated_issueus'],
-                $request->data['executive_summary'],
                 [
                     'stated_location' => $request->data['stated_location'],
                     'stated_location' => $request->data['gps_location']['latitude'],
                     'stated_location' => $request->data['gps_location']['longitude'],
                 ],
+                $request->client['id'],
             );
 
             $response_data = $this->ticketService->details($updated_ticket);
             
             return $this->apiResponseService->ok($response_data, 'Ticket updated successfully.');
 
+        }
+        catch (ModelNotFoundException)
+        {
+            return $this->apiResponseService->notFound('Ticket not found.');
         }
         catch (Throwable $e)
         {
@@ -264,10 +253,10 @@ class TicketController extends Controller
             'data' => 'required|array',
             'data.remark' => 'required|string',
             'data.supportive_documents' => 'nullable|array',
-            'data.supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
-            'data.supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
-            'data.supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
-            'data.supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
+            'data.supportive_documents.*.resource_type' => 'required|string',
+            'data.supportive_documents.*.resource_name' => 'required|string',
+            'data.supportive_documents.*.resource_size' => 'required|numeric',
+            'data.supportive_documents.*.resource_content' => 'required|string',
         ]);
 
         if($validator->fails())
@@ -281,10 +270,10 @@ class TicketController extends Controller
                 $request->client['id'],
                 $ticket_id,
                 $request->data['remark'],
-                $request->data['supportive_documents'],
+                $request->input('data.supportive_documents'),
             );
 
-            return $this->apiResponseService->created('Evaluation request submitted successfully');
+            return $this->apiResponseService->created('Evaluation request submitted successfully.');
         } 
         catch(ModelNotFoundException)
         {
@@ -296,14 +285,14 @@ class TicketController extends Controller
         }
         catch (Throwable $e) 
         {
-            Log::error('Error submitting the evaluation request.', [
+            Log::error('An error occurred while requesting ticket evaluation ', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('An error occurred while submitting the evaluation request.');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 
@@ -317,11 +306,12 @@ class TicketController extends Controller
             'data' => 'required|array',
             'data.resolveToApprove' => 'required|boolean',
             'data.issue_type' => 'required|uuid|exists:ticket_issue_types,id',
-            'data.reason' => 'required|string',    
-            'data.supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
-            'data.supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
-            'data.supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
-            'data.supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
+            'data.reason' => 'required|string',  
+            'data.supportive_documents' => 'nullable|array',
+            'data.supportive_documents.*.resource_type' => 'required|string',
+            'data.supportive_documents.*.resource_name' => 'required|string',
+            'data.supportive_documents.*.resource_size' => 'required|numeric',
+            'data.supportive_documents.*.resource_content' => 'required|string',
         ]);
 
         if($validator->fails())
@@ -336,21 +326,29 @@ class TicketController extends Controller
                 $ticket_id,
                 $request->data['resolveToApprove'],
                 $request->data['reason'],
-                $request->data['supportive_documents'],
+                $request->input('data.supportive_documents'),
             );
 
             return $this->apiResponseService->created('Ticket evaluation recorded successfully.');
         }
+        catch (ModelNotFoundException)
+        {
+            return $this->apiResponseService->notFound('Ticket not found.');
+        }
+        catch (InvalidTicketStatusException $e)
+        {
+            return $this->apiResponseService->badRequest($e->getMessage());
+        }
         catch (Throwable $e)
         {
-            Log::error('Error evaluating ticket.', [
+            Log::error('An error occurred while evaluating ticket', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('An unexpected error occurred while processing the ticket evaluation.');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 
@@ -363,10 +361,11 @@ class TicketController extends Controller
             'ticket_id' => 'required|uuid',
             'data' => 'required|array',
             'data.reason' => 'required|string',    
-            'data.supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
-            'data.supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
-            'data.supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
-            'data.supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
+            'data.supportive_documents' => 'nullable|array',
+            'data.supportive_documents.*.resource_type' => 'required|string',
+            'data.supportive_documents.*.resource_name' => 'required|string',
+            'data.supportive_documents.*.resource_size' => 'required|numeric',
+            'data.supportive_documents.*.resource_content' => 'required|string',
         ]);
 
         if($validator->fails())
@@ -376,233 +375,140 @@ class TicketController extends Controller
         
         try
         {
-            $ticket = Ticket::find($_ticketId);
-
-            if(!$ticket)
-            {
-                return $this->apiResponseService->notFound('The ticket not found.');
-            }
-
-            if($ticket->status->id != TicketStatusEnum::IN_ASSESSMENT->id() &&  $ticket->status->id != TicketStatusEnum::OPEN->id())
-            {
-                return $this->apiResponseService->forbidden('Action not allowed for the current ticket status.');
-            }
-
-            if($ticket->issuer->id == $member_id)
-            {
-                $ticket->update([
-                    'status_id' => TicketStatusEnum::CANCELLED->id(),
-                ]);
-            }
-            else if ($member_role_id == MemberRoleEnum::MANAGEMENT->id())
-            {
-                $ticket->update([
-                    'status_id' => TicketStatusEnum::REJECTED->id(),
-                ]);
-            }
-            else {
-                return $this->apiResponseService->forbidden('You are not authorized to perform this action.');
-            }
-
-            $ticket_log = $ticket->logs()->create([
-                'member_id' => $member_id,
-                'type_id' => TicketLogTypeEnum::REJECTION->id(),
-                'news' => $data['reason'],
-            ]);
-
-            $documents = $data['supportive_documents'] ?? [];
-
-            foreach ($documents as $document) {
-                $filePath = $this->storageService->storeLogTicketDocument(
-                    $document['resource_content'],
-                    $document['resource_name'],
-                    $ticket->id
-                );
-
-                TicketLogDocument::create([
-                    'log_id' => $ticket_log->id,
-                    'resource_type' => $document['resource_type'],
-                    'resource_name' => $document['resource_name'],
-                    'resource_size' => $document['resource_size'],
-                    'previewable_on' => $filePath,
-                ]);
-            }
+            $this->ticketService->close(
+                $ticket_id,
+                $request->client['id'],
+                $request->client['role_id'],
+                $request->input('data.reason'),
+                $request->input('data.supportive_documents'),
+            );
 
             return $this->apiResponseService->created('Ticket has been closed successfully.');
         }
+        catch (ModelNotFoundException)
+        {
+            return $this->apiResponseService->notFound('Ticket not Found.');
+        }
+        catch (InvalidTicketStatusException $e)
+        {
+            return $this->apiResponseService->badRequest($e->getMessage());
+        }
         catch (Throwable $e)
         {
-            Log::error('Error closing ticket.', [
+            Log::error('An error occurred while closing ticket', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('An unexpected error occurred while closing the ticket.');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 
-    public function force_close(Request $_request, string $_ticketId)
+    public function force_close(Request $request, string $ticket_id)
     {
-        if(!Str::isUuid($_ticketId))
-        {
-            return $this->apiResponseService->notFound('The ticket not found');
-        }
-
-        $data = $_request->input('data');
-
-        if(!$data)
-        {
-            return $this->apiResponseService->badRequest('Missing required data payload');
-        }
-
-        $validator = Validator::make($data, [
-            'reason' => 'required|string',    
-            'supportive_documents.*.resource_type' => 'required_with:supportive_documents|string',
-            'supportive_documents.*.resource_name' => 'required_with:supportive_documents|string',
-            'supportive_documents.*.resource_size' => 'required_with:supportive_documents|numeric',
-            'supportive_documents.*.resource_content' => 'required_with:supportive_documents|string',
+        $validator = Validator::make(array_merge(
+            ['ticket_id' => $ticket_id],
+            $request->all()
+        ), [
+            'ticket_id' => 'required|uuid',
+            'data' => 'required|array',
+            'data.reason' => 'required|string',    
+            'data.supportive_documents' => 'nullable|array',
+            'data.supportive_documents.*.resource_type' => 'required|string',
+            'data.supportive_documents.*.resource_name' => 'required|string',
+            'data.supportive_documents.*.resource_size' => 'required|numeric',
+            'data.supportive_documents.*.resource_content' => 'required|string',
         ]);
 
         if($validator->fails())
         {
-            return $this->apiResponseService->unprocessableEntity('Validation failed', $validator->errors());
-        }
-
-        $member_id = $_request->input('jwt_payload')['member_id'];
-        $member_role_id =$_request->input('jwt_payload')['role_id'];
+            return $this->apiResponseService->badRequest('Validation failed.', $validator->errors());
+        } 
 
         try
         {
-            $ticket = Ticket::find($_ticketId);
-
-            if(!$ticket)
-            {
-                return $this->apiResponseService->notFound('The ticket not found.');
-            }
-
-            if($member_role_id != MemberRoleEnum::MANAGEMENT->id())
-            {
-                return $this->apiResponseService->forbidden('You are not authorized to perform this action.');
-            }
-            
-            $ticket->update([
-                'status_id' => TicketStatusEnum::CLOSED->id(),
-            ]);
-
-            $ticket_log = $ticket->logs()->create([
-                'member_id' => $member_id,
-                'type_id' => TicketLogTypeEnum::FORCE_CLOSURE->id(),
-                'news' => $data['reason'],
-            ]);
-
-            $documents = $data['supportive_documents'] ?? [];
-
-            foreach ($documents as $document) {
-                $filePath = $this->storageService->storeLogTicketDocument(
-                    $document['resource_content'],
-                    $document['resource_name'],
-                    $ticket->id
-                );
-
-                TicketLogDocument::create([
-                    'log_id' => $ticket_log->id,
-                    'resource_type' => $document['resource_type'],
-                    'resource_name' => $document['resource_name'],
-                    'resource_size' => $document['resource_size'],
-                    'previewable_on' => $filePath,
-                ]);
-            }
-
-            return $this->apiResponseService->created('Ticket has been closed successfully.');
+            $this->ticketService->force_close(
+                $ticket_id,
+                $request->client['id'],
+                $request->data['reason'],
+                $request->input('data.supportive_documents'),
+            );
+            return $this->apiResponseService->created('The ticket has been successfully forced closed.');
+        }
+        catch (ModelNotFoundException)
+        {
+            return $this->apiResponseService->notFound('Ticket not found.');
+        }
+        catch (InvalidTicketStatusException $e)
+        {
+            return $this->apiResponseService->badRequest($e->getMessage());
         }
         catch (Throwable $e)
         {
-            Log::error('Error closing ticket.', [
+            Log::error('An error occurred while force-closing the ticket', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('An unexpected error occurred while closing the ticket.');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 
-    public function print_view(Request $_request, string $_ticketId)
+    public function print_view(Request $request, string $ticket_id)
     {
-        if (!Str::isUuid($_ticketId)) {
-            return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
-        }
+        $validator = Validator::make(['ticket_id' => $ticket_id], 
+        [
+            'ticket_id' => 'required|uuid',
+        ]);
+
+        if($validator->fails())
+        {
+            return $this->apiResponseService->badRequest('Validation failed.', $validator->errors());
+        } 
 
         try
         {
-            $ticket = Ticket::find($_ticketId);
+            $ticket = Ticket::with([
+                'assessed',
+                'status',
+                'issuer',
+                'ticket_issues.issue',
+                'response',
+                'location',
+                'evaluated',
+                'documents',
+                'logs.issuer',
+                'logs.type',
+                'logs.documents',
+            ])->findOrFail($ticket_id);
 
-            if(!$ticket)
-            {
-                return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
-            }
+            $requester = Member::find($request->client['id']);
 
-            $member_id = $_request->input('jwt_payload')['member_id'];
+            $print_view = $this->reportService->print_view(
+                $ticket,
+                $requester,
+            );
 
-            $print_view_data = [
-                'header' => [
-                    'document_id' => 'TK-' . substr(Str::uuid(), -5),
-                    'area_name' => SystemSetting::get('area_name') ?? 'Area name not set yet',
-                    'date' => now()->translatedFormat('l, d F Y'),
-                ],
-                'details' => [
-                    'ticket_no' => substr($ticket->id, -5),
-                    'created_at' => $ticket->raised_on,
-                    'completed_at' => $ticket->closed_on ?? 'Not completed',
-                    'assessed_by' => $ticket->assessed->name ?? 'Not assessed', 
-                    'ticket_status' => $ticket->status->name,
-                    'requester_name' => $ticket->issuer->name,
-                    'identifier_no' => substr($ticket->issuer->id, -5),
-                    'work_type' => $ticket->ticket_issues->map(function ($ticket_issue) {
-                        return $ticket_issue->issue->name;
-                    }),
-                    'handling_priority' => $ticket->response->name,
-                    'location' => $ticket->location->stated_location,
-                    'evaluated_by' => $ticket->evaluated->name ?? 'Not evaluated',
-                ],
-                'complaints' => $ticket->stated_issue,
-                'supportive_documents' => $ticket->documents->map(function ($document){
-                    return $document->previewable_on;
-                }),
-                'logs' => $ticket->logs->values()->map(function ($log, $index) {
-                    return [
-                        'name' => $log->issuer->name,
-                        'id_number' => substr($log->issuer->id, -5),
-                        'log_type' => $log->type->name,
-                        'raised_on' => $log->recorded_on,
-                        'news' => $log->news,
-                        'supportive_documents' => $log->documents->map(function ($document) {
-                            return $document->previewable_on;
-                        }),
-                    ];
-                }),
-                'print_view_requested_by' => Member::find($member_id)->name,
-            ];
-
-            $ticket_print_view = Pdf::loadView('pdf.ticket_print_view',$print_view_data)->setPaper('a4', 'portrait')->output();
-            
-            $this->storageService->storeWoDocument(base64_encode($ticket_print_view), 'ticket_print_view.pdf', 'testing');
-
-            return $this->apiResponseService->ok('ok');
+            return $this->apiResponseService->raw($print_view, 'application/pdf', 'ticket-print.pdf');
+        }
+        catch (ModelNotFoundException)
+        {
+            return $this->apiResponseService->notFound('Ticket not found.');
         }
         catch (Throwable $e)
         {
-            Log::error('', [
+            Log::error('An error occurred while retrieving and generating the ticket print view', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 }

@@ -5,11 +5,12 @@ namespace App\Services;
 use App\Enums\MemberRoleEnum;
 use App\Enums\TicketLogTypeEnum;
 use App\Enums\TicketStatusEnum;
-use App\Exceptions\InvalidTicketStatusException;
-use App\Models\Member;
+
 use App\Models\Ticket;
-use App\Models\TicketLogDocument;
+
 use Illuminate\Support\Facades\DB;
+
+use App\Exceptions\InvalidTicketStatusException;
 
 class TicketService
 {
@@ -17,95 +18,6 @@ class TicketService
         protected ReportService $reportService,
         protected StorageService $storageService,
     ) { }
-
-    public function create(
-        string $owner_id,
-        array $ticket,
-        array $issues,
-        array $location,
-        array $documents, 
-        
-    ) {
-
-        $created_ticket = DB::transaction(function () 
-            use ($owner_id, $ticket, $issues, $location, $documents) 
-        {
-            
-        
-            $ticket = Ticket::create([
-                'member_id' => $owner_id,
-                'status_id' => TicketStatusEnum::OPEN->id(),
-                'response_id' => $ticket['response_level'],
-                'executive_summary' => $ticket['executive_summary'],
-            ]);
-
-            $ticket_log = $ticket->logs()->create([
-                'member_id' => $owner_id,
-                'type_id' => TicketLogTypeEnum::ACTIVITY->id(),
-                'news' => 'Ticket has been created.'
-            ]);
-
-            foreach($issues as $issue)
-            {
-                $ticket->ticket_issues()->create([
-                    'issue_id' => $issue,
-                ]);
-            }
-
-            $ticket->location()->create([
-                'stated_location' => $location['stated_location'],
-                'latitude' => $location['latitude'],
-                'longitude' => $location['longitude'],
-            ]);
-        
-            foreach($documents as &$document)
-            {
-                $document_path = $this->storageService->storeTicketDocument(
-                    $document['previewable_on'],
-                    'service_form.pdf', 
-                    $ticket->id
-                );
-
-                $document['previewable_on'] = $document_path;
-
-                $ticket->documents()->create([
-                    'resource_type' => $document['resource_type'],
-                    'resource_name' => $document['resource_name'],
-                    'resource_size' => $document['resource_size'],
-                    'previewable_on' => $document['previewable_on'],
-                ]);
-            }
-
-            $ticket->load('issuer', 'ticket_issues', 'status', 'response');
-
-            $service_form_pdf = $this->reportService->serviceForm (
-                $ticket,
-                $ticket->issuer,
-                $issues,
-                $location,
-                $documents
-            );
-
-            $service_form_path = $this->storageService->storeLogTicketDocument(
-                base64_encode($service_form_pdf), 
-                'service_form.pdf', 
-                $ticket_log->id
-            );
-
-            $ticket_log->documents()->create([
-                'resource_type' => 'pdf',
-                'resource_name' => 'service_form-' . substr($ticket->id, -5),
-                'resource_size' => '',
-                'previewable_on' => $service_form_path,
-            ]);
-
-            return $ticket;
-
-        });
-
-        return $created_ticket;
-
-    }
 
     public function details(Ticket $ticket)
     {
@@ -141,7 +53,7 @@ class TicketService
             'response_level' => $ticket->response->name,
             'raised_on' => $ticket->raised_on,
             'status' => $ticket->status->name,
-            'executive_summary' => $ticket->executive_summary,
+            'stated_issue' => $ticket->stated_issue,
             'location' => [
                 'stated_location' => $ticket->location->stated_location,
                 'gps_location' => [
@@ -218,16 +130,98 @@ class TicketService
         return $details_data;
     }
 
+    public function create(
+        string $owner_id,
+        array $ticket,
+        array $issues,
+        array $location,
+        ?array $documents, 
+        
+    ) {
+        $created_ticket = DB::transaction(function () 
+            use ($owner_id, $ticket, $issues, $location, $documents) 
+        {
+            $ticket = Ticket::create([
+                'member_id' => $owner_id,
+                'status_id' => TicketStatusEnum::OPEN->id(),
+                'response_id' => $ticket['response_level'],
+                'stated_issue' => $ticket['stated_issue'],
+            ]);
+
+            $ticket_log = $ticket->logs()->create([
+                'member_id' => $owner_id,
+                'type_id' => TicketLogTypeEnum::ACTIVITY->id(),
+                'news' => 'Ticket has been created.'
+            ]);
+
+            foreach($issues as $issue)
+            {
+                $ticket->ticket_issues()->create([
+                    'issue_id' => $issue,
+                ]);
+            }
+
+            $ticket->location()->create([
+                'stated_location' => $location['stated_location'],
+                'latitude' => $location['latitude'],
+                'longitude' => $location['longitude'],
+            ]);
+        
+            foreach($documents as &$document)
+            {
+                $document_path = $this->storageService->storeTicketDocument(
+                    $document['previewable_on'],
+                    'service_form.pdf', 
+                    $ticket->id
+                );
+
+                $document['previewable_on'] = $document_path;
+
+                $ticket->documents()->create([
+                    'resource_type' => $document['resource_type'],
+                    'resource_name' => $document['resource_name'],
+                    'resource_size' => $document['resource_size'],
+                    'previewable_on' => $document['previewable_on'],
+                ]);
+            }
+
+            $ticket->load('issuer', 'ticket_issues', 'status', 'response');
+
+            $service_form_pdf = $this->reportService->service_form (
+                $ticket
+            );
+
+            $service_form_path = $this->storageService->storeLogTicketDocument(
+                base64_encode($service_form_pdf), 
+                'service_form.pdf', 
+                $ticket_log->id
+            );
+
+            $ticket_log->documents()->create([
+                'resource_type' => 'pdf',
+                'resource_name' => 'service_form-' . substr($ticket->id, -5),
+                'resource_size' => '',
+                'previewable_on' => $service_form_path,
+            ]);
+
+            return $ticket;
+
+        });
+
+        return $created_ticket;
+
+    }
+
     public function update(
         string $ticket_id,
         array $issue_ids,
         string $status,
         string $stated_issue,
-        string $executive_summary,
-        array $location 
+        array $location,
+        string $requester_id,
     ) {
         $updated_ticket = DB::transaction(function () 
-            use ($ticket_id, $issue_ids, $status, $stated_issue, $executive_summary, $location) 
+            use ($ticket_id, $issue_ids, $status, $stated_issue, $location, $requester_id) 
         {
             
             $ticket = Ticket::findOrFail($ticket_id);
@@ -235,7 +229,6 @@ class TicketService
             $ticket->update([
                 'status_id' => TicketStatusEnum::from($status['status'])->id(),
                 'stated_issue' => $stated_issue,
-                'executive_summary' => $executive_summary,
             ]);
             
             $ticket->location()->update([
@@ -257,6 +250,13 @@ class TicketService
                     ]);
                 }
             }
+
+            $ticket->logs()->create([
+                'member_id' => $requester_id,
+                'type_id' => TicketLogTypeEnum::ACTIVITY->id(),
+                'news' => 'Ticket infromation has been updated.'
+            ]);
+
             return $ticket;
         });
 
@@ -267,7 +267,7 @@ class TicketService
         string $requester_id,
         string $ticket_id,
         string $remark,
-        array $documents = []
+        ?array $documents
     ) {
 
         DB::transaction(function () 
@@ -287,14 +287,15 @@ class TicketService
                 'news' => $remark,
             ]);
 
-            foreach ($documents as $document) {
+            foreach ($documents ?? [] as $document) 
+            {
                 $filePath = $this->storageService->storeLogTicketDocument(
                     $document['resource_content'],
                     $document['resource_name'],
                     $ticket->id
                 );
 
-                TicketLogDocument::create([
+                $ticket_log->documents()->createe([
                     'log_id' => $ticket_log->id,
                     'resource_type' => $document['resource_type'],
                     'resource_name' => $document['resource_name'],
@@ -310,7 +311,7 @@ class TicketService
         string $ticket_id,
         bool $approved,
         string $reason,
-        array $documents = [],
+        ?array $documents,
 
     ) {
         DB::transaction(function () 
@@ -320,7 +321,7 @@ class TicketService
 
             $ticket_log = null;
 
-            if($approved)
+            if(!$approved)
             {
                 $ticket->update([
                     'status_id' => TicketStatusEnum::ON_PROGRESS->id(),
@@ -375,11 +376,11 @@ class TicketService
                 }
                 else 
                 {
-                    throw new InvalidTicketStatusException('Ticket status does not permit this operation.');
+                    throw new InvalidTicketStatusException('The ticket\'s current status does not permit this operation.');
                 }
             }
                     
-            foreach ($documents as $document) 
+            foreach ($documents ?? [] as $document) 
             {
                 $filePath = $this->storageService->storeLogTicketDocument(
                     $document['resource_content'],
@@ -387,7 +388,7 @@ class TicketService
                     $ticket->id
                 );
 
-                TicketLogDocument::create([
+                $ticket_log->documents()->create([
                     'log_id' => $ticket_log->id,
                     'resource_type' => $document['resource_type'],
                     'resource_name' => $document['resource_name'],
@@ -398,10 +399,105 @@ class TicketService
         });
     }
 
-    public function reject()
-    {
-        
+    public function close(
+        string $ticket_id,
+        string $requester_id,
+        string $requestor_role_id,
+        string $reason,
+        ?array $documents,
+    ) {
+        DB::transaction(function () 
+            use ($ticket_id, $requester_id, $requestor_role_id, $reason, $documents) 
+        {
+            
+            $ticket = Ticket::with('issuer')->findOrFail($ticket_id);
+
+            if($ticket->status_id != TicketStatusEnum::OPEN->id() || $ticket->status_id != TicketStatusEnum::IN_ASSESSMENT->id())
+            {
+                throw new InvalidTicketStatusException('The ticket\'s current status does not permit this operation.');
+            }
+
+            if($ticket->issuer->id == $requester_id)
+            {
+                $ticket->update([
+                    'status_id' => TicketStatusEnum::CANCELLED->id(),
+                ]);
+            }
+            else if($requestor_role_id == MemberRoleEnum::MANAGEMENT->id())
+            {
+                $ticket->update([
+                    'status_id' => TicketStatusEnum::REJECTED->id(),
+                ]);
+            } 
+
+            $ticket_log = $ticket->logs()->create([
+                'member_id' => $requester_id,
+                'type_id' => TicketLogTypeEnum::REJECTION->id(),
+                'news' => $reason,
+            ]);
+
+            foreach ($documents ?? [] as $document) 
+            {
+                $filePath = $this->storageService->storeLogTicketDocument(
+                    $document['resource_content'],
+                    $document['resource_name'],
+                    $ticket->id
+                );
+
+                $ticket_log->documents()->create([
+                    'resource_type' => $document['resource_type'],
+                    'resource_name' => $document['resource_name'],
+                    'resource_size' => $document['resource_size'],
+                    'previewable_on' => $filePath,
+                ]);
+            }
+        });  
     }
 
+    public function force_close(
+        string $ticket_id,
+        string $requester_id,
+        string $reason,
+        ?array $documents,
+    ) {
+        DB::transaction(function () 
+        use ($ticket_id, $requester_id, $reason, $documents) {
 
+            $ticket = Ticket::findOrFail($ticket_id);
+
+            if(
+                $ticket->status_id != TicketStatusEnum::ON_PROGRESS->id() ||
+                $ticket->status_id != TicketStatusEnum::WORK_EVALUATION->id()
+            ) {
+                throw new InvalidTicketStatusException('The ticket\'s current status does not permit this operation.');
+            }
+
+            $ticket->update([
+                'status_id' => TicketStatusEnum::CLOSED->id(),
+            ]);
+
+            $ticket_log = $ticket->logs()->create([
+                'member_id' => $requester_id,
+                'type_id' => TicketLogTypeEnum::FORCE_CLOSURE->id(),
+                'news' => $reason,
+            ]);
+
+            foreach ($documents ?? [] as $document) 
+            {
+                
+                $filePath = $this->storageService->storeLogTicketDocument(
+                    $document['resource_content'],
+                    $document['resource_name'],
+                    $ticket->id
+                );
+
+                $ticket_log->documents()->create([
+                    'resource_type' => $document['resource_type'],
+                    'resource_name' => $document['resource_name'],
+                    'resource_size' => $document['resource_size'],
+                    'previewable_on' => $filePath,
+                ]);
+            }
+        });
+    }
 }
