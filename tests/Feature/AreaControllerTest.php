@@ -33,7 +33,7 @@ class AreaControllerTest extends TestCase
         $this->areaService = app(AreaService::class);
     }
 
-    public function test_get_area_information(): void
+    public function test_retrieve_area_informations(): void
     {
         $area_name = $this->areaService->set_name('Binus Kemanggisan');
         $area_join_policy = $this->areaService->set_join_policy(JoinPolicyEnum::APPROVAL_NEEDED);
@@ -87,7 +87,7 @@ class AreaControllerTest extends TestCase
         $this->assertSame($data['issue_type_count'], TicketIssueType::all()->count());
     }
 
-    public function test_get_area_join_policy()
+    public function test_retrieve_area_join_policy()
     {
         $auth_code = AuthenticationCode::factory()->create();
 

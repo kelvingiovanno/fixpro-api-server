@@ -32,7 +32,7 @@ class IssueTypeControllerTest extends TestCase
         $this->googleCalendarService = new GoogleCalendarService();
     }
 
-    public function test_get_all_issue_type()
+    public function test_retrieve_all_issue_types()
     {
         $auth_code = AuthenticationCode::factory()->create(); 
 
@@ -158,8 +158,7 @@ class IssueTypeControllerTest extends TestCase
         ]);
     }
 
-
-    public function test_delete_issue_types()
+    public function test_delete_an_issue_type()
     {
         $auth_code = AuthenticationCode::factory()->create(); 
 

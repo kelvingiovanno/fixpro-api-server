@@ -40,7 +40,7 @@ class EntryControllerTest extends TestCase
         $this->areaService->set_join_policy(JoinPolicyEnum::APPROVAL_NEEDED);
     }
 
-    public function test_get_form()
+    public function test_retrieve_join_form()
     {
         $referralCode = $this->referralCodeService->generate();
 
@@ -74,7 +74,7 @@ class EntryControllerTest extends TestCase
         $this->assertNotEmpty($data['nonce']);
     }
 
-    public function test_submit()
+    public function test_application_submission()
     {
         $nonce_code = $this->nonceCodeService->generate();
 
@@ -127,7 +127,7 @@ class EntryControllerTest extends TestCase
         $this->assertDatabaseHas('members', array_merge(['id' => $member_id], $converted));
     }
 
-    public function test_check()
+    public function test_check_application_status()
     {
 
         $applicant = Applicant::factory()->create();

@@ -22,7 +22,7 @@ class JoinBarcodeControllerTest extends TestCase
         $this->artisan('db:seed');
     }
 
-    public function test_get_join_barcode()
+    public function test_retrieve_join_area_barcode()
     {
         $auth_code = AuthenticationCode::factory()->create();
         
@@ -52,5 +52,4 @@ class JoinBarcodeControllerTest extends TestCase
         $response->assertHeader('Content-Type', 'image/svg+xml');
         $this->assertNotEmpty($response->getContent());
     }   
-
 }

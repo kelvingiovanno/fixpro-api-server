@@ -20,7 +20,7 @@ class AuthControllerTest extends TestCase
         $this->artisan('db:seed');
     }
 
-    public function test_exchange(): void
+    public function test_authentication_exchange(): void
     {
        $authentication_code = AuthenticationCode::factory()->create();
 
@@ -61,7 +61,7 @@ class AuthControllerTest extends TestCase
         ]);
     }
 
-    public function test_refresh()
+    public function test_authentication_refresh()
     {
         $refresh_token = RefreshToken::factory()->create();
 
