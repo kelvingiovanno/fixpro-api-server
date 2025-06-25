@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('application_id')->nullable();
             $table->timestamp('expires_on');    
 
-            $table->foreign('application_id')->references('id')->on('applicants')->onDelete('set null');
+            $table->foreign('application_id')->references('id')->on('applicants')->onDelete('cascade');
             $table->softDeletes();
         });
     }

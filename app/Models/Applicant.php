@@ -49,6 +49,13 @@ class Applicant extends Model
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             }
         });
+
+        static::deleting(function ($model) {
+            if ($model->member) {
+                $model->member->delete();
+                $model->authentication_code->delete();
+            }
+        });
     }
 
     protected function serializeDate(DateTimeInterface $date)

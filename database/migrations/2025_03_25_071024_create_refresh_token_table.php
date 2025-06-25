@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('token')->unique();
             $table->timestamp('expires_on');
         
-            $table->foreign('member_id')->references('id')->on('members')->onDelete('set null');
+            $table->foreign('member_id')->references('id')->on('members')->onDelete('cascade');
             $table->softDeletes();
         });
     }

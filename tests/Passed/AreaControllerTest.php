@@ -170,5 +170,4 @@ class AreaControllerTest extends TestCase
 
         $this->assertSame($data['join_policy'], $this->areaService->get_join_policy());
     }
-
 }

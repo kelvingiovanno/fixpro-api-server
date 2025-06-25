@@ -43,6 +43,12 @@ class AuthenticationCode extends Model
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             } 
         });
+
+        static::deleting(function ($model) {
+            if ($model->member) {
+                $model->applicant->delete();
+            }
+        });
     }
 
     public function applicant()

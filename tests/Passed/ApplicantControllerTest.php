@@ -5,11 +5,15 @@ namespace Tests\Feature;
 use App\Enums\ApplicantStatusEnum;
 use App\Enums\IssueTypeEnum;
 use App\Enums\MemberRoleEnum;
+
 use App\Models\Applicant;
+
 use App\Models\AuthenticationCode;
 use App\Services\AreaService;
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+
 use Tests\TestCase;
 
 class ApplicantControllerTest extends TestCase

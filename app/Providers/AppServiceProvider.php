@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Date;
 
 use App\Services\AreaService;
 use App\Services\AuthService;
@@ -69,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {   
+        
         if (app()->runningInConsole() && php_sapi_name() === 'cli') {
             if (in_array($_SERVER['argv'][1] ?? '', ['serve'])) {
                 
@@ -80,5 +82,6 @@ class AppServiceProvider extends ServiceProvider
                 echo "\n[APP AUTH TOKEN]: $authToken\n";
             }
         }
+        
     }
 }

@@ -10,7 +10,7 @@ use App\Models\Applicant;
 use App\Models\RefreshToken;
 use App\Models\TicketLog;
 use App\Models\TicketIssue;
-
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -56,11 +56,13 @@ class Member extends Model
             }
             
         });
-    }
 
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('c');
+        static::deleting(function ($model) {
+            if ($model->applicant) {
+                $model->applicant->delete();
+                $model->refresh_token->delete();
+            }
+        });
     }
 
     public function tickets()

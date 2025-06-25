@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
 
 use App\Enums\ApplicantStatusEnum;
 use App\Enums\MemberRoleEnum;
@@ -51,8 +53,8 @@ class MemberController extends Controller
                     'capabilities' => $member->capabilities->map(function ($capability) {
                         return $capability->name;
                     }),
-                    'member_since' => $member->member_since,
-                    'member_until' => $member->member_until,
+                    'member_since' => $member->member_since->format('Y-m-d\TH:i:sP'),
+                    'member_until' => $member->member_until->format('Y-m-d\TH:i:sP'),
                 ];
             });
 
@@ -105,8 +107,8 @@ class MemberController extends Controller
                 'capabilities' => $member->capabilities->map(function ($capability) {
                     return $capability->name;
                 }),
-                'member_since' => $member->member_since,
-                'member_until' => $member->member_until,
+                'member_since' => $member->member_since->format('Y-m-d\TH:i:sP'),
+                'member_until' => $member->member_until->format('Y-m-d\TH:i:sP'),
             ];
     
             return $this->apiResponseService->ok($response_data, 'Successfully retrieved member');
@@ -199,7 +201,7 @@ class MemberController extends Controller
 
             $member->update([
                 'name' => $request->data['name'],
-                'role_id' => MemberRoleEnum::from($request->data['role']),
+                'role_id' => MemberRoleEnum::from($request->data['role'])->id(),
                 'title' => $request->data['title'],
                 'member_since' => $request->data['member_since'],
                 'member_until' => $request->data['member_until'],
@@ -226,8 +228,8 @@ class MemberController extends Controller
                 'capabilities' => $member->capabilities->map(function ($capability) {
                     return $capability->name;
                 }),
-                'member_since' => $member->member_since,
-                'member_until' => $member->member_until,
+                'member_since' => $member->member_since->format('Y-m-d\TH:i:sP'),
+                'member_until' => $member->member_until->format('Y-m-d\TH:i:sP'),
             ];
 
             return $this->apiResponseService->ok($response_data, 'Successfully updated member.');

@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\IssueTypeController;
 use App\Http\Controllers\Api\JoinBarcodeController;
 use App\Http\Controllers\Api\SlaController;
 use App\Http\Controllers\Api\ApplicantController;
+use App\Http\Controllers\Api\MemberController;
 
 Route::prefix('/auth')->group(function() {
     Route::post('exchange', [AuthController::class, 'exchange']);
@@ -65,10 +66,8 @@ Route::middleware(['api.auth'])->group(function () {
     ]))->group(function () {
         
         Route::prefix('/area')->group(function (){
-            Route::get('/members', [AreaController::class, 'getMembers']);
+            Route::get('/members', [MemberController::class, 'index']);
         });
-
-        
         
         Route::prefix('/ticket')->group(function ()  {
         
@@ -139,9 +138,9 @@ Route::middleware(['api.auth'])->group(function () {
             });
 
             Route::prefix('/member')->group(function () {
-                Route::get('/{member_id}', [AreaController::class, 'getMember']);
-                Route::delete('/{member_id}', [AreaController::class, 'deleteMember']);
-                Route::put('/{member_id}', [AreaController::class, 'putMember']);
+                Route::get('/{member_id}', [MemberController::class, 'show']);
+                Route::delete('/{member_id}', [MemberController::class, 'destroy']);
+                Route::put('/{member_id}', [MemberController::class, 'update']);
             });
 
         });

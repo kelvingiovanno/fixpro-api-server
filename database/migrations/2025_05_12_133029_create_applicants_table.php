@@ -18,7 +18,7 @@ return new class extends Migration
             $table->dateTime('expires_on')->nullable();
 
             $table->softDeletes();
-            $table->foreign('member_id')->references('id')->on('members')->onDelete('set null');
+            $table->foreign('member_id')->references('id')->on('members')->onDelete('cascade');
             $table->foreign('status_id')->references('id')->on('applicant_statuses')->onDelete('set null');
         });
     }
