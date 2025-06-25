@@ -51,7 +51,7 @@ class TicketService
                 ];
             }),
             'response_level' => $ticket->response->name,
-            'raised_on' => $ticket->raised_on,
+            'raised_on' => $ticket->raised_on->format('Y-m-d\TH:i:sP'),
             'status' => $ticket->status->name,
             'stated_issue' => $ticket->stated_issue,
             'location' => [
@@ -99,7 +99,7 @@ class TicketService
                             return $capability->name;
                         }),
                     ],
-                    'recorded_on' => $log->recorded_on,
+                    'recorded_on' => $log->recorded_on->format('Y-m-d\TH:i:sP'),
                     'news' => $log->news,
                     'attachments' => $log->documents,
                 ];
@@ -124,7 +124,7 @@ class TicketService
                     ];
                 });
             }),
-            'closed_on' => $ticket->closed_on,
+            'closed_on' => $ticket->closed_on->format('Y-m-d\TH:i:sP'),
         ];
 
         return $details_data;

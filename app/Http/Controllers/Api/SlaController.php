@@ -73,8 +73,8 @@ class SlaController extends Controller
 
         try
         {
-            $sla_to_reponse = $this->areaService->set_sla_response($request->data['sla_to_respond']);
-            $sla_to_auto_close = $this->areaService->set_sla_close($request->data['sla_to_auto_close']);
+            $sla_to_reponse = (string) $this->areaService->set_sla_response($request->data['sla_to_respond']);
+            $sla_to_auto_close = (string) $this->areaService->set_sla_close($request->data['sla_to_auto_close']);
 
             foreach($request->data['per_issue_types'] as $issue)
             {               

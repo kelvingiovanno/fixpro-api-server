@@ -56,13 +56,6 @@ class Member extends Model
             }
             
         });
-
-        static::deleting(function ($model) {
-            if ($model->applicant) {
-                $model->applicant->delete();
-                $model->refresh_token->delete();
-            }
-        });
     }
 
     public function tickets()

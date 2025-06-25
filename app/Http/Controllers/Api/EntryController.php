@@ -120,7 +120,7 @@ class EntryController extends Controller
 
             $response_data = [
                 'application_id' => $applicant->id,
-                'application_expiry_date' => $applicant->expires_on,
+                'application_expiry_date' => $applicant->expires_on->format('Y-m-d\TH:i:sP'),
             ];
 
             return $this->apiResponseService->ok(

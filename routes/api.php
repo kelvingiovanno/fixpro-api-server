@@ -96,8 +96,8 @@ Route::middleware(['api.auth'])->group(function () {
     )->group(function () {
         
         Route::prefix('/sla')->group(function (){
-            Route::get('/', [SlaController::class, 'get_sla']);
-            Route::put('/', [SlaController::class, 'put_sla']);
+            Route::get('/', [SlaController::class, 'index']);
+            Route::put('/', [SlaController::class, 'update']);
         });
 
         Route::prefix('/ticket')->group(function ()  {

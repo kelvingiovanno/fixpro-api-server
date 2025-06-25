@@ -4,17 +4,18 @@ namespace Tests\Feature;
 
 use App\Enums\MemberCapabilityEnum;
 use App\Enums\MemberRoleEnum;
-use App\Models\AuthenticationCode;
-use App\Models\Enums\MemberCapability;
-use App\Models\Enums\MemberRole;
-use App\Models\Enums\TicketIssueType;
-use App\Models\Member;
 
+use App\Models\Enums\MemberCapability;
+use App\Models\Enums\TicketIssueType;
+
+use App\Models\AuthenticationCode;
+use App\Models\Member;
 use App\Services\AreaService;
-use Carbon\Carbon;
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 
+use Carbon\Carbon;
 use Tests\TestCase;
 
 class MemberControllerTest extends TestCase

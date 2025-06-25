@@ -49,9 +49,9 @@ class TicketController extends Controller
                         ];
                     }),
                     'response_level' => $ticket->response->name, 
-                    'raised_on' => $ticket->raised_on,
+                    'raised_on' => $ticket->raised_on->format('Y-m-d\TH:i:sP'),
                     'status' => $ticket->status->name,  
-                    'closed_on' => $ticket->closed_on,  
+                    'closed_on' => $ticket->closed_on->format('Y-m-d\TH:i:sP'),  
                 ];
             });
     
@@ -119,9 +119,9 @@ class TicketController extends Controller
                     ];
                 }),
                 'response_level' => $ticket->response->name,
-                'raised_on' => $ticket->raised_on,
+                'raised_on' => $ticket->raised_on->format('Y-m-d\TH:i:sP'),
                 'status' => $ticket->status->name,
-                'closed_on' => $ticket->closed_on,
+                'closed_on' => $ticket->closed_on->format('Y-m-d\TH:i:sP'),
             ];
     
             return $this->apiResponseService->created($reponse_data, 'Ticket created successfully.');
