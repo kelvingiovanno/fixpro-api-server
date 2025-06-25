@@ -34,17 +34,17 @@ Route::middleware(['api.auth'])->group(function () {
     ]))->group(function () {
         
         Route::prefix('/tickets')->group(function() {
-            Route::get('/', [TicketController::class, 'getTickets']);
-            Route::post('/', [TicketController::class, 'postTicket']);
+            Route::get('/', [TicketController::class, 'index']);
+            Route::post('/', [TicketController::class, 'store']);
         });
 
         Route::prefix('/ticket')->group(function ()  {
         
-            Route::prefix('/{_ticketId}')->group(function () {
+            Route::prefix('/{ticket_id}')->group(function () {
 
-                Route::get('/', [TicketController::class, 'getTicket']);
-                Route::patch('/', [TicketController::class, 'patchTicket']);
-                Route::get('/print-view', [TicketController::class, 'printView']);
+                Route::get('/', [TicketController::class, 'show']);
+                Route::patch('/', [TicketController::class, 'update']);
+                Route::get('/print-view', [TicketController::class, 'print_view']);
                 Route::post('/close', [TicketController::class, 'close']);
 
                 Route::prefix('logs')->group(function () {
@@ -75,7 +75,7 @@ Route::middleware(['api.auth'])->group(function () {
                 
                 Route::prefix('evaluate')->group(function (){
                     Route::post('/', [TicketController::class,'evaluate']);
-                    Route::post('/request', [TicketController::class,'evaluateRequest']);
+                    Route::post('/request', [TicketController::class,'evaluate_request']);
                 });
 
                 Route::prefix('handlers')->group(function () {
@@ -104,7 +104,7 @@ Route::middleware(['api.auth'])->group(function () {
         
             Route::prefix('/{_ticketId}')->group(function () {
 
-                Route::post('/force-close', [TicketController::class, 'forceClose']);
+                Route::post('/force-close', [TicketController::class, 'force_close']);
 
             }); 
 
@@ -153,6 +153,7 @@ Route::middleware(['api.auth'])->group(function () {
         });
           
     });
+    
 });
 
 

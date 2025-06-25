@@ -45,6 +45,6 @@ class Location extends Model
 
     public function ticket()
     {
-        return $this->belongsTo(Ticket::class,  'location_id', 'id');
+        return $this->belongsTo(Ticket::class,  'ticket_id', 'id');
     }
 }

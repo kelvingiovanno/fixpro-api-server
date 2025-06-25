@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\JoinPolicyEnum;
+use App\Enums\StorageTypeEnum;
 use App\Models\SystemSetting;
 use Illuminate\Support\Facades\Cache;
 
@@ -65,7 +66,19 @@ class AreaService {
             Cache::forever('area_sla_close', $sla_close);
         }
 
-        return (int) $sla_close;;
+        return (int) $sla_close;
+    }
+
+    public function get_storage_type()
+    {
+        $type = Cache::get('area_storage_type');
+
+        if (!$type) {
+            $type = SystemSetting::get('area_storage_type') ?? StorageTypeEnum::LOCAL->value;
+            Cache::forever('area_storage_type', $type);
+        }
+
+        return $type;
     }
 
     public function set_name(string $area_name) : string
@@ -116,6 +129,14 @@ class AreaService {
         Cache::forever('area_sla_close', $sla_close);
 
         return (int) $sla_close;
+    }
+
+    public function set_storage_tyoe(StorageTypeEnum $type) : string
+    {
+        SystemSetting::put('area_storage_type', $type->value);
+        Cache::forever('area_storage_type', $type->value);
+
+        return $type->value;
     }
 
     public function is_first_joined() : ?string

@@ -97,14 +97,14 @@ class TicketController extends Controller
             $ticket = $this->ticketService->create (
                 $request->client['id'],
                 [
-                    'response_id' => TicketResponseTypeEnum::from($request->data['response_level']),
+                    'response_id' => TicketResponseTypeEnum::from($request->data['response_level'])->id(),
                     'stated_issue' => $request->data['stated_issue'],
                 ],
                 $request->data['issue_type_ids'],
                 [
-                    'stated_location' => $request->data['stated_location'],
-                    'latitude' => $request->data['gps_location']['latitude'],
-                    'longitude' => $request->data['gps_location']['longitude'],
+                    'stated_location' => $request->data['location']['stated_location'],
+                    'latitude' => $request->data['location']['gps_location']['latitude'],
+                    'longitude' => $request->data['location']['gps_location']['longitude'],
                 ],
                 $request->data['supportive_documents'],
             );
@@ -119,9 +119,11 @@ class TicketController extends Controller
                     ];
                 }),
                 'response_level' => $ticket->response->name,
+                'status' => $ticket->status->name,
+                'executive_summary' => '',
                 'raised_on' => $ticket->raised_on->format('Y-m-d\TH:i:sP'),
                 'status' => $ticket->status->name,
-                'closed_on' => $ticket->closed_on->format('Y-m-d\TH:i:sP'),
+                'closed_on' => $ticket->closed_on?->format('Y-m-d\TH:i:sP'),
             ];
     
             return $this->apiResponseService->created($reponse_data, 'Ticket created successfully.');
@@ -211,11 +213,11 @@ class TicketController extends Controller
                 $ticket_id,
                 $request->data['issue_type'],
                 $request->data['status'],
-                $request->data['statstated_issueus'],
+                $request->data['stated_issue'],
                 [
-                    'stated_location' => $request->data['stated_location'],
-                    'stated_location' => $request->data['gps_location']['latitude'],
-                    'stated_location' => $request->data['gps_location']['longitude'],
+                    'stated_location' => $request->data['location']['stated_location'],
+                    'latitude' => $request->data['location']['gps_location']['latitude'],
+                    'longitude' => $request->data['location']['gps_location']['longitude'],
                 ],
                 $request->client['id'],
             );
@@ -305,7 +307,6 @@ class TicketController extends Controller
             'ticket_id' => 'required|uuid',
             'data' => 'required|array',
             'data.resolveToApprove' => 'required|boolean',
-            'data.issue_type' => 'required|uuid|exists:ticket_issue_types,id',
             'data.reason' => 'required|string',  
             'data.supportive_documents' => 'nullable|array',
             'data.supportive_documents.*.resource_type' => 'required|string',
@@ -492,7 +493,7 @@ class TicketController extends Controller
                 $ticket,
                 $requester,
             );
-
+            
             return $this->apiResponseService->raw($print_view, 'application/pdf', 'ticket-print.pdf');
         }
         catch (ModelNotFoundException)

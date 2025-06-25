@@ -15,7 +15,7 @@ class ReportService
         protected AreaService $areaService,
     ) {}
 
-    public function workOrder(array $_data = [])
+    public function work_order(array $_data = [])
     {
     }
 
@@ -29,14 +29,14 @@ class ReportService
                 'date' => now()->translatedFormat('l, d F Y'),
             ],
             'requestor_identity' => array_merge(
-                Arr::except($ticket->issuer, ['id', 'role_id', 'member_since', 'member_until', 'title']),
+                Arr::except($ticket->issuer->toArray(), ['id', 'role_id', 'member_since', 'member_until', 'title']),
                 ['name' => $ticket->issuer->name . ' (' . substr($ticket->issuer->id, -5) . ')']
             ),
             'formally_requests' => [
                 'work_type' => $ticket->ticket_issues->pluck('issue.name')->toArray(),
-                'response_level' => $ticket['response_level'],
+                'response_level' => $ticket->response->name,
                 'location' => $ticket->location->stated_location,
-                'that_can_be_described_by' => $ticket->executive_summary,
+                'that_can_be_described_by' => $ticket->stated_issue,
             ],
             'supportive_documents' => collect($ticket->documents)->map(function ($document) {
                 return [
@@ -45,14 +45,17 @@ class ReportService
                 ];
             })->toArray()
         ];
-
         
         $service_form = Pdf::loadView('pdf.service_form', $service_form_data)->setPaper('a4', 'portrait')->output();
         
         return $service_form;
     }
 
-    public function periodicReport()
+    public function periodic_report()
+    {
+    }
+
+    public function ticket_report()
     {
     }
 

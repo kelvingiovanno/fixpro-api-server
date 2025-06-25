@@ -2,15 +2,23 @@
 
 namespace App\Services;
 
+use App\Enums\StorageTypeEnum;
+
+use App\Exceptions\InvalidStorageTypeException;
+
 use App\Models\SystemSetting;
+
 use Google\Cloud\Storage\StorageClient;
+
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class StorageService
 {
 
-    // === PUBLIC STORE METHODS ===
+    public function __construct(
+        protected AreaService $areaService,
+    ) { }
 
     public function storeTicketDocument(string $base64Content, string $originalName, string $ticketId): string
     {
@@ -36,27 +44,31 @@ class StorageService
         return $this->store($base64Content, $filePath);
     }
 
-    // === CORE STORE LOGIC ===
-
     protected function store(string $base64Content, string $filePath): string
     {
-        $storageType = SystemSetting::get('storage_type');
+        $storageType = $this->areaService->get_storage_type();
         
 
         $fileContent = base64_decode($base64Content);
 
-        if ($storageType === 'CLOUD') {
+        if ($storageType === StorageTypeEnum::GOOGLE_CLOUD->value) {
             return $this->storeToCloud($fileContent, $filePath);
         } 
+        else if ($storageType === StorageTypeEnum::LOCAL->value)
+        {
+            return  $this->storeToLocal($fileContent, $filePath);
+        }
 
-        return  $this->storeToLocal($fileContent, $filePath);
+        throw new InvalidStorageTypeException();
     }
 
     protected function storeToLocal(string $fileContent, string $filePath): string
     {
         Storage::disk('public')->put($filePath, $fileContent);
-        $parsed_path = public_path('/storage/' . $filePath);
-        return $parsed_path;
+
+        $publicUrl  =  asset('storage/' . $filePath);
+            
+        return $publicUrl ;
     }
 
     protected function storeToCloud(string $fileContent, string $filePath): string
@@ -77,9 +89,6 @@ class StorageService
 
         return "https://storage.googleapis.com/{$bucketName}/{$filePath}";
     }
-
-
-    // === UTILS ===
 
     protected function generateFileName(string $originalName): string
     {

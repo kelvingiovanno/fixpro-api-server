@@ -23,11 +23,11 @@ class TicketService
     {
         $ticket->load([
             'issuer.role',
-            'issuer.specialties',
+            'issuer.specialities',
             'issuer.capabilities',
             'ticket_issues.maintainers',
             'ticket_issues.maintainers.role',
-            'ticket_issues.maintainers.specialties',
+            'ticket_issues.maintainers.specialities',
             'ticket_issues.maintainers.capabilities',
             'location',
             'documents',
@@ -36,8 +36,8 @@ class TicketService
             'logs.type',
             'logs.issuer',
             'logs.issuer.role',
-            'logs.issuer.specialties',
-            'logs.issuer.capabilities',
+            'logs.issuer.specialities',
+            'logs.issuer.specialities',
             'logs.documents',
         ]);
 
@@ -53,6 +53,7 @@ class TicketService
             'response_level' => $ticket->response->name,
             'raised_on' => $ticket->raised_on->format('Y-m-d\TH:i:sP'),
             'status' => $ticket->status->name,
+            'executive_summary' => '',
             'stated_issue' => $ticket->stated_issue,
             'location' => [
                 'stated_location' => $ticket->location->stated_location,
@@ -124,7 +125,7 @@ class TicketService
                     ];
                 });
             }),
-            'closed_on' => $ticket->closed_on->format('Y-m-d\TH:i:sP'),
+            'closed_on' => $ticket->closed_on?->format('Y-m-d\TH:i:sP'),
         ];
 
         return $details_data;
@@ -144,14 +145,15 @@ class TicketService
             $ticket = Ticket::create([
                 'member_id' => $owner_id,
                 'status_id' => TicketStatusEnum::OPEN->id(),
-                'response_id' => $ticket['response_level'],
+                'response_id' => $ticket['response_id'],
                 'stated_issue' => $ticket['stated_issue'],
             ]);
 
             $ticket_log = $ticket->logs()->create([
                 'member_id' => $owner_id,
                 'type_id' => TicketLogTypeEnum::ACTIVITY->id(),
-                'news' => 'Ticket has been created.'
+                'news' => 'Ticket has been created.',
+                'recorded_on' => now(),
             ]);
 
             foreach($issues as $issue)
@@ -167,21 +169,19 @@ class TicketService
                 'longitude' => $location['longitude'],
             ]);
         
-            foreach($documents as &$document)
+            foreach($documents as $document)
             {
                 $document_path = $this->storageService->storeTicketDocument(
-                    $document['previewable_on'],
-                    'service_form.pdf', 
+                    $document['resource_content'],
+                    $document['resource_name'], 
                     $ticket->id
                 );
-
-                $document['previewable_on'] = $document_path;
 
                 $ticket->documents()->create([
                     'resource_type' => $document['resource_type'],
                     'resource_name' => $document['resource_name'],
                     'resource_size' => $document['resource_size'],
-                    'previewable_on' => $document['previewable_on'],
+                    'previewable_on' => $document_path,
                 ]);
             }
 
@@ -196,6 +196,10 @@ class TicketService
                 'service_form.pdf', 
                 $ticket_log->id
             );
+
+            logger('service_form', [
+                'path' => $service_form_path,
+            ]);
 
             $ticket_log->documents()->create([
                 'resource_type' => 'pdf',
@@ -227,7 +231,7 @@ class TicketService
             $ticket = Ticket::findOrFail($ticket_id);
 
             $ticket->update([
-                'status_id' => TicketStatusEnum::from($status['status'])->id(),
+                'status_id' => TicketStatusEnum::from($status)->id(),
                 'stated_issue' => $stated_issue,
             ]);
             
@@ -254,7 +258,8 @@ class TicketService
             $ticket->logs()->create([
                 'member_id' => $requester_id,
                 'type_id' => TicketLogTypeEnum::ACTIVITY->id(),
-                'news' => 'Ticket infromation has been updated.'
+                'news' => 'Ticket infromation has been updated.',
+                'recorded_on' => now(),
             ]);
 
             return $ticket;
@@ -275,7 +280,7 @@ class TicketService
         {
             $ticket = Ticket::findOrFail($ticket_id);
 
-            if ($ticket->status->id != TicketStatusEnum::ON_PROGRESS->id()) {
+            if ($ticket->status_id != TicketStatusEnum::ON_PROGRESS->id()) {
                 throw new InvalidTicketStatusException('Ticket is not in progress.');
             }
 
@@ -285,6 +290,7 @@ class TicketService
                 'member_id' => $requester_id,
                 'type_id' => TicketLogTypeEnum::WORK_EVALUATION_REQUEST->id(),
                 'news' => $remark,
+                'recorded_on' => now(),
             ]);
 
             foreach ($documents ?? [] as $document) 
@@ -295,7 +301,7 @@ class TicketService
                     $ticket->id
                 );
 
-                $ticket_log->documents()->createe([
+                $ticket_log->documents()->create([
                     'log_id' => $ticket_log->id,
                     'resource_type' => $document['resource_type'],
                     'resource_name' => $document['resource_name'],
@@ -331,6 +337,7 @@ class TicketService
                     'member_id' => $evaluated_by,
                     'type_id' => TicketLogTypeEnum::REJECTION->id(),
                     'news' => $reason,
+                    'recorded_on' => now(),
                 ]);
             }
             else 
@@ -346,6 +353,7 @@ class TicketService
                         'member_id' => $evaluated_by,
                         'type_id' => TicketLogTypeEnum::WORK_EVALUATION->id(),
                         'news' => $reason,
+                        'recorded_on' => now(),
                     ]);
 
                 }
@@ -359,6 +367,7 @@ class TicketService
                         'member_id' => $evaluated_by,
                         'type_id' => TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id(),
                         'news' => $reason,
+                        'recorded_on' => now(),
                     ]);
 
                 }
@@ -372,6 +381,7 @@ class TicketService
                         'member_id' => $evaluated_by,
                         'type_id' => TicketLogTypeEnum::APPROVAL->id(),
                         'news' => $reason,
+                        'recorded_on' => now(),
                     ]);
                 }
                 else 
@@ -412,7 +422,7 @@ class TicketService
             
             $ticket = Ticket::with('issuer')->findOrFail($ticket_id);
 
-            if($ticket->status_id != TicketStatusEnum::OPEN->id() || $ticket->status_id != TicketStatusEnum::IN_ASSESSMENT->id())
+            if($ticket->status_id != TicketStatusEnum::OPEN->id() && $ticket->status_id != TicketStatusEnum::IN_ASSESSMENT->id())
             {
                 throw new InvalidTicketStatusException('The ticket\'s current status does not permit this operation.');
             }
@@ -434,6 +444,7 @@ class TicketService
                 'member_id' => $requester_id,
                 'type_id' => TicketLogTypeEnum::REJECTION->id(),
                 'news' => $reason,
+                'recorded_on' => now(),
             ]);
 
             foreach ($documents ?? [] as $document) 
@@ -466,7 +477,7 @@ class TicketService
             $ticket = Ticket::findOrFail($ticket_id);
 
             if(
-                $ticket->status_id != TicketStatusEnum::ON_PROGRESS->id() ||
+                $ticket->status_id != TicketStatusEnum::ON_PROGRESS->id() &&
                 $ticket->status_id != TicketStatusEnum::WORK_EVALUATION->id()
             ) {
                 throw new InvalidTicketStatusException('The ticket\'s current status does not permit this operation.');
@@ -480,6 +491,7 @@ class TicketService
                 'member_id' => $requester_id,
                 'type_id' => TicketLogTypeEnum::FORCE_CLOSURE->id(),
                 'news' => $reason,
+                'recorded_on' => now(),
             ]);
 
             foreach ($documents ?? [] as $document) 

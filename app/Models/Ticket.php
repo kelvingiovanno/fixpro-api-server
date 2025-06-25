@@ -97,7 +97,7 @@ class Ticket extends Model
 
     public function location()
     {
-        return $this->hasOne(Location::class, 'location_id', 'id');
+        return $this->hasOne(Location::class, 'ticket_id', 'id');
     }
     
     public function documents() 

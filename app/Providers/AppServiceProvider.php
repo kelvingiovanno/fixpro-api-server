@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Date;
 
 use App\Services\AreaService;
 use App\Services\AuthService;
@@ -74,10 +73,8 @@ class AppServiceProvider extends ServiceProvider
         if (app()->runningInConsole() && php_sapi_name() === 'cli') {
             if (in_array($_SERVER['argv'][1] ?? '', ['serve'])) {
                 
-                // Remove old token to force renewal
                 cache()->forget('web_auth_token');
                 
-                // Generate and store a new token
                 $authToken = WebAuthTokenService::generateAndStoreKey();
                 echo "\n[APP AUTH TOKEN]: $authToken\n";
             }
