@@ -2,8 +2,10 @@
 
 namespace Database\Factories;
 
-use App\Models\Enums\ApplicantStatus;
+use App\Enums\ApplicantStatusEnum;
+
 use App\Models\Member;
+
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -20,7 +22,7 @@ class ApplicantFactory extends Factory
     {
         return [
             'member_id' => Member::factory(),
-            'status_id' => ApplicantStatus::inRandomOrder()->first()->id,
+            'status_id' => ApplicantStatusEnum::ACCEPTED->id(),
         ];
     }
 }

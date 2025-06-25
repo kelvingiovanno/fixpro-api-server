@@ -11,7 +11,7 @@ use App\Http\Controllers\Api\GoogleCalendarTestController;
 use App\Http\Controllers\Api\IssueTypeController;
 use App\Http\Controllers\Api\JoinBarcodeController;
 use App\Http\Controllers\Api\SlaController;
-
+use App\Http\Controllers\Api\ApplicantController;
 
 Route::prefix('/auth')->group(function() {
     Route::post('exchange', [AuthController::class, 'exchange']);
@@ -132,10 +132,10 @@ Route::middleware(['api.auth'])->group(function () {
         Route::prefix('/area')->group(function() {
 
             Route::prefix('pending-memberships')->group(function() {
-                Route::get('/', [AreaController::class, 'getPendingMembers']);
-                Route::post('/', [AreaController::class, 'postPendingMembers']);
-                Route::get('/{application_id}', [AreaController::class, 'getPendingMember']);
-                Route::delete('/{application_id}', [AreaController::class, 'delPendingMember']);
+                Route::get('/', [ApplicantController::class, 'index']);
+                Route::post('/', [ApplicantController::class, 'accept']);
+                Route::get('/{application_id}', [ApplicantController::class, 'show']);
+                Route::delete('/{application_id}', [ApplicantController::class, 'reject']);
             });
 
             Route::prefix('/member')->group(function () {

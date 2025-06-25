@@ -12,7 +12,7 @@ class AreaService {
     {
         $area_name = Cache::get('area_name');
         
-        if ($area_name) {
+        if (!$area_name) {
             $area_name = SystemSetting::get('area_name') ?? 'Default Area';
             Cache::forever('area_name', $area_name);
         }
@@ -84,7 +84,7 @@ class AreaService {
         return $policy->value;
     }
 
-    public function set_join_form($form_data): array
+    public function set_join_form(array $form_data): array
     {
         $formatted_form = array_map(function ($item) {
             $item = trim($item);

@@ -1,10 +1,11 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\api;
+
+use App\Http\Controllers\Controller;
 
 use App\Enums\ApplicantStatusEnum;
 use App\Enums\MemberRoleEnum;
-
 use App\Models\Applicant;
 use App\Models\Member;
 
@@ -63,85 +64,6 @@ class ApplicantController extends Controller
         }
     }
     
-    public function accept(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'data' => 'required|array',
-            'data.application_id' => 'required|uuid',
-            'data.role' => 'required|string',
-            'data.specialization' => 'nullable|array',
-            'data.specialization.*' => 'string|uuid|exists:ticket_issue_types,id',
-            'data.title' => 'required|string|max:255',
-        ],
-        [
-            'data.required' => 'The data field is required.',
-            'data.application_id.required' => 'The application ID is required.',
-            'data.application_id.uuid' => 'The application ID must be a valid UUID.',
-            'data.role.required' => 'The role is required.',
-            'data.role.string' => 'The role must be a string.',
-            'data.specialization.array' => 'The specialization field must be an array.',
-            'data.specialization.*.string' => 'Each specialization must be a string.',
-            'data.specialization.*.uuid' => 'Each specialization must be a valid UUID.',
-            'data.specialization.*.exists' => 'One or more specialization IDs do not exist.',
-            'data.title.required' => 'The title is required.',
-            'data.title.string' => 'The title must be a string.',
-            'data.title.max' => 'The title must not exceed 255 characters.',
-        ]);
-        
-        if ($validator->fails()) {
-            return $this->apiResponseService->badRequest("Validation failed.", $validator->errors());
-        }
-        
-        try 
-        {
-            $applicant = Applicant::with('member')->findOrFail($request->data['application_id']);
-
-            $applicant->update([
-                'status_id' => ApplicantStatusEnum::ACCEPTED->id(),
-            ]);
-
-            $applicant->member()->update([
-                'role_id' => MemberRoleEnum::from($request->data['role']),
-                'title' => $request->data['title'],
-            ]);
-            
-            $applicant->member->specialities()->attach($request->data['specialization']);
-
-            $form_fields = $this->areaService->get_join_form();
-
-            $response_data = [
-                'id' => $applicant->member->id,
-                'form_answer' => collect($form_fields)->map(function ($field) use ($applicant) {
-                    return [
-                        'field_label' => $field,
-                        'field_value' => $applicant->member->$field,
-                    ];
-                })->toArray(),
-            ];
-
-            return $this->apiResponseService->created($response_data, 'Applicant Acccpted');
-        } 
-        catch (ModelNotFoundException)
-        {
-            return $this->apiResponseService->notFound('Applicant not found.');
-        }
-        catch (ValueError)
-        {
-            return $this->apiResponseService->badRequest('Invalid role provided.');
-        }
-        catch (Throwable $e) 
-        { 
-            Log::error('An error occurred during applicant acceptance', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
-        }
-    }
-
     public function show(string $application_id)
     {
         $validator = Validator::make(['application_id' => $application_id], [
@@ -188,6 +110,85 @@ class ApplicantController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
         
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
+        }
+    }
+
+    public function accept(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'data' => 'required|array',
+            'data.application_id' => 'required|uuid',
+            'data.role' => 'required|string',
+            'data.specialization' => 'nullable|array',
+            'data.specialization.*' => 'string|uuid|exists:ticket_issue_types,id',
+            'data.title' => 'required|string|max:255',
+        ],
+        [
+            'data.required' => 'The data field is required.',
+            'data.application_id.required' => 'The application ID is required.',
+            'data.application_id.uuid' => 'The application ID must be a valid UUID.',
+            'data.role.required' => 'The role is required.',
+            'data.role.string' => 'The role must be a string.',
+            'data.specialization.array' => 'The specialization field must be an array.',
+            'data.specialization.*.string' => 'Each specialization must be a string.',
+            'data.specialization.*.uuid' => 'Each specialization must be a valid UUID.',
+            'data.specialization.*.exists' => 'One or more specialization IDs do not exist.',
+            'data.title.required' => 'The title is required.',
+            'data.title.string' => 'The title must be a string.',
+            'data.title.max' => 'The title must not exceed 255 characters.',
+        ]);
+        
+        if ($validator->fails()) {
+            return $this->apiResponseService->badRequest("Validation failed.", $validator->errors());
+        }
+        
+        try 
+        {
+            $applicant = Applicant::with('member')->findOrFail($request->data['application_id']);
+
+            $applicant->update([
+                'status_id' => ApplicantStatusEnum::ACCEPTED->id(),
+            ]);
+
+            $applicant->member()->update([
+                'role_id' => MemberRoleEnum::from($request->data['role'])->id(),
+                'title' => $request->data['title'],
+            ]);
+            
+            $applicant->member->specialities()->attach($request->data['specialization']);
+
+            $form_fields = $this->areaService->get_join_form();
+
+            $response_data = [
+                'id' => $applicant->member->id,
+                'form_answer' => collect($form_fields)->map(function ($field) use ($applicant) {
+                    return [
+                        'field_label' => $field,
+                        'field_value' => $applicant->member->$field,
+                    ];
+                })->toArray(),
+            ];
+
+            return $this->apiResponseService->created($response_data, 'Applicant Acccpted');
+        } 
+        catch (ModelNotFoundException)
+        {
+            return $this->apiResponseService->notFound('Applicant not found.');
+        }
+        catch (ValueError)
+        {
+            return $this->apiResponseService->badRequest('Invalid role provided.');
+        }
+        catch (Throwable $e) 
+        { 
+            Log::error('An error occurred during applicant acceptance', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
             return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
