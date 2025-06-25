@@ -109,6 +109,7 @@ class JoinAreaService
         
         if($status_id === ApplicantStatusEnum::REJECTED->id())
         {
+            $applicant->delete();
             throw new JoinAreaException('Your application has been rejected.');
         }
 
