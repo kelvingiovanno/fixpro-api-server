@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\ServiceProvider;
+
 use App\Services\AreaService;
 use App\Services\AuthService;
 use App\Services\EncryptionService;
@@ -13,8 +15,8 @@ use App\Services\StorageService;
 use App\Services\GoogleCalendarService;
 use App\Services\JoinFormService;
 use App\Services\JoinAreaService;
-
-use Illuminate\Support\ServiceProvider;
+use App\Services\ReportService;
+use App\Services\TicketService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -44,6 +46,19 @@ class AppServiceProvider extends ServiceProvider
             return new JoinAreaService(
                 $this->app->make(NonceCodeService::class),
                 $this->app->make(JoinFormService::class),
+                $this->app->make(AreaService::class),
+            );
+        });
+
+        $this->app->singleton(TicketService::class, function () {
+            return new TicketService(
+                $this->app->make(ReportService::class),
+                $this->app->make(StorageService::class),
+            );
+        });
+
+        $this->app->singleton(ReportService::class, function () {
+            return new ReportService(
                 $this->app->make(AreaService::class),
             );
         });

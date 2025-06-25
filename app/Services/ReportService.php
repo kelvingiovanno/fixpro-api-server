@@ -6,7 +6,6 @@ use App\Models\Member;
 use App\Models\Ticket;
 
 use Illuminate\Support\Arr;
-use Illuminate\Support\Str;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
