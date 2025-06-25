@@ -25,7 +25,12 @@ class RolesAuthMiddleware
             ->map(fn ($role) => MemberRoleEnum::idFromName($role))
             ->all();
 
-        if (!$request->client['role_id'] || !in_array($request->role_id, $allowed_role_ids)) {
+        logger('role_middleware', [
+            'client_role_id' => $request->input('client.role_id'),
+            'role_reqired_ids' => $allowed_role_ids,
+        ]);
+
+        if (!$request->client['role_id'] || !in_array($request->client['role_id'], $allowed_role_ids)) {
             
             return $this->apiResponseService->forbidden('You are not authorized to access this resource.');   
         }

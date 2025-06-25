@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Enums\MemberRoleEnum;
+
 use App\Models\AuthenticationCode;
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+
 use Tests\TestCase;
 
 class JoinBarcodeControllerTest extends TestCase

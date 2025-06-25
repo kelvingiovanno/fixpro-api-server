@@ -183,7 +183,7 @@ class IssueTypeControllerTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->deleteJson('/api/issue-types/' . $issue_id);
+        ])->deleteJson('/api/issue-type/' . $issue_id);
 
         $response->assertStatus(200);
         

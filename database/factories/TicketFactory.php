@@ -31,12 +31,11 @@ class TicketFactory extends Factory
     {
         return [
             'member_id' => Member::where('role_id', MemberRoleEnum::MEMBER->id())->inRandomOrder()->value('id'),
-            'status_id' => TicketStatusEnum::CLOSED->id(),
+            'status_id' => TicketStatusEnum::OPEN->id(),
             'assessed_by' => Member::where('role_id', MemberRoleEnum::MANAGEMENT->id())->inRandomOrder()->value('id'),
             'evaluated_by'=> Member::where('role_id', MemberRoleEnum::MANAGEMENT->id())->inRandomOrder()->value('id'),
             'response_id' => TicketResponseType::inRandomOrder()->first()?->id,
             'stated_issue' => $this->faker->sentence(10),
-            'executive_summary' => $this->faker->paragraph(),
         ];   
     }
 
@@ -147,6 +146,7 @@ class TicketFactory extends Factory
 
             $ticket->update([
                 'closed_on' => $startTime,
+                'status_id' => TicketStatusEnum::CLOSED->id(),
             ]);
 
             $docCount = $this->faker->numberBetween(3, 5);
