@@ -26,7 +26,6 @@ class TicketIssueFactory extends Factory
         return [
             'issue_id' => TicketIssueType::inRandomOrder()->first()->id,
             'ticket_id' => Ticket::factory(),
-            'wo_id' => WODocument::factory(),
         ];
     }
 

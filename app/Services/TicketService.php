@@ -557,11 +557,11 @@ class TicketService
                 'member_id' => $requester_id,
                 'type_id' => TicketLogTypeEnum::INVITATION->id(),
                 'news' => "Maintainers have been assigned to the {$ticket_issue->issue->name} issue.",
-                'recoreded_on' => now(),
+                'recorded_on' => now(),
             ]);
 
             
-            $ticket->ticket_issues->work_order()->create([
+            $ticket_issue->work_order()->create([
                 'id' => 'WO-'. substr($ticket->id, -2) . substr($issue_id, -3),
                 'resource_type' => 'document/pdf',
                 'resource_name' => 'work_order.pdf',

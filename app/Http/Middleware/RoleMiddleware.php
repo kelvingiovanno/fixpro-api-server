@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 use Closure;
 
-class RoleAuthMiddleware
+class RoleMiddleware
 {
     public function __construct(
         protected ApiResponseService $apiResponseService,

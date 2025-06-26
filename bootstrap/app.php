@@ -2,7 +2,7 @@
 
 use App\Http\Middleware\ApiAuthMiddleware;
 use App\Http\Middleware\CapabilityMiddleware;
-use App\Http\Middleware\RoleAuthMiddleware;
+use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\WebAuthMiddleware;
 
 use Illuminate\Foundation\Application;
@@ -18,7 +18,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'role' => RoleAuthMiddleware::class,
+            'role' => RoleMiddleware::class,
             'capability' => CapabilityMiddleware::class,
             'api.auth' => ApiAuthMiddleware::class,
             'web.auth' => WebAuthMiddleware::class,

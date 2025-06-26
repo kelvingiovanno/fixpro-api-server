@@ -114,10 +114,6 @@ class TicketFactory extends Factory
                 
                 $startTime = $startTime->copy()->addMinutes(rand(5, 10));
 
-                $ticket->ticket_issues()->where('issue_id', $issueId)->update([
-                    'resolved_on' => $startTime,
-                ]);
-
                 TicketLog::factory()->create([
                     'ticket_id' => $ticket->id,
                     'type_id' => TicketLogTypeEnum::WORK_EVALUATION->id(),

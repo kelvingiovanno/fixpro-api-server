@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\TicketIssue;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,6 +18,7 @@ class WODocumentFactory extends Factory
     public function definition(): array
     {
         return [
+            'ticket_issue_id' => TicketIssue::factory(),
             'resource_type' => $this->faker->randomElement(['pdf', 'doc']),
             'resource_name' => $this->faker->word . '.' . $this->faker->fileExtension,
             'resource_size' => $this->faker->numberBetween(100, 5000), 

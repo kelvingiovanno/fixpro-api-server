@@ -30,7 +30,7 @@ class ReportService
                 'work_type' => $ticket->ticket_issues->firstWhere('issue_id', $issue_id)->issue->name,
                 'response_level' => $ticket->response->name,
                 'location' => $ticket->location->stated_location,
-                'as_a_follow_up_for' => $ticket->id,
+                'as_a_follow_up_for' => 'SF-' . substr($ticket->id, 0, 5),
                 'work_directive' => $work_description,
             ],
             'upon_the_request_of' => array_merge(

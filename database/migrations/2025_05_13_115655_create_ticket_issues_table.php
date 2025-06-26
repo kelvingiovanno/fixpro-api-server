@@ -19,7 +19,6 @@ return new class extends Migration
 
             $table->foreign('issue_id')->references('id')->on('ticket_issue_types')->onDelete('set null');
             $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('set null');
-            $table->foreign('wo_id')->references('id')->on('work_order_documents')->onDelete('set null');
             
             $table->softDeletes();
         });

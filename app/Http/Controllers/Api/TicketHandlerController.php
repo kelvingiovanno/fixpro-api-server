@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
 
 use App\Exceptions\IssueNotFoundException;
 use App\Models\Ticket;
@@ -34,8 +36,8 @@ class TicketHandlerController extends Controller
         try
         {
             $ticket = Ticket::with(
-                'maintainers.specialities',
-                'maintainers.capabilities', 
+                'ticket_issues.maintainers.specialities',
+                'ticket_issues.maintainers.capabilities', 
             )->findOrFail($ticket_id);
 
             $response_data =  $ticket->ticket_issues->flatMap(function ($issue) {

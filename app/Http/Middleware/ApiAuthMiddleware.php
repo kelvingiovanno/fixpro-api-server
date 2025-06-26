@@ -27,11 +27,13 @@ class ApiAuthMiddleware
             
             $member_id = $payload->get('member_id');
             $role_id = $payload->get('role_id');
+            $capability_ids = $payload->get('capability_ids');
 
             $request->merge([
                 'client' => [
                     'id' => $member_id, 
                     'role_id' => $role_id,
+                    'capability_ids' => $capability_ids,
                 ],
             ]);
         } 

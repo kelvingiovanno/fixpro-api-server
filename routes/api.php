@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\JoinBarcodeController;
 use App\Http\Controllers\Api\SlaController;
 use App\Http\Controllers\Api\ApplicantController;
 use App\Http\Controllers\Api\MemberController;
+use App\Http\Controllers\Api\TicketHandlerController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -80,7 +81,7 @@ Route::middleware('api.auth')->group(function () {
                 });
 
                 Route::prefix('handlers')->group(function () {
-                    Route::get('/', [TicketController::class, 'getHandlers']);
+                    Route::get('/', [TicketHandlerController::class, 'index']);
                 });
                 
                 Route::prefix('logs')->group(function () {
@@ -110,7 +111,7 @@ Route::middleware('api.auth')->group(function () {
 
         });
 
-        Route::post('/ticket/{ticket_id}/handlers', [TicketController::class, 'postHandlers']);
+        Route::post('/ticket/{ticket_id}/handlers', [TicketHandlerController::class, 'store']);
 
         Route::prefix('/area')->group(function () {
 
@@ -160,7 +161,7 @@ Route::middleware('api.auth')->group(function () {
         'role:' . MemberRoleEnum::CREW->value
     )->group(function () {
 
-        Route::post('/ticket/{ticket_id}/handlers', [TicketController::class, 'postHandlers'])
+        Route::post('/ticket/{ticket_id}/handlers', [TicketHandlerController::class, 'store'])
             ->middleware('capability:' . MemberCapabilityEnum::INVITE->value);
 
         Route::post('/ticket/{ticket_id}/evaluate/request', [TicketController::class,'evaluate'])
