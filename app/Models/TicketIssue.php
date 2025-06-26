@@ -23,9 +23,7 @@ class TicketIssue extends Model
     protected $fillable = [
         'issue_id',
         'ticket_id',
-        'wo_id',
         'work_description',
-        'resolved_on',
     ];
 
     protected $hidden = [
@@ -63,8 +61,8 @@ class TicketIssue extends Model
         return $this->belongsToMany(Member::class, 'maintainers', 'ticket_issue_id', 'member_id');
     }
 
-    public function wo_document()
+    public function work_order()
     {
-        return $this->belongsTo(WODocument::class, 'wo_id', 'id');
+        return $this->hasOne(WODocument::class, 'ticket_issue_id', 'id');
     }
 }

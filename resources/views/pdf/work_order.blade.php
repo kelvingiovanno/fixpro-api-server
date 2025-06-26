@@ -121,8 +121,8 @@
 
 <div class="report-header">
     <h1>Work Order</h1>
-    <p class="work-order-id">{{ $work_order_data['header']['work_order_id'] }}</p>
-    <p class="work-order-area">{{ $work_order_data['header']['area_name'] }}  •  {{ $work_order_data['header']['date'] }}</p>
+    <p class="work-order-id">{{ $header['work_order_id'] }}</p>
+    <p class="work-order-area">{{ $header['area_name'] }}  •  {{ $header['date'] }}</p>
 </div>
 
 <div class="sections work-order-details">
@@ -133,29 +133,29 @@
             <td>:</td>
             <td>
                 <p>
-                    {{ $work_order_data['to_perform']['work_type'] }}
+                    {{ $to_perform['work_type'] }}
                 </p>
             </td>
         </tr>
         <tr>
             <td>Response Level</td>
             <td>:</td>
-            <td>{{ $work_order_data['to_perform']['response_level'] }}</td>
+            <td>{{ $to_perform['response_level'] }}</td>
         </tr>
         <tr>
             <td>Location</td>
             <td>:</td>
-            <td>{{ $work_order_data['to_perform']['location'] }}</td>
+            <td>{{ $to_perform['location'] }}</td>
         </tr>
         <tr>
             <td>As a Follow-up for</td>
             <td>:</td>
-            <td>{{ $work_order_data['to_perform']['as_a_follow_up_for'] }}</td>
+            <td>{{ $to_perform['as_a_follow_up_for'] }}</td>
         </tr>
         <tr>
             <td>Work Directive</td>
             <td>:</td>
-            <td>{{ $work_order_data['to_perform']['work_directive'] }}</td>
+            <td>{{ $to_perform['work_directive'] }}</td>
         </tr>
     </table>
 </div>
@@ -163,7 +163,7 @@
 <div class="sections requestor-info">
     <h3>Upon the Request of</h3>
     <table>
-        @foreach ($work_order_data['upon_the_request_of'] as $key => $value)
+        @foreach ($upon_the_request_of as $key => $value)
             <tr>
                 <td class="label">{{ ucwords(str_replace('_', ' ', $key)) }}:</td> 
                 <td>:</td>
@@ -180,10 +180,10 @@
             <tr><th>Name</th><th>Title</th></tr>
         </thead>
         <tbody>
-            @foreach ($work_order_data['to be carried out by'] as $member)
+            @foreach ($to_be_carried_out_by as $crew)
                 <tr>
-                    <td>{{ $member['name'] }}</td>
-                    <td>{{ $member['title'] ?? '-' }}</td>
+                    <td>{{ $crew['name'] }}</td>
+                    <td>{{ $crew['title'] ?? '-' }}</td>
                 </tr>
             @endforeach
         </tbody>

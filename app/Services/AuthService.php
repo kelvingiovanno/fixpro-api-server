@@ -21,11 +21,12 @@ class AuthService
         $refreshExpiry = $now->copy()->addMonths(3);
 
         $member = $authenticationCode->applicant->member;
-
+ 
         $customClaims = [
             'sub' => 'profix_api_service',
             'member_id' => $member->id,
             'role_id' => $member->role->id,
+            'capability_ids' => $member->capabilities->pluck('id')->toArray(), 
             'iat' => $now->timestamp,
             'exp' => $accessExpiry->timestamp,
         ];
@@ -78,6 +79,7 @@ class AuthService
             'sub' => 'profix_api_service',
             'member_id' => $newToken->member->id,
             'role_id' => $newToken->member->role->id,
+            'capability_ids' => $newToken->member->capabilities->pluck('id')->toArray(),
             'iat' => $now->timestamp,
             'exp' => $accessExpiry->timestamp,
         ];

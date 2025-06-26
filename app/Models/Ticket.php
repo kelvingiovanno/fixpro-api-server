@@ -60,11 +60,6 @@ class Ticket extends Model
         });
     }
 
-    protected function serializeDate(DateTimeInterface $date)
-    {
-        return $date->format('c');
-    }
-
     public function issuer()
     {
         return $this->belongsTo(Member::class, 'member_id', 'id');

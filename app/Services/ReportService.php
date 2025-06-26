@@ -15,13 +15,41 @@ class ReportService
         protected AreaService $areaService,
     ) {}
 
-    public function work_order(array $_data = [])
-    {
+    public function work_order(
+        Ticket $ticket,
+        string $issue_id,
+        string $work_description,
+    ) {
+        $report_data = [
+            'header' => [
+                'work_order_id' => 'WO-'. substr($ticket->id, -2) . substr($issue_id, -3),
+                'area_name' => $this->areaService->get_name(),
+                'date' => now()->translatedFormat('l, d F Y'),
+            ],
+            'to_perform' => [
+                'work_type' => $ticket->ticket_issues->firstWhere('issue_id', $issue_id)->issue->name,
+                'response_level' => $ticket->response->name,
+                'location' => $ticket->location->stated_location,
+                'as_a_follow_up_for' => $ticket->id,
+                'work_directive' => $work_description,
+            ],
+            'upon_the_request_of' => array_merge(
+                Arr::except($ticket->issuer->toArray(), ['id', 'role_id', 'member_since', 'member_until', 'title']),
+                ['on' => $ticket->raised_on, 'name' => $ticket->issuer->name . ' (' . substr($ticket->issuer->id, -5) . ')']
+            ),
+            'to_be_carried_out_by' => $ticket->ticket_issues->firstWhere('issue_id', $issue_id)->maintainers->map(function ($member) {
+                return $member->only(['name', 'title']);
+            })->values()->all(),
+        ];
+
+        $work_order = Pdf::loadView('pdf.work_order', $report_data)->setPaper('a4', 'portrait')->output();
+        
+        return $work_order;
     }
 
     public function service_form(Ticket $ticket)
     {
-        $service_form_data = 
+        $report_data = 
         [
             'header' => [
                 'work_order_id' => 'SF-' . substr($ticket->id, 0, 5),
@@ -46,7 +74,7 @@ class ReportService
             })->toArray()
         ];
         
-        $service_form = Pdf::loadView('pdf.service_form', $service_form_data)->setPaper('a4', 'portrait')->output();
+        $service_form = Pdf::loadView('pdf.service_form', $report_data)->setPaper('a4', 'portrait')->output();
         
         return $service_form;
     }
@@ -61,7 +89,7 @@ class ReportService
 
     public function print_view(Ticket $ticket, Member $requester)    
     {
-        $print_view_data = 
+        $report_data = 
         [
             'header' => [
                 'document_id' => 'PV-' . substr($ticket->id, 0, 5),
@@ -100,7 +128,7 @@ class ReportService
             'print_view_requested_by' => $requester->name,
         ];
 
-        $print_view = Pdf::loadView('pdf.ticket_print_view',$print_view_data)->setPaper('a4', 'portrait')->output();
+        $print_view = Pdf::loadView('pdf.ticket_print_view',$report_data)->setPaper('a4', 'portrait')->output();
             
         return $print_view;
     }

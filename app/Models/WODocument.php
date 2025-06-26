@@ -17,6 +17,8 @@ class WODocument extends Model
     protected $table = 'work_order_documents';
 
     protected $fillable = [
+        'id',
+        'ticket_issue_id',
         'resource_type',
         'resource_name',
         'resource_size',
@@ -27,20 +29,8 @@ class WODocument extends Model
     public $incrementing = false; 
     protected $keyType = 'string'; 
 
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($model) 
-        {   
-            if (!$model->getKey()) {
-                $model->{$model->getKeyName()} = (string) Str::uuid();
-            } 
-        });
-    }
-
     public function ticket_issue()
     {
-        return $this->hasOne(TicketIssue::class, 'wo_id', 'id');
+        return $this->belongsTo(TicketIssue::class, 'ticket_issue_id', 'id');
     }
 }

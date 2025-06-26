@@ -1,7 +1,7 @@
 <?php
 
+use App\Enums\MemberCapabilityEnum;
 use App\Enums\MemberRoleEnum;
-use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\EntryController;
 use App\Http\Controllers\Api\TicketController;
@@ -14,6 +14,8 @@ use App\Http\Controllers\Api\SlaController;
 use App\Http\Controllers\Api\ApplicantController;
 use App\Http\Controllers\Api\MemberController;
 
+use Illuminate\Support\Facades\Route;
+
 Route::prefix('/auth')->group(function() {
     Route::post('exchange', [AuthController::class, 'exchange']);
     Route::post('refresh', [AuthController::class, 'refresh']);
@@ -25,7 +27,7 @@ Route::prefix('entry')->group(function(){
     Route::post('/form',[EntryController::class, 'store']);
 });
 
-Route::middleware(['api.auth'])->group(function () {
+Route::middleware('api.auth')->group(function () {
 
     Route::middleware('role:' . implode(',', [
         MemberRoleEnum::MANAGEMENT->value,
@@ -74,13 +76,11 @@ Route::middleware(['api.auth'])->group(function () {
             Route::prefix('/{_ticketId}')->group(function () {
                 
                 Route::prefix('evaluate')->group(function (){
-                    Route::post('/', [TicketController::class,'evaluate']);
                     Route::post('/request', [TicketController::class,'evaluate_request']);
                 });
 
                 Route::prefix('handlers')->group(function () {
                     Route::get('/', [TicketController::class, 'getHandlers']);
-                    Route::post('/', [TicketController::class, 'postHandlers']);
                 });
                 
                 Route::prefix('logs')->group(function () {
@@ -109,6 +109,8 @@ Route::middleware(['api.auth'])->group(function () {
             }); 
 
         });
+
+        Route::post('/ticket/{ticket_id}/handlers', [TicketController::class, 'postHandlers']);
 
         Route::prefix('/area')->group(function () {
 
@@ -152,6 +154,18 @@ Route::middleware(['api.auth'])->group(function () {
             });
         });
           
+    });
+
+    Route::middleware(
+        'role:' . MemberRoleEnum::CREW->value
+    )->group(function () {
+
+        Route::post('/ticket/{ticket_id}/handlers', [TicketController::class, 'postHandlers'])
+            ->middleware('capability:' . MemberCapabilityEnum::INVITE->value);
+
+        Route::post('/ticket/{ticket_id}/evaluate/request', [TicketController::class,'evaluate'])
+            ->middleware('capability:' . MemberCapabilityEnum::APPROVAL->value);
+
     });
     
 });

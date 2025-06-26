@@ -2,24 +2,41 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\IssueNotFoundException;
+use App\Models\Ticket;
+use App\Services\ApiResponseService;
+use App\Services\TicketService;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
+use Throwable;
 
 class TicketHandlerController extends Controller
 {
-    public function index(string $_ticketId)
+    public function __construct(
+        protected ApiResponseService $apiResponseService,
+        protected TicketService $ticketService,
+    ) {} 
+
+    public function index(string $ticket_id)
     {
-        if (!Str::isUuid($_ticketId)) {
-            return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID'); 
+        
+        $validator = Validator::make(['ticket_id' => $ticket_id], [
+            'ticket_id' => 'required|uuid'
+        ]);
+
+        if($validator->fails())
+        {
+            return $this->apiResponseService->badRequest('Validation failed.', $validator->errors());
         }
 
         try
         {
-            $ticket = Ticket::find($_ticketId);
-
-            if(!$ticket)
-            {
-                return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
-            }
+            $ticket = Ticket::with(
+                'maintainers.specialities',
+                'maintainers.capabilities', 
+            )->findOrFail($ticket_id);
 
             $response_data =  $ticket->ticket_issues->flatMap(function ($issue) {
                 
@@ -33,44 +50,44 @@ class TicketHandlerController extends Controller
                             return [
                                 'id' => $specialty->id,
                                 'name' => $specialty->name,
-                                'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
+                                'service_level_agreement_duration_hour' => $specialty->sla_hours,
                             ];
                         }),
                         'capabilities' => $maintainer->capabilities->map(function ($capability) {
                             return $capability->name;
                         }),
+                        'member_since' => $maintainer->member_since->format('Y-m-d\TH:i:sP'),
+                        'member_until' => $maintainer->member_until->format('Y-m-d\TH:i:sP'),
                     ];
                 });
             });
 
-            return $this->apiResponseService->ok($response_data, 'Ticket handlers retrieved successfully');
+            return $this->apiResponseService->ok($response_data, 'Ticket handlers retrieved successfully.');
+        }
+        catch(ModelNotFoundException)
+        {
+            return $this->apiResponseService->notFound('Ticket not found.');
         }
         catch (Throwable $e)
         {
-            Log::error('Error retrieving ticket handlers',  [
+            Log::error('An error occurred while retrieving ticket handlers',  [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('An error occurred while retrieving ticket handlers');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 
-    public function store(Request $_request, string $_ticketId)
+    public function store(Request $request, string $ticket_id)
     {
-        if (!Str::isUuid($_ticketId)) {
-            return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
-        }
-
-        $data = $_request->input('data');
-
-        if (!$data || !is_array($data)) {
-            return $this->apiResponseService->badRequest('Missing or invalid data payload');
-        }
-
-        $validator = Validator::make($_request->all(), [
+        $validator = Validator::make(array_merge(
+            ['ticket_id' => $ticket_id],
+            $request->all(),
+        ), [
+            'ticket_id' => 'required|uuid',
             'data' => 'required|array',
             'data.*.appointed_member_ids' => 'required|array',
             'data.*.appointed_member_ids.*' => 'uuid|exists:members,id',
@@ -83,118 +100,35 @@ class TicketHandlerController extends Controller
             'data.*.supportive_documents.*.resource_content' => 'required|string',
         ]);
 
-        if ($validator->fails()) {
-            return $this->apiResponseService->unprocessableEntity(
-                'Validation failed, please check the provided data',
-                $validator->errors()
-            );
+        if($validator->fails())
+        {
+            return $this->apiResponseService->badRequest('Validation failed.', $validator->errors());
         }
 
-        try {
-            $ticket = Ticket::find($_ticketId);
-            $member_id = $_request->input('jwt_payload')['member_id'];
-            $member_role_id = $_request->input('jwt_payload')['member_role_id'];
-            $member = Member::find($member_id);
+        try 
+        {
+            $ticket = Ticket::with('ticket_issues.issue')->findOrFail($ticket_id);
 
-        
+            foreach ($request->input('data') as $assign) {
+                
+                $this->ticketService->assign_handlers(
+                    $ticket,
+                    $assign['issue_type'],
+                    $assign['appointed_member_ids'],
+                    $assign['work_description'],
+                    $assign['supportive_documents'],
+                    $request->client['id'],
+                );
+            };
 
-            if($member_role_id != MemberRoleEnum::MANAGEMENT->id())
-            {
-                $hasAssign = collect($member->capabilities)->contains('id', MemberCapabilityEnum::INVITE->id());
+            $ticket->load([
+                'ticket_issues.issue',
+                'ticket_issues.maintainers.specialities',
+                'ticket_issues.maintainers.capabilities',
+                'ticket_issues.maintainers.role',
+            ]);
 
-                if (!$hasAssign) {
-                    return $this->apiResponseService->forbidden('You do not have permission to perform this action.');
-                }
-            }
-
-            if (!$ticket) {
-                return $this->apiResponseService->notFound('Ticket not found or invalid ticket ID');
-            }
-
-            foreach ($data as $item) {
-                $work_description = $item['work_description'];
-                $appointed_member_ids = $item['appointed_member_ids'];
-                $issue_type_id = $item['issue_type'];
-
-                $ticket_issue = $ticket->ticket_issues->firstWhere('issue_id', $issue_type_id);
-
-                if (!$ticket_issue) {
-                    return $this->apiResponseService->unprocessableEntity("Ticket issue with ID $issue_type_id not found.");
-                }
-
-                $ticket_issue->update([
-                    'work_description' => $work_description,
-                ]);
-
-                $ticket_issue->maintainers()->sync($appointed_member_ids);
-
-                $ticket_log = TicketLog::create([
-                    'ticket_id' => $_ticketId,
-                    'member_id' => $member_id,
-                    'type_id' => TicketLogTypeEnum::INVITATION->id(),
-                    'news' => count($appointed_member_ids) . " maintainer(s) assigned to ticket issue $issue_type_id.",
-                ]);
-
-                $wo_id = Str::uuid();
-
-                $work_order_data = [
-                    'header' => [
-                        'work_order_id' => 'WO-'. substr($wo_id, -5),
-                        'area_name' => SystemSetting::get('area_name') ?? 'Area name not set yet',
-                        'date' => now()->translatedFormat('l, d F Y'),
-                    ],
-                    'to_perform' => [
-                        'work_type' => TicketIssueType::find($issue_type_id)->name,
-                        'response_level' => $ticket->response->name,
-                        'location' => $ticket->location->stated_location,
-                        'as_a_follow_up_for' => $ticket->id,
-                        'work_directive' => $work_description,
-                    ],
-                    'upon_the_request_of' => array_merge(
-                        Arr::except($ticket->issuer->toArray(), ['id', 'role_id', 'member_since', 'member_until', 'title']),
-                        ['on' => $ticket->raised_on, 'name' => $ticket->issuer->name . ' (' . substr($ticket->issuer->id, -5) . ')']
-                    ),
-                    'to be carried out by' => Member::whereIn('id', $appointed_member_ids)
-                        ->get()
-                        ->map(function ($member) {
-                            return $member->only(['name', 'title']); 
-                    }),
-                ];
-                    
-                $pdf = Pdf::loadView('pdf.work_order', ['work_order_data' => $work_order_data])->setPaper('a4', 'portrait')->output();
-
-                $wo_path = $this->storageService->storeLogTicketDocument(base64_encode($pdf), 'work_order.pdf', $ticket_log->id);
-
-                TicketLogDocument::create([
-                    'log_id' => $ticket_log->id,
-                    'resource_type' => 'pdf',
-                    'resource_name' => $wo_id,
-                    'resource_size' => '123',
-                    'previewable_on' => $wo_path,
-                ]);
-
-                $documents = $item['supportive_documents'] ?? [];
-
-                foreach ($documents as $document) {
-                    $filePath = $this->storageService->storeLogTicketDocument(
-                        $document['resource_content'],
-                        $document['resource_name'],
-                        $ticket_log->id
-                    );
-
-                    TicketLogDocument::create([
-                        'log_id' => $ticket_log->id,
-                        'resource_type' => $document['resource_type'],
-                        'resource_name' => $document['resource_name'],
-                        'resource_size' => $document['resource_size'],
-                        'previewable_on' => $filePath,
-                    ]);
-                }                
-            }
-
-            $updated_ticket = Ticket::find($_ticketId);
-
-            $response_data = $updated_ticket->ticket_issues->flatMap(function ($issue) {
+            $response_data = $ticket->ticket_issues->flatMap(function ($issue) {
                 return $issue->maintainers->map(function ($maintainer) {
                     return [
                         'id' => $maintainer->id,
@@ -205,7 +139,7 @@ class TicketHandlerController extends Controller
                             return [
                                 'id' => $specialty->id,
                                 'name' => $specialty->name,
-                                'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
+                                'service_level_agreement_duration_hour' => $specialty->sla_hours ,
                             ];
                         }),
                         'capabilities' => $maintainer->capabilities->map(fn($capability) => $capability->name),
@@ -213,18 +147,27 @@ class TicketHandlerController extends Controller
                 });
             });
 
-            return $this->apiResponseService->ok($response_data, 'Successfully added handlers to the ticket');
+            return $this->apiResponseService->ok($response_data, 'Successfully assigned the handlers to the ticket.');
 
         } 
-        catch (Throwable $e) {
-            Log::error('Error assigning ticket handlers', [
+        catch (ModelNotFoundException)
+        {
+            return $this->apiResponseService->notFound('Ticket not found.');
+        }
+        catch (IssueNotFoundException $e)
+        {
+            return $this->apiResponseService->badRequest($e->getMessage());
+        }
+        catch (Throwable $e) 
+        {
+            Log::error('An error occurred while assigning ticket handlers', [
                 'message' => $e->getMessage(),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return $this->apiResponseService->internalServerError('An error occurred while assigning ticket handlers');
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
         }
     }
 }

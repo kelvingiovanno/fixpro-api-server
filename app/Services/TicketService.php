@@ -11,6 +11,7 @@ use App\Models\Ticket;
 use Illuminate\Support\Facades\DB;
 
 use App\Exceptions\InvalidTicketStatusException;
+use App\Exceptions\IssueNotFoundException;
 
 class TicketService
 {
@@ -497,6 +498,90 @@ class TicketService
             foreach ($documents ?? [] as $document) 
             {
                 
+                $filePath = $this->storageService->storeLogTicketDocument(
+                    $document['resource_content'],
+                    $document['resource_name'],
+                    $ticket->id
+                );
+
+                $ticket_log->documents()->create([
+                    'resource_type' => $document['resource_type'],
+                    'resource_name' => $document['resource_name'],
+                    'resource_size' => $document['resource_size'],
+                    'previewable_on' => $filePath,
+                ]);
+            }
+        });
+    }
+
+    public function assign_handlers(
+        Ticket $ticket,
+        string $issue_id,
+        array $handler_ids,
+        string $work_description,
+        ?array $documents,
+        string $requester_id,
+    ) {
+        DB::transaction(function () 
+        use ($ticket, $issue_id, $handler_ids, $work_description, $documents, $requester_id) 
+        {
+            $ticket_issue = $ticket->ticket_issues->firstWhere('issue_id', $issue_id);
+
+            if(!$ticket_issue)
+            {
+                throw new IssueNotFoundException();
+            }
+
+            $ticket_issue->maintainers()->sync($handler_ids);
+
+            $ticket->load(
+                'location',
+                'response',
+                'issuer',
+                'ticket_issues.maintainers',
+            );
+
+            $work_order = $this->reportService->work_order(
+                $ticket,
+                $issue_id,
+                $work_description,
+            );
+
+            $work_order_path = $this->storageService->storeWoDocument(
+                base64_encode($work_order), 
+                'work_order.pdf',
+                $issue_id,
+            );
+
+            $ticket_log = $ticket->logs()->create([
+                'member_id' => $requester_id,
+                'type_id' => TicketLogTypeEnum::INVITATION->id(),
+                'news' => "Maintainers have been assigned to the {$ticket_issue->issue->name} issue.",
+                'recoreded_on' => now(),
+            ]);
+
+            
+            $ticket->ticket_issues->work_order()->create([
+                'id' => 'WO-'. substr($ticket->id, -2) . substr($issue_id, -3),
+                'resource_type' => 'document/pdf',
+                'resource_name' => 'work_order.pdf',
+                'resource_size' => (string) round(strlen($work_order) / 1048576, 2) . ' MB',
+                'previewable_on' => $work_order_path,
+            ]);
+
+            $ticket_issue->update([
+                'work_description' => $work_description,
+            ]);
+
+            $ticket_log->documents()->create([
+                'resource_type' => 'document/pdf',
+                'resource_name' => 'work_order.pdf',
+                'resource_size' => (string) round(strlen($work_order) / 1048576, 2) . ' MB',
+                'previewable_on' => $work_order_path,
+            ]);
+
+            foreach ($documents ?? [] as $document) 
+            {
                 $filePath = $this->storageService->storeLogTicketDocument(
                     $document['resource_content'],
                     $document['resource_name'],
