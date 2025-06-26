@@ -597,4 +597,55 @@ class TicketService
             }
         });
     }
+
+    public function add_log(
+        string $ticket_id,
+        string $log_type,
+        string $news,
+        ?array $documents,
+        string $requester_id,
+    ) {
+        $new_log = DB::transaction(function () 
+            use($ticket_id, $log_type, $news, $documents, $requester_id) {
+                
+                $ticket = Ticket::findOrFail($ticket_id);
+
+                $ticket_log = $ticket->logs()->create([
+                    'member_id' => $requester_id,
+                    'type_id' => TicketLogTypeEnum::from($log_type)->id(),
+                    'news' => $news,
+                ]);
+
+                    
+                $documents = $data['supportive_documents'] ?? [];
+            
+                foreach ($documents ?? [] as $document) 
+                {
+                    $filePath = $this->storageService->storeLogTicketDocument(
+                        $document['resource_content'],
+                        $document['resource_name'],
+                        $ticket->id
+                    );
+
+                    $ticket_log->documents()->create([
+                        'resource_type' => $document['resource_type'],
+                        'resource_name' => $document['resource_name'],
+                        'resource_size' => $document['resource_size'],
+                        'previewable_on' => $filePath,
+                    ]);
+                }
+
+                $ticket_log->load(
+                    'type',
+                    'issuer.role',
+                    'issuer.specialities',
+                    'issuer.capabilities',
+                    'documents',
+                );
+
+                return $ticket_log;
+            });
+
+        return $new_log;
+    }
 }
