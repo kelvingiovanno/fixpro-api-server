@@ -211,7 +211,7 @@ class TicketController extends Controller
 
         try
         {
-            $updated_ticket = $this->ticketService->update(
+            $this->ticketService->update(
                 $ticket_id,
                 $request->data['issue_type'],
                 $request->data['status'],
@@ -224,7 +224,7 @@ class TicketController extends Controller
                 $request->client['id'],
             );
 
-            $response_data = $this->ticketService->details($updated_ticket);
+            $response_data = $this->ticketService->details($ticket_id);
             
             return $this->apiResponseService->ok($response_data, 'Ticket updated successfully.');
 

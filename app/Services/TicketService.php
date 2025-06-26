@@ -23,8 +23,8 @@ class TicketService
 
     public function details(
         string $ticket_id,
-        string $requester_id,
-        string $requester_role_id,
+        ?string $requester_id = null,
+        ?string $requester_role_id = null,
     ) {
         $ticket = Ticket::findOrFail($ticket_id);
 
