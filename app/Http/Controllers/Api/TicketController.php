@@ -142,7 +142,7 @@ class TicketController extends Controller
         }
     }
 
-    public function show(string $ticket_id)
+    public function show(Request $request, string $ticket_id)
     {
         $validator = Validator::make(['ticket_id' => $ticket_id], [
             'ticket_id' => 'required|uuid'
@@ -159,9 +159,11 @@ class TicketController extends Controller
         
         try 
         {
-            $ticket = Ticket::findOrFail($ticket_id);
-
-            $response_data = $this->ticketService->details($ticket);
+            $response_data = $this->ticketService->details(
+                $ticket_id,
+                $request->client('id'),
+                $request->client('role_id'),
+            );
             
             return $this->apiResponseService->ok($response_data, 'Ticket details retrieved successfully.');
         } 

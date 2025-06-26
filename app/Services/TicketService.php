@@ -7,6 +7,7 @@ use App\Enums\TicketLogTypeEnum;
 use App\Enums\TicketStatusEnum;
 
 use App\Models\Ticket;
+use App\Models\Member;
 
 use Illuminate\Support\Facades\DB;
 
@@ -20,8 +21,37 @@ class TicketService
         protected StorageService $storageService,
     ) { }
 
-    public function details(Ticket $ticket)
-    {
+    public function details(
+        string $ticket_id,
+        string $requester_id,
+        string $requester_role_id,
+    ) {
+        $ticket = Ticket::findOrFail($ticket_id);
+
+        if(
+            $ticket->status->id == TicketStatusEnum::OPEN->id() &&
+            $requester_role_id == MemberRoleEnum::MANAGEMENT->id()    
+        ){
+            DB::transaction(function () 
+                use($ticket, $requester_id)
+            {
+                $requester = Member::find($requester_id);
+
+                $ticket->update([
+                    'status_id' => TicketStatusEnum::IN_ASSESSMENT->id(),
+                    'assessed_by' => $requester_id,
+                ]);
+
+                $ticket->log()->create([
+                    'member_id' => $requester_id,
+                    'type_id' => TicketLogTypeEnum::ASSESSMENT->id(),
+                    'news' => "Ticket assessed by {$requester->name}",
+                    'recorded_on' => now(),
+                ]);
+
+            });
+        }
+
         $ticket->load([
             'issuer.role',
             'issuer.specialities',
