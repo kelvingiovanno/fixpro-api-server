@@ -36,6 +36,7 @@ class TicketFactory extends Factory
             'evaluated_by'=> Member::where('role_id', MemberRoleEnum::MANAGEMENT->id())->inRandomOrder()->value('id'),
             'response_id' => TicketResponseType::inRandomOrder()->first()?->id,
             'stated_issue' => $this->faker->sentence(10),
+            'raised_on' => now(),
         ];   
     }
 
@@ -47,11 +48,21 @@ class TicketFactory extends Factory
     public function configure()
     {
         return $this->afterCreating(function (Ticket $ticket) {
-            
+
+            $docCount = $this->faker->numberBetween(3, 5);
+            for ($i = 0; $i < $docCount; $i++) {
+                TicketDocument::factory()->create([
+                    'ticket_id' => $ticket->id,
+                ]);
+            }
+
+            Location::factory()->create([
+                'ticket_id' => $ticket->id
+            ]);
 
             $issueCount = $this->faker->numberBetween(1, 4);
             $issueTypes = TicketIssueType::inRandomOrder()->limit($issueCount)->pluck('id');
-            
+
             foreach ($issueTypes as $issueId) {
                 TicketIssue::factory()->create([
                     'ticket_id' => $ticket->id,
@@ -59,7 +70,7 @@ class TicketFactory extends Factory
                 ]);
             }
 
-            $startTime = now();
+            $startTime = $ticket->raised_on;
 
             // ASSESSMENT
             $startTime = $startTime->copy()->addHours(rand(10, 30))->addMinutes(rand(0, 59));
@@ -79,7 +90,7 @@ class TicketFactory extends Factory
                 'recorded_on' => $startTime,
             ]);
 
-            // WORK_PROGRESS (1–3 times)
+            // WORK_PROGRESS and TIME_EXTENSION
             for ($i = 0; $i < rand(1, 3); $i++) {
                 $startTime = $startTime->copy()->addHours(rand(1, 4))->addMinutes(rand(0, 59));
                 TicketLog::factory()->create([
@@ -98,7 +109,7 @@ class TicketFactory extends Factory
                 ]);
             }
 
-            // WORK_EVALUATION_REQUEST (per issue)
+            // WORK_EVALUATION_REQUEST
             for ($i = 0; $i < $issueCount; $i++) {
                 $startTime = $startTime->copy()->addMinutes(rand(5, 10));
                 TicketLog::factory()->create([
@@ -109,11 +120,9 @@ class TicketFactory extends Factory
                 ]);
             }
 
-
+            // WORK_EVALUATION
             foreach ($issueTypes as $issueId) {
-                
                 $startTime = $startTime->copy()->addMinutes(rand(5, 10));
-
                 TicketLog::factory()->create([
                     'ticket_id' => $ticket->id,
                     'type_id' => TicketLogTypeEnum::WORK_EVALUATION->id(),
@@ -122,39 +131,44 @@ class TicketFactory extends Factory
                 ]);
             }
 
-            // OWNER_EVALUATION_REQUEST
-            $startTime = $startTime->copy()->addMinutes(rand(5, 20));
-            TicketLog::factory()->create([
-                'ticket_id' => $ticket->id,
-                'type_id' => TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id(),
-                'member_id' => Member::where('role_id', MemberRoleEnum::CREW->id())->inRandomOrder()->value('id'),
-                'recorded_on' => $startTime,
-            ]);
+            // RANDOMLY DECIDE: Should this ticket proceed to OWNER_EVALUATION & CLOSE?
+            $chance = rand(1, 100);
 
-            // APPROVAL
-            $startTime = $startTime->copy()->addMinutes(rand(5, 30));
-            TicketLog::factory()->create([
-                'ticket_id' => $ticket->id,
-                'type_id' => TicketLogTypeEnum::APPROVAL->id(),
-                'member_id' => Member::where('role_id', MemberRoleEnum::CREW->id())->inRandomOrder()->value('id'),
-                'recorded_on' => $startTime,
-            ]);
-
-            $ticket->update([
-                'closed_on' => $startTime,
-                'status_id' => TicketStatusEnum::CLOSED->id(),
-            ]);
-
-            $docCount = $this->faker->numberBetween(3, 5);
-            for ($i = 0; $i < $docCount; $i++) {
-                TicketDocument::factory()->create([
+            if ($chance <= 60) {
+                // 60% chance to go to OWNER_EVALUATION_REQUEST
+                $startTime = $startTime->copy()->addMinutes(rand(5, 20));
+                TicketLog::factory()->create([
                     'ticket_id' => $ticket->id,
+                    'type_id' => TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id(),
+                    'member_id' => Member::where('role_id', MemberRoleEnum::CREW->id())->inRandomOrder()->value('id'),
+                    'recorded_on' => $startTime,
                 ]);
-            }   
-            
-            Location::factory()->create([
-                'ticket_id' => $ticket->id
-            ]);
+            }
+
+            if ($chance <= 40) {
+                // 40% chance to be approved and closed
+                $startTime = $startTime->copy()->addMinutes(rand(5, 30));
+                TicketLog::factory()->create([
+                    'ticket_id' => $ticket->id,
+                    'type_id' => TicketLogTypeEnum::APPROVAL->id(),
+                    'member_id' => Member::where('role_id', MemberRoleEnum::CREW->id())->inRandomOrder()->value('id'),
+                    'recorded_on' => $startTime,
+                ]);
+
+                $ticket->update([
+                    'closed_on' => $startTime,
+                    'status_id' => TicketStatusEnum::CLOSED->id(),
+                ]);
+            } elseif ($chance <= 70) {
+                // 30% chance to be in progress
+                $ticket->update([
+                    'status_id' => TicketStatusEnum::ON_PROGRESS->id(),
+                ]);
+            } else {
+                // 30% chance to stay open (default)
+                // No status change needed if default is OPEN
+            }
         });
+
     }
 }

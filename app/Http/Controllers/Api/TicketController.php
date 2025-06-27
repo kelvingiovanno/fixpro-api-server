@@ -11,8 +11,9 @@ use App\Enums\TicketResponseTypeEnum;
 use App\Models\Ticket;
 use App\Models\Member;
 
+use App\Services\Reports\PrintViewReport;
+
 use App\Services\ApiResponseService;
-use App\Services\ReportService;
 use App\Services\StorageService;
 use App\Services\TicketService;
 
@@ -29,7 +30,7 @@ class TicketController extends Controller
         protected ApiResponseService $apiResponseService, 
         protected StorageService $storageService,
         protected TicketService $ticketService,
-        protected ReportService $reportService,
+        protected PrintViewReport $printViewReport,
     ) { }
 
     public function index()
@@ -491,7 +492,7 @@ class TicketController extends Controller
 
             $requester = Member::find($request->client['id']);
 
-            $print_view = $this->reportService->print_view(
+            $print_view = $this->printViewReport->generate(
                 $ticket,
                 $requester,
             );

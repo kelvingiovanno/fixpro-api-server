@@ -9,15 +9,20 @@ use App\Enums\TicketStatusEnum;
 use App\Models\Ticket;
 use App\Models\Member;
 
-use Illuminate\Support\Facades\DB;
-
 use App\Exceptions\InvalidTicketStatusException;
 use App\Exceptions\IssueNotFoundException;
+
+use App\Services\Reports\ServiceFormReport;
+use App\Services\Reports\WorkOrderReport;
+
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class TicketService
 {
     public function __construct (
-        protected ReportService $reportService,
+        protected ServiceFormReport $serviceFormReport,
+        protected WorkOrderReport $workOrderReport,
         protected StorageService $storageService,
         protected AreaService $areaService,
     ) { }
@@ -65,6 +70,7 @@ class TicketService
                 DB::transaction(function () use ($ticket) {
                     $ticket->update([
                         'status_id' => TicketStatusEnum::CLOSED->id(),
+                        'closed_on' => now(),
                     ]);
 
                     $ticket->logs()->create([
@@ -209,6 +215,7 @@ class TicketService
                 if ($hoursPassed > $sla_auto_close) {
                     $ticket->update([
                         'status_id' => TicketStatusEnum::CLOSED->id(),
+                        'closed_on' => now(),
                     ]);
 
                     $ticket->logs()->create([
@@ -228,7 +235,6 @@ class TicketService
             ->get();
     }
 
-
     public function create(
         string $owner_id,
         array $ticket,
@@ -245,6 +251,7 @@ class TicketService
                 'status_id' => TicketStatusEnum::OPEN->id(),
                 'response_id' => $ticket['response_id'],
                 'stated_issue' => $ticket['stated_issue'],
+                'raised_on' => now(),
             ]);
 
             $ticket_log = $ticket->logs()->create([
@@ -285,7 +292,7 @@ class TicketService
 
             $ticket->load('issuer', 'ticket_issues', 'status', 'response');
 
-            $service_form_pdf = $this->reportService->service_form (
+            $service_form_pdf = $this->serviceFormReport->generate (
                 $ticket
             );
 
@@ -469,6 +476,7 @@ class TicketService
                 {
                     $ticket->update([
                         'status_id' => TicketStatusEnum::CLOSED->id(),
+                        'closed_on' => now(),
                     ]);
 
                     $ticket_log = $ticket->logs()->create([
@@ -525,12 +533,14 @@ class TicketService
             {
                 $ticket->update([
                     'status_id' => TicketStatusEnum::CANCELLED->id(),
+                    'closed_on' => now(),
                 ]);
             }
             else if($requestor_role_id == MemberRoleEnum::MANAGEMENT->id())
             {
                 $ticket->update([
                     'status_id' => TicketStatusEnum::REJECTED->id(),
+                    'closed_on' => now(),
                 ]);
             } 
 
@@ -579,6 +589,7 @@ class TicketService
 
             $ticket->update([
                 'status_id' => TicketStatusEnum::CLOSED->id(),
+                'closed_on' => now(),
             ]);
 
             $ticket_log = $ticket->logs()->create([
@@ -634,14 +645,17 @@ class TicketService
                 'ticket_issues.maintainers',
             );
 
-            $work_order = $this->reportService->work_order(
+            $wo_id = 'WO-'. substr(Str::uuid(), -5);
+
+            $work_order = $this->workOrderReport->generate(
                 $ticket,
                 $issue_id,
                 $work_description,
+                $wo_id
             );
 
             $work_order_path = $this->storageService->storeWoDocument(
-                base64_encode($work_order['document']), 
+                base64_encode($work_order), 
                 'work_order.pdf',
                 $issue_id,
             );
@@ -654,10 +668,10 @@ class TicketService
             ]);
             
             $ticket_issue->work_order()->create([
-                'id' => $work_order['wo_id'],
+                'id' => $wo_id,
                 'resource_type' => 'document/pdf',
                 'resource_name' => 'work_order.pdf',
-                'resource_size' => (string) round(strlen($work_order['document']) / 1048576, 2) . ' MB',
+                'resource_size' => (string) round(strlen($work_order) / 1048576, 2) . ' MB',
                 'previewable_on' => $work_order_path,
             ]);
 
@@ -668,7 +682,7 @@ class TicketService
             $ticket_log->documents()->create([
                 'resource_type' => 'document/pdf',
                 'resource_name' => 'work_order.pdf',
-                'resource_size' => (string) round(strlen($work_order['document']) / 1048576, 2) . ' MB',
+                'resource_size' => (string) round(strlen($work_order) / 1048576, 2) . ' MB',
                 'previewable_on' => $work_order_path,
             ]);
 

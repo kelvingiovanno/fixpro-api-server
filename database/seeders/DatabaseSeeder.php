@@ -21,6 +21,7 @@ use App\Models\Enums\TicketIssueType;
 use App\Models\Enums\TicketLogType;
 use App\Models\Member;
 use App\Models\Ticket;
+use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
@@ -75,7 +76,12 @@ class DatabaseSeeder extends Seeder
             'role_id' => MemberRoleEnum::MEMBER->id(),
         ]);
 
+        Ticket::factory(15)->create([
+            'raised_on' => fn () => Carbon::now()->subMonth()->startOfMonth()->addDays(rand(0, 27)),
+        ]);
+
         Ticket::factory(15)->create();
+        
     }
 
 }

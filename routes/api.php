@@ -15,7 +15,14 @@ use App\Http\Controllers\Api\ApplicantController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\TicketHandlerController;
 use App\Http\Controllers\Api\TicketLogController;
+use App\Http\Controllers\Api\TicketReportController;
+
 use Illuminate\Support\Facades\Route;
+
+
+Route::get('/hello', function () {
+    return response()->json(['message' => 'hello']);
+});
 
 Route::prefix('/auth')->group(function() {
     Route::post('exchange', [AuthController::class, 'exchange']);
@@ -148,17 +155,16 @@ Route::middleware('api.auth')->group(function () {
             });
 
         });
-        
+
         Route::prefix('/statistics')->group(function () {
-            Route::prefix('/{_month}')->group(function (){
-                Route::get('/report', [AreaController::class, 'get_periodic_report']);
-                Route::get('/tickets', [AreaController::class, 'get_ticket_report']);
+            Route::prefix('/{month}')->group(function (){
+                Route::get('/report', [TicketReportController::class, 'periodic_report']);
+                Route::get('/tickets', [TicketReportController::class, 'ticket_report']);
             });
         });
           
     });
 });
-
 
 Route::prefix('calendar-test')->controller(GoogleCalendarTestController::class)->group(function () {
     Route::post('create', 'createCalendar');

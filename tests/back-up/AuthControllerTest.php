@@ -4,22 +4,23 @@ namespace Tests\Feature;
 
 use App\Models\AuthenticationCode;
 use App\Models\RefreshToken;
+
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
+
 use Tests\TestCase;
 
 class AuthControllerTest extends TestCase
-{    
+{
     use RefreshDatabase, WithFaker;
 
     protected function setUp(): void
     {
         parent::setUp();
-
         $this->artisan('db:seed');
     }
 
-    public function test_exchange(): void
+    public function test_authentication_exchange(): void
     {
        $authentication_code = AuthenticationCode::factory()->create();
 
@@ -60,7 +61,7 @@ class AuthControllerTest extends TestCase
         ]);
     }
 
-    public function test_refresh()
+    public function test_authentication_refresh()
     {
         $refresh_token = RefreshToken::factory()->create();
 

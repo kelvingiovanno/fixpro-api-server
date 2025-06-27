@@ -115,23 +115,29 @@ class AreaService {
         return $formatted_form;
     }
 
-    public function set_sla_response(string $sla_response) : int
+    public function set_sla_response(string $sla_response): int
     {
-        SystemSetting::put('area_sla_response', $sla_response);
-        Cache::forever('area_sla_response', $sla_response);
+        $hour = (int) $sla_response;
+        $sla_response_in_seconds = $hour * 3600;
 
-        return (int) $sla_response;
+        SystemSetting::put('area_sla_response', $sla_response_in_seconds);
+        Cache::forever('area_sla_response', $sla_response_in_seconds);
+
+        return $hour;
     }
 
     public function set_sla_close(int $sla_close) : int
     {
-        SystemSetting::put('area_sla_close', $sla_close);
-        Cache::forever('area_sla_close', $sla_close);
+        $hour = (int) $sla_close;
+        $sla_close_in_seconds = $hour * 3600;
 
-        return (int) $sla_close;
+        SystemSetting::put('area_sla_close', $sla_close_in_seconds);
+        Cache::forever('area_sla_close', $sla_close_in_seconds);
+
+        return $hour;
     }
 
-    public function set_storage_tyoe(StorageTypeEnum $type) : string
+    public function set_storage_type(StorageTypeEnum $type) : string
     {
         SystemSetting::put('area_storage_type', $type->value);
         Cache::forever('area_storage_type', $type->value);

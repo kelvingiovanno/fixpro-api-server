@@ -15,8 +15,15 @@ use App\Services\StorageService;
 use App\Services\GoogleCalendarService;
 use App\Services\JoinFormService;
 use App\Services\JoinAreaService;
-use App\Services\ReportService;
+use App\Services\QuickChartService;
 use App\Services\TicketService;
+
+use App\Services\Reports\PeriodicReport;
+use App\Services\Reports\PrintViewReport;
+use App\Services\Reports\ServiceFormReport;
+use App\Services\Reports\TicketReport;
+use App\Services\Reports\WorkOrderReport;
+
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -52,15 +59,42 @@ class AppServiceProvider extends ServiceProvider
 
         $this->app->singleton(TicketService::class, function () {
             return new TicketService(
-                $this->app->make(ReportService::class),
+                $this->app->make(ServiceFormReport::class),
+                $this->app->make(WorkOrderReport::class),
                 $this->app->make(StorageService::class),
                 $this->app->make(AreaService::class),
             );
         });
 
-        $this->app->singleton(ReportService::class, function () {
-            return new ReportService(
+        $this->app->singleton(ServiceFormReport::class, function () {
+            return new ServiceFormReport(
                 $this->app->make(AreaService::class),
+            );
+        });
+
+        $this->app->singleton(WorkOrderReport::class, function () {
+            return new WorkOrderReport(
+                $this->app->make(AreaService::class),
+            );
+        });
+
+        $this->app->singleton(PrintViewReport::class, function () {
+            return new PrintViewReport(
+                $this->app->make(AreaService::class),
+            );
+        });
+        
+        $this->app->singleton(TicketReport::class, function () {
+            return new TicketReport(
+                $this->app->make(AreaService::class),
+            );
+        });
+
+        $this->app->singleton(PeriodicReport::class, function () {
+            return new PeriodicReport(
+                $this->app->make(AreaService::class),
+                $this->app->make(TicketService::class),
+                $this->app->make(QuickChartService::class),
             );
         });
     }

@@ -14,8 +14,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
-use DateTimeInterface;
-
 class Ticket extends Model
 {   
     use HasFactory;
@@ -31,6 +29,7 @@ class Ticket extends Model
         'response_id',
         'stated_issue',
         'closed_at',
+        'raised_on',
     ];
 
     protected $casts = [
@@ -50,10 +49,8 @@ class Ticket extends Model
     {
         parent::boot();
 
-        static::creating(function ($model) {
-
-            $model->raised_on = now();
-
+        static::creating(function ($model) 
+        {
             if(! $model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             }
