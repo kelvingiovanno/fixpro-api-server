@@ -54,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
             return new TicketService(
                 $this->app->make(ReportService::class),
                 $this->app->make(StorageService::class),
+                $this->app->make(AreaService::class),
             );
         });
 

@@ -16,7 +16,8 @@ enum TicketLogTypeEnum : string
     case OWNER_EVALUATION_REQUEST = "Owner Evaluation Request";
     case REJECTION = "Rejection";
     case APPROVAL = "Approval";
-    case FORCE_CLOSURE = "FORCE_CLOSURE";
+    case FORCE_CLOSURE = "Force Closure";
+    case AUTO_CLOSE = 'Auto Close';
 
     public function id(): ?string
     {

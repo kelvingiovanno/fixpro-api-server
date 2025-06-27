@@ -19,6 +19,7 @@ class TicketService
     public function __construct (
         protected ReportService $reportService,
         protected StorageService $storageService,
+        protected AreaService $areaService,
     ) { }
 
     public function details(
@@ -26,7 +27,7 @@ class TicketService
         ?string $requester_id = null,
         ?string $requester_role_id = null,
     ) {
-        $ticket = Ticket::findOrFail($ticket_id);
+        $ticket = Ticket::with('logs', 'issuer')->findOrFail($ticket_id);
 
         if(
             $ticket->status->id == TicketStatusEnum::OPEN->id() &&
@@ -50,6 +51,30 @@ class TicketService
                 ]);
 
             });
+        }
+        
+        $lastLog = $ticket->logs->sortByDesc('recorded_on')->first();
+
+        if ($lastLog && $lastLog->type_id == TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id()) 
+        {
+            $hoursPassed = now()->diffInHours($lastLog->recorded_on);
+            $sla_auto_close = $this->areaService->get_sla_close();
+
+            if ($hoursPassed > $sla_auto_close) 
+            {
+                DB::transaction(function () use ($ticket) {
+                    $ticket->update([
+                        'status_id' => TicketStatusEnum::CLOSED->id(),
+                    ]);
+
+                    $ticket->logs()->create([
+                        'member_id' => $ticket->issuer->id,
+                        'type_id' => TicketLogTypeEnum::AUTO_CLOSE->id(),
+                        'news' => 'This ticket was automatically closed by the system',
+                        'recorded_on' => now(),
+                    ]);
+                });
+            }
         }
 
         $ticket->load([
@@ -162,6 +187,48 @@ class TicketService
         return $details_data;
     }
 
+    public function all(array|string $eager = '')
+    {
+        $eager = $eager === '' ? [] : (array) $eager;
+
+        $ticketIds = [];
+
+        DB::transaction(function () use ($eager, &$ticketIds) {
+            $tickets = Ticket::with($eager)->get();
+
+            foreach ($tickets as $ticket) {
+                $lastLog = $ticket->logs->sortByDesc('recorded_on')->first();
+
+                if (!$lastLog || $lastLog->type_id !== TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id()) {
+                    continue;
+                }
+
+                $hoursPassed = now()->diffInHours($lastLog->recorded_on);
+                $sla_auto_close = $this->areaService->get_sla_close();
+
+                if ($hoursPassed > $sla_auto_close) {
+                    $ticket->update([
+                        'status_id' => TicketStatusEnum::CLOSED->id(),
+                    ]);
+
+                    $ticket->logs()->create([
+                        'member_id' => $ticket->issuer->id,
+                        'type_id' => TicketLogTypeEnum::AUTO_CLOSE->id(),
+                        'news' => 'This ticket was automatically closed by the system.',
+                        'recorded_on' => now(),
+                    ]);
+
+                    $ticketIds[] = $ticket->id; 
+                }
+            }
+        });
+
+        return Ticket::with($eager)
+            ->when(!empty($ticketIds), fn ($query) => $query->whereIn('id', $ticketIds))
+            ->get();
+    }
+
+
     public function create(
         string $owner_id,
         array $ticket,
@@ -227,10 +294,6 @@ class TicketService
                 'service_form.pdf', 
                 $ticket_log->id
             );
-
-            logger('service_form', [
-                'path' => $service_form_path,
-            ]);
 
             $ticket_log->documents()->create([
                 'resource_type' => 'pdf',

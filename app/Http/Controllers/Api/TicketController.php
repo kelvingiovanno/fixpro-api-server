@@ -36,7 +36,7 @@ class TicketController extends Controller
     {
         try 
         {
-            $tickets = Ticket::with(['ticket_issues.issue', 'status', 'response'])->get();
+            $tickets = $this->ticketService->all(['ticket_issues.issue', 'status', 'response']);
             
             $response_data = $tickets->map(function ($ticket) {
                 return [
