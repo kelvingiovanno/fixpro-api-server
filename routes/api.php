@@ -14,7 +14,7 @@ use App\Http\Controllers\Api\SlaController;
 use App\Http\Controllers\Api\ApplicantController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\TicketHandlerController;
-
+use App\Http\Controllers\Api\TicketLogController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('/auth')->group(function() {
@@ -51,7 +51,7 @@ Route::middleware('api.auth')->group(function () {
                 Route::post('/close', [TicketController::class, 'close']);
 
                 Route::prefix('logs')->group(function () {
-                    Route::get('/', [TicketController::class, 'getLogs']);
+                    Route::get('/', [TicketLogController::class, 'index']);
                 });
 
             }); 
@@ -80,12 +80,17 @@ Route::middleware('api.auth')->group(function () {
                     Route::post('/request', [TicketController::class,'evaluate_request']);
                 });
 
+                Route::post('/evaluate', [TicketController::class,'evaluate'])
+                        ->middleware('capability:' . MemberCapabilityEnum::APPROVAL->value);
+
                 Route::prefix('handlers')->group(function () {
                     Route::get('/', [TicketHandlerController::class, 'index']);
+                    Route::post('/', [TicketHandlerController::class, 'store'])
+                        ->middleware('capability:' . MemberCapabilityEnum::INVITE->value);
                 });
                 
                 Route::prefix('logs')->group(function () {
-                    Route::post('/', [TicketController::class, 'postLog']);
+                    Route::post('/', [TicketLogController::class, 'store']);
                 });
             }); 
         });
@@ -104,14 +109,10 @@ Route::middleware('api.auth')->group(function () {
         Route::prefix('/ticket')->group(function ()  {
         
             Route::prefix('/{_ticketId}')->group(function () {
-
                 Route::post('/force-close', [TicketController::class, 'force_close']);
-
             }); 
 
         });
-
-        Route::post('/ticket/{ticket_id}/handlers', [TicketHandlerController::class, 'store']);
 
         Route::prefix('/area')->group(function () {
 
@@ -156,19 +157,6 @@ Route::middleware('api.auth')->group(function () {
         });
           
     });
-
-    Route::middleware(
-        'role:' . MemberRoleEnum::CREW->value
-    )->group(function () {
-
-        Route::post('/ticket/{ticket_id}/handlers', [TicketHandlerController::class, 'store'])
-            ->middleware('capability:' . MemberCapabilityEnum::INVITE->value);
-
-        Route::post('/ticket/{ticket_id}/evaluate/request', [TicketController::class,'evaluate'])
-            ->middleware('capability:' . MemberCapabilityEnum::APPROVAL->value);
-
-    });
-    
 });
 
 

@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('capabilities', function (Blueprint $table) {
-            $table->uuid('member_id');
-            $table->uuid('capability_id');
+            $table->uuid('member_id')->nullable();
+            $table->uuid('capability_id')->nullable();
 
             $table->foreign('member_id')->references('id')->on('members')->onDelete('set null');
             $table->foreign('capability_id')->references('id')->on('member_capabilities')->onDelete('set null');

@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Ticket;
 
@@ -118,7 +120,7 @@ class TicketLogController extends Controller
                 $ticket_id,
                 $request->data['type'],
                 $request->data['news'],
-                $request->data['documents'],
+                $request->data['supportive_documents'],
                 $request->client['id'],
             );
 

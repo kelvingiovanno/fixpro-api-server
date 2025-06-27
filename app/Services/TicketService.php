@@ -578,7 +578,7 @@ class TicketService
             );
 
             $work_order_path = $this->storageService->storeWoDocument(
-                base64_encode($work_order), 
+                base64_encode($work_order['document']), 
                 'work_order.pdf',
                 $issue_id,
             );
@@ -589,13 +589,12 @@ class TicketService
                 'news' => "Maintainers have been assigned to the {$ticket_issue->issue->name} issue.",
                 'recorded_on' => now(),
             ]);
-
             
             $ticket_issue->work_order()->create([
-                'id' => 'WO-'. substr($ticket->id, -2) . substr($issue_id, -3),
+                'id' => $work_order['wo_id'],
                 'resource_type' => 'document/pdf',
                 'resource_name' => 'work_order.pdf',
-                'resource_size' => (string) round(strlen($work_order) / 1048576, 2) . ' MB',
+                'resource_size' => (string) round(strlen($work_order['document']) / 1048576, 2) . ' MB',
                 'previewable_on' => $work_order_path,
             ]);
 
@@ -606,7 +605,7 @@ class TicketService
             $ticket_log->documents()->create([
                 'resource_type' => 'document/pdf',
                 'resource_name' => 'work_order.pdf',
-                'resource_size' => (string) round(strlen($work_order) / 1048576, 2) . ' MB',
+                'resource_size' => (string) round(strlen($work_order['document']) / 1048576, 2) . ' MB',
                 'previewable_on' => $work_order_path,
             ]);
 
@@ -644,11 +643,9 @@ class TicketService
                     'member_id' => $requester_id,
                     'type_id' => TicketLogTypeEnum::from($log_type)->id(),
                     'news' => $news,
+                    'recorded_on' => now(),
                 ]);
-
-                    
-                $documents = $data['supportive_documents'] ?? [];
-            
+                
                 foreach ($documents ?? [] as $document) 
                 {
                     $filePath = $this->storageService->storeLogTicketDocument(

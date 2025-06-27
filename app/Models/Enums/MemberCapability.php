@@ -4,11 +4,15 @@ namespace App\Models\Enums;
 
 use App\Models\Member;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
 class MemberCapability extends Model
 {
+    use HasFactory, SoftDeletes;
+
     protected $table = 'member_capabilities';
 
     protected $fillable = [

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\MemberCapabilityEnum;
 use App\Enums\MemberRoleEnum;
 use App\Enums\TicketStatusEnum;
 
@@ -472,8 +473,10 @@ class TicketControllerTest extends TestCase
         $member = $auth_code->applicant->member;
 
         $member->update([
-            'role_id' => MemberRoleEnum::MANAGEMENT->id(),
+            'role_id' => MemberRoleEnum::CREW->id(),
         ]);
+
+        $member->capabilities()->sync(MemberCapabilityEnum::APPROVAL->id());
 
         $ticket = Ticket::factory()->create([
             'member_id' => $member,

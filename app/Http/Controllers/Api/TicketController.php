@@ -277,7 +277,7 @@ class TicketController extends Controller
                 $request->input('data.supportive_documents'),
             );
 
-            return $this->apiResponseService->created('Evaluation request submitted successfully.');
+            return $this->apiResponseService->created(null, 'Evaluation request submitted successfully.');
         } 
         catch(ModelNotFoundException)
         {
@@ -332,7 +332,7 @@ class TicketController extends Controller
                 $request->input('data.supportive_documents'),
             );
 
-            return $this->apiResponseService->created('Ticket evaluation recorded successfully.');
+            return $this->apiResponseService->created(null, 'Ticket evaluation recorded successfully.');
         }
         catch (ModelNotFoundException)
         {
@@ -386,7 +386,7 @@ class TicketController extends Controller
                 $request->input('data.supportive_documents'),
             );
 
-            return $this->apiResponseService->created('Ticket has been closed successfully.');
+            return $this->apiResponseService->created(null, 'Ticket has been closed successfully.');
         }
         catch (ModelNotFoundException)
         {
@@ -438,7 +438,7 @@ class TicketController extends Controller
                 $request->data['reason'],
                 $request->input('data.supportive_documents'),
             );
-            return $this->apiResponseService->created('The ticket has been successfully forced closed.');
+            return $this->apiResponseService->created(null, 'The ticket has been successfully forced closed.');
         }
         catch (ModelNotFoundException)
         {

@@ -116,8 +116,8 @@ class TicketHandlerController extends Controller
         {
             $ticket = Ticket::with('ticket_issues.issue')->findOrFail($ticket_id);
 
-            foreach ($request->input('data') as $assign) {
-                
+            foreach ($request->input('data') as $assign) 
+            {
                 $this->ticketService->assign_handlers(
                     $ticket,
                     $assign['issue_type'],

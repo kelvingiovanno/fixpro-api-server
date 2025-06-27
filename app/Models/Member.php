@@ -10,13 +10,11 @@ use App\Models\Applicant;
 use App\Models\RefreshToken;
 use App\Models\TicketLog;
 use App\Models\TicketIssue;
-use Carbon\Carbon;
+
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
-
-use DateTimeInterface;
 
 class Member extends Model
 {

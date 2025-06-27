@@ -6,6 +6,7 @@ use App\Models\Member;
 use App\Models\Ticket;
 
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -20,9 +21,11 @@ class ReportService
         string $issue_id,
         string $work_description,
     ) {
+        $wo_id = 'WO-'. substr(Str::uuid(), -5);
+
         $report_data = [
             'header' => [
-                'work_order_id' => 'WO-'. substr($ticket->id, -2) . substr($issue_id, -3),
+                'work_order_id' => $wo_id,
                 'area_name' => $this->areaService->get_name(),
                 'date' => now()->translatedFormat('l, d F Y'),
             ],
@@ -44,7 +47,10 @@ class ReportService
 
         $work_order = Pdf::loadView('pdf.work_order', $report_data)->setPaper('a4', 'portrait')->output();
         
-        return $work_order;
+        return [
+            'document' => $work_order,
+            'wo_id' => $wo_id,   
+        ];  
     }
 
     public function service_form(Ticket $ticket)
