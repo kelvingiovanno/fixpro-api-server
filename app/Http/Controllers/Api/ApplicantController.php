@@ -39,7 +39,7 @@ class ApplicantController extends Controller
 
             $response_data = $members->map(function ($member) use ($form_fields) {
                 return [
-                    'id' => $member->id, 
+                    'id' => $member->applicant->id, 
                     'form_answer' => collect($form_fields)->map(function ($field) use ($member) {
                         return [
                             'field_label' => $field,
@@ -148,6 +148,8 @@ class ApplicantController extends Controller
         try 
         {
             $applicant = Applicant::with('member')->findOrFail($request->data['application_id']);
+
+            logger($applicant->toArray());
 
             $applicant->update([
                 'status_id' => ApplicantStatusEnum::ACCEPTED->id(),
