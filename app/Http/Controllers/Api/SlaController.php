@@ -28,9 +28,9 @@ class SlaController extends Controller
         {
             $per_issue_types = TicketIssueType::all();
 
-            $reponse_data = [
-                'sla_to_respond' => (string) $this->areaService->get_sla_response(),
-                'sla_to_auto_close' => (string) $this->areaService->get_sla_close(),
+            $response_data = [
+                'sla_to_respond' => (string) ($this->areaService->get_sla_response() / 3600),
+                'sla_to_auto_close' => (string) ($this->areaService->get_sla_close() / 3600),
                 'per_issue_types' => $per_issue_types->map(function ($issue) {
                     return [
                         'id' => $issue->id,
@@ -40,7 +40,8 @@ class SlaController extends Controller
                 }),
             ];
 
-            return $this->apiResponseService->ok($reponse_data, 'SLA retrieved successfully.');
+
+            return $this->apiResponseService->ok($response_data, 'SLA retrieved successfully.');
         }
         catch (Throwable $e)
         {
