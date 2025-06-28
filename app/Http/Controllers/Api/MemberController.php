@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 use Throwable;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use ValueError;
 
 class MemberController extends Controller
@@ -149,6 +150,7 @@ class MemberController extends Controller
         {
             $member = Member::findOrFail($member_id);
 
+            JWTAuth::invalidate(JWTAuth::getToken());
             $member->delete();
     
             return $this->apiResponseService->ok('Member revoked successfully.');

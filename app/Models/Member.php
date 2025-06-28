@@ -52,6 +52,10 @@ class Member extends Model
             if (!$model->getKey()) {
                 $model->{$model->getKeyName()} = (string) Str::uuid();
             }
+
+            static::deleting(function ($member) {
+                $member->refresh_token()->delete();
+            });
             
         });
     }
