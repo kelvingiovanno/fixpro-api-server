@@ -46,6 +46,7 @@ class ApplicantController extends Controller
                             'field_value' => $member->$field,
                         ];
                     })->toArray(),
+                    'submitted_on' => $member->member_since->format('Y-m-d\TH:i:sP'),
                 ];
             });
 
@@ -93,6 +94,7 @@ class ApplicantController extends Controller
                         'field_value' => $applicant->member->$field,
                     ];
                 })->toArray(),
+                'submitted_on' => $applicant->member->member_since->format('Y-m-d\TH:i:sP'),
             ];
     
             return $this->apiResponseService->ok($response_data, 'Successfully retrieved applicant.');

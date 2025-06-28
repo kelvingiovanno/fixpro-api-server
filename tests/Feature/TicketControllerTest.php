@@ -124,6 +124,8 @@ class TicketControllerTest extends TestCase
 
         $response->assertStatus(200);
 
+        dd($response->json());
+
     }
 
     public function test_create_new_ticket()
