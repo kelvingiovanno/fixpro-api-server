@@ -29,13 +29,13 @@ class SlaController extends Controller
             $per_issue_types = TicketIssueType::all();
 
             $reponse_data = [
-                'sla_to_respond' => $this->areaService->get_sla_response(),
-                'sla_to_auto_close' => $this->areaService->get_sla_close(),
+                'sla_to_respond' => (string) $this->areaService->get_sla_response(),
+                'sla_to_auto_close' => (string) $this->areaService->get_sla_close(),
                 'per_issue_types' => $per_issue_types->map(function ($issue) {
                     return [
                         'id' => $issue->id,
                         'name' => $issue->name,
-                        'service_level_agreement_duration_hour' => $issue->sla_hours,
+                        'service_level_agreement_duration_hour' => (string) $issue->sla_hours,
                     ];
                 }),
             ];
@@ -87,13 +87,13 @@ class SlaController extends Controller
             $issues = TicketIssueType::all();
 
             $reponse_data = [
-                'sla_to_respond' => $sla_to_reponse,
-                'sla_to_auto_close' => $sla_to_auto_close,
+                'sla_to_respond' => (string) $sla_to_reponse,
+                'sla_to_auto_close' => (string) $sla_to_auto_close,
                 'per_issue_types' => $issues->map(function ($issue) {
                     return [
                         'id' => $issue->id,
                         'name' => $issue->name,
-                        'duration' => $issue->sla_hours,
+                        'duration' => (string) $issue->sla_hours,
                     ];
                 }),
             ];
