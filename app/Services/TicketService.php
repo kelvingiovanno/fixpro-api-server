@@ -106,7 +106,7 @@ class TicketService
 
         $details_data = [
             'id' => $ticket->id,
-            'issue_type' => $ticket->ticket_issues->map(function ($ticket_issue) {
+            'issue_types' => $ticket->ticket_issues->map(function ($ticket_issue) {
                 return [
                     'id' => $ticket_issue->issue->id,
                     'name' => $ticket_issue->issue->name,
