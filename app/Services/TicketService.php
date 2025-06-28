@@ -110,7 +110,7 @@ class TicketService
                 return [
                     'id' => $ticket_issue->issue->id,
                     'name' => $ticket_issue->issue->name,
-                    'service_level_agreement_duration_hour' => $ticket_issue->issue->sla_hours,
+                    'service_level_agreement_duration_hour' => (string) $ticket_issue->issue->sla_hours,
                 ];
             }),
             'response_level' => $ticket->response->name,
@@ -135,7 +135,7 @@ class TicketService
                     return [
                         'id' => $specialty->id,
                         'name' => $specialty->name,
-                        'service_level_agreement_duration_hour' => $specialty->sla_hours,
+                        'service_level_agreement_duration_hour' => (string) $specialty->sla_hours,
                     ];
                 }),
                 'capabilities' => $ticket->issuer->capabilities->map(function ($capability) {
@@ -156,7 +156,7 @@ class TicketService
                             return [
                                 'id' => $specialty->id,
                                 'name' => $specialty->name,
-                                'service_level_agreement_duration_hour' => $specialty->sla_hours,
+                                'service_level_agreement_duration_hour' => (string) $specialty->sla_hours,
                             ];
                         }),
                         'capabilities' => $log->issuer->capabilities->map(function ($capability) {
@@ -179,7 +179,7 @@ class TicketService
                             return [
                                 'id' => $specialty->id,
                                 'name' => $specialty->name,
-                                'service_level_agreement_duration_hour' => $specialty->sla_hours,
+                                'service_level_agreement_duration_hour' => (string) $specialty->sla_hours,
                             ];
                         }),
                         'capabilities' => $maintainer->capabilities->map(function ($capability) {

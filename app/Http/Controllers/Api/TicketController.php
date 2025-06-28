@@ -46,7 +46,7 @@ class TicketController extends Controller
                         return [
                             'id' => $ticket_issue->issue->id,
                             'name' => $ticket_issue->issue->name,
-                            'service_level_agreement_duration_hour' => $ticket_issue->issue->sla_hours,
+                            'service_level_agreement_duration_hour' => (string) $ticket_issue->issue->sla_hours,
                         ];
                     }),
                     'response_level' => $ticket->response->name, 
@@ -116,7 +116,7 @@ class TicketController extends Controller
                     return [
                         'id' => $ticket_issue->issue->id,
                         'name' => $ticket_issue->issue->name,
-                        'service_level_agreement_duration_hour' => $ticket_issue->issue->sla_hours,
+                        'service_level_agreement_duration_hour' => (string) $ticket_issue->issue->sla_hours,
                     ];
                 }),
                 'response_level' => $ticket->response->name,
