@@ -41,8 +41,6 @@ class AreaController extends Controller
                 'issue_type_count' => TicketIssueType::all()->count(),
             ];
 
-            dd($reponse_data);
-
             return $this->apiResponseService->ok($reponse_data, 'Area data retrieved successfully.');
         } 
         catch (Throwable $e) 
@@ -68,6 +66,8 @@ class AreaController extends Controller
                 'join_policy' => $join_policy,
             ];
 
+            dd($join_policy);
+
             return $this->apiResponseService->ok($response_data, 'join_policy retrieved successfully.');
         }
         catch(Throwable $e)
@@ -87,13 +87,7 @@ class AreaController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'data' => 'required|array',
-            'data.join_policy' => 'required|string'
-        ],
-        [
-            'data.required' => 'The data field is required.',
-            'data.array' => 'The data field must be an array.',
-            'data.join_policy.required' => 'The join policy field is required.',
-            'data.join_policy.string' => 'The join policy must be a string.',
+            'data.new_join_policy' => 'required|string'
         ]);
 
         if($validator->fails())
@@ -103,7 +97,7 @@ class AreaController extends Controller
 
         try
         {
-            $join_policy = $this->areaService->set_join_policy(JoinPolicyEnum::from($request['data']['join_policy']));
+            $join_policy = $this->areaService->set_join_policy(JoinPolicyEnum::from($request['data']['new_join_policy']));
 
             $response_data = [
                 'join_policy' => $join_policy,
