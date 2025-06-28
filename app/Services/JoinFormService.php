@@ -24,7 +24,7 @@ class JoinFormService
     public function formated(): array
     {
         return array_map(function ($label) {
-            return ucwords(str_replace('_', ' ', $label));
+            return ucfirst(str_replace('_', ' ', $label));
         }, $this->areaService->get_join_form());
     }
 
