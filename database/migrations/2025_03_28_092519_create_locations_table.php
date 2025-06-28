@@ -15,8 +15,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('ticket_id')->nullable();
             $table->string('stated_location');
-            $table->string('latitude');
-            $table->string('longitude');
+            $table->double('latitude');
+            $table->double('longitude');
 
             $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('set null');
 

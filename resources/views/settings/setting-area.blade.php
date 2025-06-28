@@ -34,7 +34,7 @@
                     @endphp
 
                     <option value="OPEN" {{ $selectedJoinPolicy == 'OPEN' ? 'selected' : '' }}>Open</option>
-                    <option value="APROVAL_NEEDED" {{ $selectedJoinPolicy == 'APROVAL_NEEDED' ? 'selected' : '' }}>Approval Needed</option>
+                    <option value="APPROVAL-NEEDED" {{ $selectedJoinPolicy == 'APPROVAL-NEEDED' ? 'selected' : '' }}>Approval Needed</option>
                     <option value="CLOSED" {{ $selectedJoinPolicy == 'CLOSED' ? 'selected' : '' }}>Closed</option>
                 </select>
                 @error('join_policy')

@@ -65,7 +65,10 @@ class AreaController extends Controller
             $response_data = [
                 'join_policy' => $join_policy,
             ];
+
             
+            logger($join_policy);
+
             return $this->apiResponseService->ok($response_data, 'join_policy retrieved successfully.');
         }
         catch(Throwable $e)

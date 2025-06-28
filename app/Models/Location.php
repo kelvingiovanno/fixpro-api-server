@@ -27,6 +27,11 @@ class Location extends Model
         'deleted_at',
     ];
 
+    protected $casts = [
+        'latitude' => 'double',
+        'longitude' => 'double',
+    ];
+
     public $timestamps = false;
     public $incrementing = false; 
     protected $keyType = 'string'; 
