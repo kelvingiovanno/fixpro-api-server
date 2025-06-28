@@ -60,13 +60,14 @@ class CalenderService
                         . "&location={$location}";
 
                     $response_data[] = [
-                        'id' => $event->tikcet->id,
+                        'id' => $event->id,
                         'event_title' => $event->summary,
                         'event_description' => $event->description,
                         'happening_on' => $event->start->format('Y-m-d\TH:i:sP'),
                         'duration_in_seconds' =>  $event->start->diffInSeconds($event->end),
                         'reminder_enebled' => true,
                         'saved_on' => $googleCalendarLink,
+                        'effected_ticket' => $event->tikcet->id,
                     ];
                 }
             }
@@ -98,13 +99,13 @@ class CalenderService
                     . "&location={$location}";
 
                 $response_data[] = [
-                    'id' => $event->tikcet->id,
+                    'id' => $event->id,
                     'event_title' => $event->summary,
                     'event_description' => $event->description,
                     'happening_on' => $event->start->format('Y-m-d\TH:i:sP'),
                     'duration_in_seconds' =>  $event->start->diffInSeconds($event->end),
                     'reminder_enebled' => true,
-                    'saved_on' => $googleCalendarLink,
+                    'effected_ticket' => $event->tikcet->id,
                 ];
             }
         }

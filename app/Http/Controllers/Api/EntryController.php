@@ -23,8 +23,6 @@ use Illuminate\Support\Facades\Validator;
 
 use Throwable;
 
-use function Psy\debug;
-
 class EntryController extends Controller
 {
     public function __construct (
