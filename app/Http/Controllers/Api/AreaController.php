@@ -41,6 +41,8 @@ class AreaController extends Controller
                 'issue_type_count' => TicketIssueType::all()->count(),
             ];
 
+            dd($reponse_data);
+
             return $this->apiResponseService->ok($reponse_data, 'Area data retrieved successfully.');
         } 
         catch (Throwable $e) 
