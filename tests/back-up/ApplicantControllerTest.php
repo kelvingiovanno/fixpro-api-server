@@ -73,6 +73,7 @@ class ApplicantControllerTest extends TestCase
                             'field_value',
                         ],
                     ],
+                    'submitted_on',
                 ],
             ],
             'errors',
@@ -122,7 +123,7 @@ class ApplicantControllerTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->getJson('/api/area/pending-memberships/' . $applicant->id);
+        ])->getJson('/api/area/pending-membership/' . $applicant->id);
 
         $response->assertStatus(200);
 
@@ -136,6 +137,7 @@ class ApplicantControllerTest extends TestCase
                         'field_value',
                     ],
                 ],
+                'submitted_on',
             ],
             'errors',
         ]);
@@ -265,7 +267,7 @@ class ApplicantControllerTest extends TestCase
 
         $response = $this->withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->deleteJson('/api/area/pending-memberships/' . $applicant->id);
+        ])->deleteJson('/api/area/pending-membership/' . $applicant->id);
 
         $response->assertStatus(200);
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\JoinPolicyEnum;
 use App\Http\Controllers\Controller;
 
 use App\Exceptions\InvalidNonceException;
@@ -52,6 +53,11 @@ class EntryController extends Controller
         try 
         {
             $this->referralCodeService->check($request->query('area_join_form_referral_tracking_identifier'));
+
+            if($this->areaService->get_join_policy() == JoinPolicyEnum::CLOSED->value)
+            {
+                return $this->apiResponseService->forbidden('Joining area is currently closed.');
+            }
 
             $area_name = $this->areaService->get_name();
             $form_fields = $this->joinFormService->form();

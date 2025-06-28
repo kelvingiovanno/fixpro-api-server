@@ -21,7 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-
+use Illuminate\Log\Logger;
 use Throwable;
 
 class TicketController extends Controller   
@@ -160,11 +160,14 @@ class TicketController extends Controller
         
         try 
         {
+
             $response_data = $this->ticketService->details(
                 $ticket_id,
                 $request->client['id'],
                 $request->client['role_id'],
             );
+
+            
             
             return $this->apiResponseService->ok($response_data, 'Ticket details retrieved successfully.');
         } 

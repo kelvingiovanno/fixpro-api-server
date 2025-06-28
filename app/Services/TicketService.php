@@ -43,7 +43,7 @@ class TicketService
                 use($ticket, $requester_id)
             {
                 $requester = Member::find($requester_id);
-
+                
                 $ticket->update([
                     'status_id' => TicketStatusEnum::IN_ASSESSMENT->id(),
                     'assessed_by' => $requester_id,

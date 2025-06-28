@@ -29,7 +29,7 @@ class TicketReportController extends Controller
     {
         try
         {
-
+            
         }
         catch(Throwable $e)
         {

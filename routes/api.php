@@ -145,9 +145,12 @@ Route::middleware('api.auth')->group(function () {
 
         Route::prefix('/area')->group(function() {
 
-            Route::prefix('pending-memberships')->group(function() {
+            Route::prefix('/pending-memberships')->group(function() {
                 Route::get('/', [ApplicantController::class, 'index']);
                 Route::post('/', [ApplicantController::class, 'accept']);
+            });
+
+            Route::prefix('/pending-membership')->group(function () {
                 Route::get('/{application_id}', [ApplicantController::class, 'show']);
                 Route::delete('/{application_id}', [ApplicantController::class, 'reject']);
             });
