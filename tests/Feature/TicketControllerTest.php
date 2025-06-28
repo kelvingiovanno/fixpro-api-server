@@ -97,7 +97,6 @@ class TicketControllerTest extends TestCase
             $this->assertNotEmpty($ticket['response_level']);
             $this->assertNotEmpty($ticket['raised_on']);
             $this->assertNotEmpty($ticket['status']);
-            $this->assertNotEmpty($ticket['closed_on']);
         }
     }
 

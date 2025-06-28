@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Calender;
 use Illuminate\Support\ServiceProvider;
 
 use App\Services\AreaService;
@@ -64,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
                 $this->app->make(WorkOrderReport::class),
                 $this->app->make(StorageService::class),
                 $this->app->make(AreaService::class),
+                $this->app->make(CalenderService::class),
             );
         });
 
@@ -102,6 +104,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(CalenderService::class, function () {
             return new CalenderService(
                 $this->app->make(GoogleCalendarService::class),
+                $this->app->make(AreaService::class),
             );
         });
     }

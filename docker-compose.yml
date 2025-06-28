@@ -6,7 +6,7 @@ services:
         ports:
             - '${APP_PORT}:80'
         volumes:
-            # - '.:/var/www/html'
+            - '.:/var/www/html'
             - '.env:/var/www/html/.env'
         networks:
             - profix-network

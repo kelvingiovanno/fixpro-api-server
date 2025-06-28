@@ -79,14 +79,16 @@ class EntryControllerTest extends TestCase
         $nonce_code = $this->nonceCodeService->generate();
 
         $get_form = $this->areaService->get_join_form(); 
+
     
         $payload = [
             'data' => []
         ];
 
         foreach ($get_form as $field) {
-            $formatted_label = ucwords(str_replace('_', ' ', $field)); 
+            $formatted_label = ucfirst(str_replace('_', ' ', $field)); 
             
+
             $payload['data'][] = [
                 'field_label' => $formatted_label,
                 'field_value' => 'dummy_' . strtolower($formatted_label), 

@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Validator;
 
 use Throwable;
 
+use function Psy\debug;
+
 class EntryController extends Controller
 {
     public function __construct (
@@ -55,6 +57,7 @@ class EntryController extends Controller
 
             $area_name = $this->areaService->get_name();
             $form_fields = $this->joinFormService->form();
+
             $nonce = $this->nonceCodeService->generate();
 
             $response_data = [
@@ -114,8 +117,9 @@ class EntryController extends Controller
         try 
         {
             $form = $request['data'];
+
             $nonce = $request->query('area_join_form_submission_nonce');
-            
+
             $applicant = $this->joinAreaService->request($form, $nonce);
 
             $response_data = [

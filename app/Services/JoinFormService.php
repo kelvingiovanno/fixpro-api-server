@@ -61,3 +61,4 @@ class JoinFormService
         return $normalized;
     }
 }
+ 
