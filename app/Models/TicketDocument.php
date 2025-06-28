@@ -30,6 +30,10 @@ class TicketDocument extends Model
         'deleted_at',
     ];
 
+    protected $casts = [
+        'resource_size' => 'double',
+    ];
+
     public $timestamps = false;
     public $incrementing = false; 
     protected $keyType = 'string'; 

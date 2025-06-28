@@ -16,7 +16,7 @@ return new class extends Migration
             $table->uuid('log_id')->nullable();
             $table->string('resource_type');
             $table->string('resource_name');
-            $table->string('resource_size');
+            $table->double('resource_size');
             $table->string('previewable_on');
             
             $table->foreign('log_id')->references('id')->on('ticket_logs');
