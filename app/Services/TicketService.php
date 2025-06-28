@@ -49,7 +49,7 @@ class TicketService
                     'assessed_by' => $requester_id,
                 ]);
 
-                $ticket->log()->create([
+                $ticket->logs()->create([
                     'member_id' => $requester_id,
                     'type_id' => TicketLogTypeEnum::ASSESSMENT->id(),
                     'news' => "Ticket assessed by {$requester->name}",
