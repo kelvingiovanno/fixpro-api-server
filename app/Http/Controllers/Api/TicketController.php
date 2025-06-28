@@ -160,8 +160,6 @@ class TicketController extends Controller
         
         try 
         {
-            logger($request->client('id'));
-
             $response_data = $this->ticketService->details(
                 $ticket_id,
                 $request->client['id'],

@@ -100,6 +100,32 @@ class TicketControllerTest extends TestCase
         }
     }
 
+    public function test_retrive_spesific_tickets()
+    {
+        $auth_code = AuthenticationCode::factory()->create(); 
+
+        $payload = [
+            'data' => [
+                'authentication_code' => $auth_code->id,
+            ],
+        ];
+
+        $response_exchange = $this->postJson('/api/auth/exchange', $payload);
+
+        $response_exchange->assertStatus(200);
+
+        $token = $response_exchange->json('data')['access_token'];
+
+        $ticket = Ticket::first();
+
+        $response = $this->withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->getJson('/api/ticket/' . $ticket->id);
+
+        $response->assertStatus(200);
+
+    }
+
     public function test_create_new_ticket()
     {
         $auth_code = AuthenticationCode::factory()->create(); 

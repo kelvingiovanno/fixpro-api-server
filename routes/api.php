@@ -84,7 +84,7 @@ Route::middleware('api.auth')->group(function () {
         
         Route::prefix('/ticket')->group(function ()  {
         
-            Route::prefix('/{_ticketId}')->group(function () {
+            Route::prefix('/{ticket_id}')->group(function () {
                 
                 Route::prefix('evaluate')->group(function (){
                     Route::post('/request', [TicketController::class,'evaluate_request']);
