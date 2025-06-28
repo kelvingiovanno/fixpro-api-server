@@ -25,6 +25,25 @@ class TicketReportController extends Controller
         protected TicketReport $ticketReport,
     ){}
 
+    public function statistics()
+    {
+        try
+        {
+
+        }
+        catch(Throwable $e)
+        {
+            Log::error('An error occurred while retriving statistics', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        
+            return $this->apiResponseService->internalServerError('Something went wrong, please try again later.');
+        }
+    }
+
     public function periodic_report(string $month)
     {
         $validator = Validator::make(['month' => $month], [

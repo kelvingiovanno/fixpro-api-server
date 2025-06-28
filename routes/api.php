@@ -36,6 +36,8 @@ Route::prefix('entry')->group(function(){
     Route::post('/form',[EntryController::class, 'store']);
 });
 
+Route::get('/area/join', [JoinBarcodeController::class, 'barcode']);
+
 Route::middleware('api.auth')->group(function () {
 
     Route::middleware('role:' . implode(',', [
@@ -133,8 +135,6 @@ Route::middleware('api.auth')->group(function () {
                 Route::get('/', [AreaController::class, 'get_join_policy']);
                 Route::put('/', [AreaController::class, 'update_join_policy']); 
             });
-
-            Route::get('/join', [JoinBarcodeController::class, 'barcode']);
         });
 
         Route::prefix('/issue-types')->group(function () {
@@ -165,6 +165,7 @@ Route::middleware('api.auth')->group(function () {
                 Route::get('/report', [TicketReportController::class, 'periodic_report']);
                 Route::get('/tickets', [TicketReportController::class, 'ticket_report']);
             });
+            Route::get('/', [TicketReportController::class, 'index']);
         });
           
     });

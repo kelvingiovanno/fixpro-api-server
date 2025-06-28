@@ -36,7 +36,7 @@ class IssueTypeController extends Controller
                 return [
                     'id' => $issue->id,
                     'name' => $issue->name,
-                    'service_level_agreement_duration_hour' => $issue->sla_hours,
+                    'service_level_agreement_duration_hour' => (string) $issue->sla_hours,
                 ];
             });
 
@@ -95,7 +95,7 @@ class IssueTypeController extends Controller
             $response_data = [
                 'id' => $new_issue_type->id,
                 'name' => $new_issue_type->name,
-                'service_level_agreement_duration_hour' => $new_issue_type->sla_hours,
+                'service_level_agreement_duration_hour' => (string) $new_issue_type->sla_hours,
             ];
 
             return $this->apiResponseService->created($response_data, 'Issue type created successfully.');
