@@ -146,7 +146,7 @@ class AreaControllerTest extends TestCase
 
         $payload = [
             'data' => [
-                'join_policy' => 'OPEN',
+                'new_join_policy' => 'OPEN',
             ],
         ];
 
