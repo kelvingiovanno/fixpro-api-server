@@ -47,9 +47,9 @@ class AuthService
 
         return [
             'access_token' => $accessToken,
-            'access_expiry_interval' => $accessExpiry->diffInMilliseconds($now),
+            'access_expiry_interval' => $now->diffInSeconds($accessExpiry),
             'refresh_token' => $refreshToken,
-            'refresh_expiry_interval' => $refreshExpiry->diffInMilliseconds($now),
+            'refresh_expiry_interval' => $now->diffInSeconds($refreshExpiry),
             'token_type' => 'Bearer',
             'role_scope' => $member->role->name,
             'capabilities' => $member->capabilities->map(function ($capability){
