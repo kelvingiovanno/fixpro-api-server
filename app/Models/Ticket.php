@@ -101,4 +101,9 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketLog::class, 'ticket_id', 'id');
     }
+
+    public function calender_event()
+    {
+        return $this->hasOne(Event::class, 'ticket_id', 'id');
+    }
 }

@@ -52,6 +52,16 @@ class AuthService
             'refresh_expiry_interval' => $refreshExpiry->diffInMilliseconds($now),
             'token_type' => 'Bearer',
             'role_scope' => $member->role->name,
+            'capabilities' => $member->capabilities->map(function ($capability){
+                return $capability->name;
+            }),
+            'specialties' => $member->specialities->map(function ($specialty){
+                return [
+                    'id' => $specialty->id,
+                    'name' => $specialty->name,
+                    'service_level_agreement_duration_hour' => $specialty->sla_hours,
+                ];
+            }),
         ];
     }
 
@@ -95,6 +105,16 @@ class AuthService
             'refresh_expiry_interval' => $refreshExpiry->diffInMilliseconds($now),
             'token_type' => 'Bearer',
             'role_scope' => $newToken->member->role->name,
+            'capabilities' => $newToken->member->capabilities->map(function ($capability){
+                return $capability->name;
+            }),
+            'specialties' => $newToken->member->specialities->map(function ($specialty){
+                return [
+                    'id' => $specialty->id,
+                    'name' => $specialty->name,
+                    'service_level_agreement_duration_hour' => $specialty->sla_hours,
+                ];
+            }),
         ];
     }
 }

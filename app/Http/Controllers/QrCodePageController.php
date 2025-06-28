@@ -19,13 +19,17 @@ class QrCodePageController extends Controller
 
     public function index()
     {
-        return view('home');
+        $this->referralCodeService->generate();
+
+        $referral_code = $this->referralCodeService->get();
+
+        return view('home', compact('referral_code'));
     }
 
     public function showQrCode()
     {
 
-        $code = $this->referralCodeService->generate();
+        $code = $this->referralCodeService->get();
 
         $host = env('APP_URL') . '/api'; 
 
@@ -36,16 +40,8 @@ class QrCodePageController extends Controller
 
         $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);
 
-
-
         $qrCode = $this->qrCodeService->generateBarcode($jsonData);
 
         return response($qrCode)->header('Content-Type', 'image/svg+xml');
-    }
-
-    public function refreshQrCode()
-    {
-        $this->referralCodeService->generate();
-        return redirect()->route('qrcode.');
     }
 }

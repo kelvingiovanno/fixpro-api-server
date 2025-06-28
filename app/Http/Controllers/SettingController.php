@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\JoinPolicyEnum;
 use App\Models\Enums\TicketIssueType;
-
+use App\Models\Member;
 use App\Models\SystemSetting;
 
 use App\Services\AreaService;
@@ -36,7 +36,26 @@ class SettingController extends Controller
 
     public function member(Request $_request)
     {
-        return view('settings.setting-member');
+
+        $allColumns = Schema::getColumnListing((new Member)->getTable());
+
+        $excluded = [
+            "id",
+            "role_id",
+            "name",
+            "title",
+            "member_since",
+            "member_until",
+            "deleted_at",
+        ];
+
+        $filtered = array_diff($allColumns, $excluded);
+
+        $response_data = [
+            'form' => $filtered,
+        ];
+
+        return view('settings.setting-member', $response_data);
     }
 
     public function issue(Request $_request)
@@ -126,17 +145,42 @@ class SettingController extends Controller
 
         try
         {
-            $forms = $request_data['forms'];
+            $forms = $_request->input('forms', []);
+            $forms = array_map('trim', $forms); 
 
-            $member_columns = $this->areaService->set_join_form($forms);
+            $this->areaService->set_join_form($forms);
 
-            Schema::table('members', function (Blueprint $table) use ($member_columns) {
-                foreach ($member_columns as $column) {
-                    if (!Schema::hasColumn('members', $column)) {
-                        $table->string($column)->nullable();
+            $allColumns = Schema::getColumnListing('members');
+
+            $protected = [
+                'id', 'role_id', 'name', 'title',
+                'member_since', 'member_until', 'deleted_at',
+                'created_at', 'updated_at',
+            ];
+
+            $toAdd = array_diff($forms, $allColumns);
+
+            $toDelete = array_diff($allColumns, array_merge($forms, $protected));
+
+            if (!empty($toAdd)) {
+                Schema::table('members', function (Blueprint $table) use ($toAdd) {
+                    foreach ($toAdd as $column) {
+                        if (!Schema::hasColumn('members', $column)) {
+                            $table->string($column)->nullable();
+                        }
                     }
-                }
-            });
+                });
+            }
+
+            if (!empty($toDelete)) {
+                Schema::table('members', function (Blueprint $table) use ($toDelete) {
+                    foreach ($toDelete as $column) {
+                        if (Schema::hasColumn('members', $column)) {
+                            $table->dropColumn($column);
+                        }
+                    }
+                });
+            }
 
             return redirect()->back()
                 ->with('success', 'Settings updated successfully!');
@@ -195,7 +239,7 @@ class SettingController extends Controller
             {
                 TicketIssueType::create([
                     'name' => $name,
-                    'sla_duration_hour' => $sla_duration_hour[$index],
+                    'sla_hours' => $sla_duration_hour[$index],
                 ]);
             }
 

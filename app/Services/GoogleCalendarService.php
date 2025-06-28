@@ -178,7 +178,7 @@ class GoogleCalendarService
         return $client;
     }
 
-    public function create_event(array $eventData, string $calendarId = 'primary')
+    public function create_event(array $eventData, string $calendarId)
     {
         try {
             $client = $this->client();

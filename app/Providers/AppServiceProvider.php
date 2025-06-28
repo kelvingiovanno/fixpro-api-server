@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 
 use App\Services\AreaService;
 use App\Services\AuthService;
+use App\Services\CalenderService;
 use App\Services\EncryptionService;
 use App\Services\QrCodeService;
 use App\Services\WebAuthTokenService;
@@ -95,6 +96,12 @@ class AppServiceProvider extends ServiceProvider
                 $this->app->make(AreaService::class),
                 $this->app->make(TicketService::class),
                 $this->app->make(QuickChartService::class),
+            );
+        });
+
+        $this->app->singleton(CalenderService::class, function () {
+            return new CalenderService(
+                $this->app->make(GoogleCalendarService::class),
             );
         });
     }

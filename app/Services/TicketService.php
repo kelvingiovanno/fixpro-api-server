@@ -25,6 +25,7 @@ class TicketService
         protected WorkOrderReport $workOrderReport,
         protected StorageService $storageService,
         protected AreaService $areaService,
+        protected CalenderService $calenderService,
     ) { }
 
     public function details(
@@ -263,9 +264,16 @@ class TicketService
 
             foreach($issues as $issue)
             {
-                $ticket->ticket_issues()->create([
+                $calendar_issue_name = $ticket->ticket_issues()->create([
                     'issue_id' => $issue,
-                ]);
+                ])->issue->name;
+
+                $this->calenderService->create_event(
+                    $ticket,
+                    'Ticket Due - ' . substr($ticket->id, -5),
+                    '',
+                    $calendar_issue_name,
+                );
             }
 
             $ticket->location()->create([

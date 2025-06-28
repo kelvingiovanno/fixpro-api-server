@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\IssueTypeController;
 use App\Http\Controllers\Api\JoinBarcodeController;
 use App\Http\Controllers\Api\SlaController;
 use App\Http\Controllers\Api\ApplicantController;
+use App\Http\Controllers\Api\CalenderController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\TicketHandlerController;
 use App\Http\Controllers\Api\TicketLogController;
@@ -101,6 +102,9 @@ Route::middleware('api.auth')->group(function () {
                 });
             }); 
         });
+
+        
+        
     });
 
 
@@ -166,8 +170,16 @@ Route::middleware('api.auth')->group(function () {
     });
 });
 
+Route::get('/calender', [CalenderController::class, 'show_events']);
+
 Route::prefix('calendar-test')->controller(GoogleCalendarTestController::class)->group(function () {
     Route::post('create', 'createCalendar');
     Route::post('event', 'createEvent');
     Route::get('events', 'getEvents');
+});
+
+Route::fallback(function () {
+    return response()->json([
+        'message' => 'You are so lost, where is ur mother?',
+    ], 404);
 });

@@ -11,6 +11,7 @@ use App\Models\Calender;
 use App\Models\Enums\TicketIssueType;
 
 use App\Services\ApiResponseService;
+use App\Services\CalenderService;
 use App\Services\GoogleCalendarService;
 
 use Illuminate\Support\Facades\Log;
@@ -20,8 +21,9 @@ use Throwable;
 class GoogleCalenderController extends Controller
 {
     public function __construct(
-        protected GoogleCalendarService $googleCalendarService,
+        protected CalenderService $calenderService,
         protected ApiResponseService $apiResponseService,
+        protected GoogleCalendarService $googleCalendarService,
     ) { }
 
     public function auth()
@@ -69,12 +71,7 @@ class GoogleCalenderController extends Controller
 
             foreach ($issues as $issue)
             {
-                $new_calender = $this->googleCalendarService->create_calender($issue->name);
-
-                Calender::create([
-                    'id' => $new_calender->getId(), 
-                    'name' => $new_calender->getSummary(),
-                ]);
+                $this->calenderService->create_calender($issue->name);
             }
 
             return redirect()

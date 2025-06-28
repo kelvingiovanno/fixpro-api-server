@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\MemberCapabilityEnum;
 use App\Models\AuthenticationCode;
 use App\Models\RefreshToken;
 
@@ -22,7 +23,10 @@ class AuthControllerTest extends TestCase
 
     public function test_authentication_exchange(): void
     {
-       $authentication_code = AuthenticationCode::factory()->create();
+        $authentication_code = AuthenticationCode::factory()->create();
+
+        $authentication_code->applicant->member->capabilities()
+            ->sync(MemberCapabilityEnum::APPROVAL->id());
 
         $payload = [
             'data' => [
@@ -43,6 +47,14 @@ class AuthControllerTest extends TestCase
                 'refresh_expiry_interval',
                 'token_type',
                 'role_scope',
+                'capabilities',
+                'specialties' => [
+                    '*' => [
+                        'id',
+                        'name',
+                        'service_level_agreement_duration_hour',
+                    ],
+                ],
             ],
             'errors',
         ]);
@@ -55,6 +67,15 @@ class AuthControllerTest extends TestCase
         $this->assertNotEmpty($data['refresh_expiry_interval']);
         $this->assertNotEmpty($data['token_type']);
         $this->assertNotEmpty($data['role_scope']);
+        $this->assertNotEmpty($data['capabilities']);
+        $this->assertNotEmpty($data['specialties']);
+
+        foreach($data['specialties'] as $specialty)
+        {
+            $this->assertNotEmpty($specialty['id']);
+            $this->assertNotEmpty($specialty['name']);
+            $this->assertNotEmpty($specialty['service_level_agreement_duration_hour']);
+        }
 
         $this->assertDatabaseHas('refresh_tokens', [
             'token' => $data['refresh_token'],
@@ -64,6 +85,8 @@ class AuthControllerTest extends TestCase
     public function test_authentication_refresh()
     {
         $refresh_token = RefreshToken::factory()->create();
+
+        $refresh_token->member->capabilities()->sync(MemberCapabilityEnum::APPROVAL->id());
 
         $payload = [
             'data' => [
@@ -84,6 +107,14 @@ class AuthControllerTest extends TestCase
                 'refresh_expiry_interval',
                 'token_type',
                 'role_scope',
+                'capabilities',
+                'specialties' => [
+                    '*' => [
+                        'id',
+                        'name',
+                        'service_level_agreement_duration_hour',
+                    ],
+                ],
             ],
             'errors',
         ]);
@@ -96,6 +127,15 @@ class AuthControllerTest extends TestCase
         $this->assertNotEmpty($data['refresh_expiry_interval']);
         $this->assertNotEmpty($data['token_type']);
         $this->assertNotEmpty($data['role_scope']);
+        $this->assertNotEmpty($data['capabilities']);
+        $this->assertNotEmpty($data['specialties']);
+
+        foreach($data['specialties'] as $specialty)
+        {
+            $this->assertNotEmpty($specialty['id']);
+            $this->assertNotEmpty($specialty['name']);
+            $this->assertNotEmpty($specialty['service_level_agreement_duration_hour']);
+        }
 
         $this->assertDatabaseHas('refresh_tokens', [
             'token' => $data['refresh_token'],
