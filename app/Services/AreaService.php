@@ -163,4 +163,23 @@ class AreaService {
         SystemSetting::put('first_member_login', '1');
         Cache::forever('first_member_login', '1');
     }
+
+    public function is_calendar_setup() : ?string
+    {
+        $is_calendar_setup = Cache::get('flag_calendar_setup');
+        
+        if(!$is_calendar_setup)
+        {
+            $is_calendar_setup = SystemSetting::get('flag_calendar_setup');
+            Cache::forever('flag_calendar_setup', $is_calendar_setup);
+        }
+
+        return $is_calendar_setup;
+    }
+
+    public function mark_calendar_setup() : void
+    {
+        SystemSetting::put('flag_calendar_setup', '1');
+        Cache::forever('flag_calendar_setup', '1');
+    }
 } 

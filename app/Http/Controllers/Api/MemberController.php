@@ -48,7 +48,7 @@ class MemberController extends Controller
                         return [
                             'id' => $speciality->id,
                             'name' => $speciality->name,
-                            'service_level_agreement_duration_hour' => $speciality->sla_hours ,
+                            'service_level_agreement_duration_hour' => (string) $speciality->sla_hours ,
                         ];
                     }),
                     'capabilities' => $member->capabilities->map(function ($capability) {
@@ -102,7 +102,7 @@ class MemberController extends Controller
                     return [
                         'id' => $speciality->id,
                         'name' => $speciality->name,
-                        'service_level_agreement_duration_hour' => $speciality->sla_hours,
+                        'service_level_agreement_duration_hour' => (string) $speciality->sla_hours,
                     ];
                 }),
                 'capabilities' => $member->capabilities->map(function ($capability) {
@@ -224,7 +224,7 @@ class MemberController extends Controller
                     return [
                         'id' => $speciality->id,
                         'name' => $speciality->name,
-                        'service_level_agreement_duration_hour' => $speciality->sla_hours,
+                        'service_level_agreement_duration_hour' => (string) $speciality->sla_hours,
                     ];
                 }),
                 'capabilities' => $member->capabilities->map(function ($capability) {

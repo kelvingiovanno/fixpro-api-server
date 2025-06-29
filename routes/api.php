@@ -71,6 +71,7 @@ Route::middleware('api.auth')->group(function () {
             Route::get('/', [IssueTypeController::class, 'index']);
         });
         
+        Route::get('/calendar', [CalenderController::class, 'show_events']);
     });
 
     Route::middleware('role:' . implode(',', [
@@ -164,17 +165,19 @@ Route::middleware('api.auth')->group(function () {
         });
 
         Route::prefix('/statistics')->group(function () {
-            Route::prefix('/{month}')->group(function (){
+            
+            Route::prefix('/{month}')->group(function () {
                 Route::get('/report', [TicketReportController::class, 'periodic_report']);
                 Route::get('/tickets', [TicketReportController::class, 'ticket_report']);
             });
-            Route::get('/', [TicketReportController::class, 'index']);
+
+            Route::get('/', [TicketReportController::class, 'statistics']);
         });
-          
+        
     });
 });
 
-Route::get('/calender', [CalenderController::class, 'show_events']);
+          
 
 Route::prefix('calendar-test')->controller(GoogleCalendarTestController::class)->group(function () {
     Route::post('create', 'createCalendar');

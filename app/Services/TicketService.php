@@ -262,18 +262,23 @@ class TicketService
                 'recorded_on' => now(),
             ]);
 
+            $is_calender_setup = $this->areaService->is_calendar_setup();
+
             foreach($issues as $issue)
             {
                 $calendar_issue_name = $ticket->ticket_issues()->create([
                     'issue_id' => $issue,
                 ])->issue->name;
 
-                $this->calenderService->create_event(
-                    $ticket,
-                    'Ticket Due - ' . substr($ticket->id, -5),
-                    '',
-                    $calendar_issue_name,
-                );
+                if($is_calender_setup)
+                {
+                    $this->calenderService->create_event(
+                        $ticket,
+                        'Ticket Due - ' . substr($ticket->id, -5),
+                        '',
+                        $calendar_issue_name,
+                    );
+                }
             }
 
             $ticket->location()->create([

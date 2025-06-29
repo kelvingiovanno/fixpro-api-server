@@ -22,7 +22,7 @@ class CalenderController extends Controller
         try
         {
             $client_id = $request->client['id'];
-            $client_role_id = $request->cleint['role_id'];
+            $client_role_id = $request->client['role_id'];
 
             $response_data = $this->calenderService->get_all_events(
                 $client_id,

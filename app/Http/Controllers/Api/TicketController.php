@@ -390,7 +390,7 @@ class TicketController extends Controller
                 $request->input('data.supportive_documents'),
             );
 
-            return $this->apiResponseService->created(null, 'Ticket has been closed successfully.');
+            return $this->apiResponseService->ok('Ticket has been closed successfully.');
         }
         catch (ModelNotFoundException)
         {

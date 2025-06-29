@@ -383,6 +383,8 @@ class SettingController extends Controller
             $this->googleCalendarService->set_client_secret($request['google_client_secret']);
             $this->googleCalendarService->set_redirect_uri($request['google_callback']);
 
+            $this->areaService->mark_calendar_setup();
+
             return redirect()->route('google.auth');
         }
         catch (Throwable $e)

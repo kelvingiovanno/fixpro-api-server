@@ -29,7 +29,26 @@ class TicketReportController extends Controller
     {
         try
         {
-            
+            $tickets = Ticket::all();
+
+            $grouped = $tickets->groupBy(function ($ticket) {
+                return Carbon::parse($ticket->raised_on)->format('Y-m');
+            });
+
+            $response_data = $grouped->map(function ($items, $yearMonth) {
+                $date = Carbon::createFromFormat('Y-m', $yearMonth);
+
+                $monthLower = strtolower($date->format('F')); 
+
+                return [
+                    'month' => $date->format('F'),
+                    'year' => $date->format('Y'),
+                    'periodic_report' => env('APP_URL') . "/api/statistics/{$monthLower}/report",
+                    'ticket_summarization' => env('APP_URL') . "/api/statistics/{$monthLower}/tickets",
+                ];
+            })->values();
+
+            return $this->apiResponseService->ok($response_data, 'List of available months with report and summarization.');
         }
         catch(Throwable $e)
         {
