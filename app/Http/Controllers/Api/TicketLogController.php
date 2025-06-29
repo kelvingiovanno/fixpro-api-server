@@ -131,13 +131,13 @@ class TicketLogController extends Controller
                 'issuer' => [
                     'id' => $ticket_log->issuer->id,
                     'name' => $ticket_log->issuer->name,
-                    'role' => $ticket_log->issuer->role,
+                    'role' => $ticket_log->issuer->role->name,
                     'title' => $ticket_log->issuer->title,
                     'specialities' => $ticket_log->issuer->specialities->map(function ($specialty){
                         return [
                             'id' => $specialty->id,
                             'name' => $specialty->name,
-                            'service_level_agreement_duration_hour' => $specialty->sla_duration_hour ?? 'Not assigned yet',
+                            'service_level_agreement_duration_hour' => (string) $specialty->sla_hours,
                         ]; 
                     }),
                     'capabilities' => $ticket_log->issuer->capabilities->map(function ($capability) {
@@ -148,6 +148,7 @@ class TicketLogController extends Controller
                 'news' => $ticket_log->news,
                 'attachments' => $ticket_log->documents->map(function ($document) {
                     return [
+                        'id' => $document->id,
                         'resource_type' => $document->resource_type,
                         'resource_name' => $document->resource_name,
                         'resource_size' => $document->resource_size,

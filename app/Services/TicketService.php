@@ -333,12 +333,11 @@ class TicketService
             $ticket_log->documents()->create([
                 'resource_type' => 'pdf',
                 'resource_name' => 'service_form-' . substr($ticket->id, -5),
-                'resource_size' => '',
+                'resource_size' =>  (double)  round(strlen($service_form_pdf) / 1048576, 2),
                 'previewable_on' => $service_form_path,
             ]);
 
             return $ticket;
-
         });
 
         return $created_ticket;
@@ -613,7 +612,7 @@ class TicketService
         string $reason,
         ?array $documents,
     ) {
-        DB::transaction(function () 
+        $ticket_log = DB::transaction(function () 
             use ($ticket_id, $requester_id, $requestor_role_id, $reason, $documents) 
         {
             
@@ -661,7 +660,11 @@ class TicketService
                     'previewable_on' => $filePath,
                 ]);
             }
+
+            return $ticket_log;
         });  
+
+        return $ticket_log;
     }
 
     public function force_close(
