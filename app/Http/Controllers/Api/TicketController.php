@@ -367,7 +367,7 @@ class TicketController extends Controller
         ), [
             'ticket_id' => 'required|uuid',
             'data' => 'required|array',
-            'data.reason' => 'required|string',    
+            'data.reason' => 'nullable|string',    
             'data.supportive_documents' => 'nullable|array',
             'data.supportive_documents.*.resource_type' => 'required|string',
             'data.supportive_documents.*.resource_name' => 'required|string',

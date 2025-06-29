@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 use Throwable;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use ValueError;
 
 class ApplicantController extends Controller
@@ -216,8 +217,12 @@ class ApplicantController extends Controller
         {
             $applicant = Applicant::findOrFail($application_id);
     
+            JWTAuth::invalidate(JWTAuth::getToken());
+            
             $applicant->update(['status_id' => ApplicantStatusEnum::REJECTED->id()]);
-    
+            
+            $applicant->member->delete();
+
             return $this->apiResponseService->ok('Applicant rejected successfully.');
         } 
         catch (ModelNotFoundException)

@@ -59,7 +59,7 @@ class AuthService
                 return [
                     'id' => $specialty->id,
                     'name' => $specialty->name,
-                    'service_level_agreement_duration_hour' => $specialty->sla_hours,
+                    'service_level_agreement_duration_hour' => (string) $specialty->sla_hours,
                 ];
             }),
         ];
@@ -112,7 +112,7 @@ class AuthService
                 return [
                     'id' => $specialty->id,
                     'name' => $specialty->name,
-                    'service_level_agreement_duration_hour' => $specialty->sla_hours,
+                    'service_level_agreement_duration_hour' => (string) $specialty->sla_hours,
                 ];
             }),
         ];
