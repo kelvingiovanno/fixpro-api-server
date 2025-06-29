@@ -241,6 +241,29 @@ class GoogleCalendarService
         }
     }
 
+    public function delete_calender(string $calendarId)
+    {
+        try {
+            $client = $this->client();
+            $service = new Calendar($client);
+
+            $service->calendars->delete($calendarId);
+
+            return true;
+        } 
+        catch (Exception $e) {
+            Log::error('Google Calendar Deletion Error', [
+                'calendar_id' => $calendarId,
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            throw new Exception('Unable to delete calendar.');
+        }
+    }
+
     public function get_events(string $calendarId = 'primary', array $params = [])
     {
         try {

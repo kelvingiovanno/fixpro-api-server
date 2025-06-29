@@ -61,7 +61,7 @@ class IssueTypeController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'data' => 'required|array',
-            'data.name' => 'required|unique:ticket_issue_types,name',
+            'data.name' => 'required|string',
             'data.service_level_agreement_duration_hour' => 'required|integer',
         ]);
 
@@ -72,32 +72,64 @@ class IssueTypeController extends Controller
 
         try
         {
-            $issue_type = TicketIssueType::create([
-                'name' => $request['data']['name'],
-                'sla_hours' => $request['data']['service_level_agreement_duration_hour'],
-            ]);
+            $name = $request['data']['name'];
+            $sla = $request['data']['service_level_agreement_duration_hour'];
 
-            $new_issue_type = TicketIssueType::find($issue_type->id);
+            $existing = TicketIssueType::withTrashed()
+                ->where('name', $name)
+                ->first();
 
-            $is_calender_setup = $this->areaService->is_calendar_setup();
-
-            if($is_calender_setup)
+            if ($existing) 
             {
-                $new_calender = $this->googleCalendarService->create_calender($request['data']['name']);
+                if ($existing->trashed()) 
+                {
+                    $existing->restore();
+                    $existing->update(['sla_hours' => $sla]); 
 
-                Calender::create([
-                    'id' => $new_calender->getId(), 
-                    'name' => $new_calender->getSummary(),
+                    $issue_type = $existing;
+
+
+                    if($this->areaService->is_calendar_setup())
+                    {
+                        $new_calender = $this->googleCalendarService->create_calender($name);
+
+                        Calender::create([
+                            'id' => $new_calender->getId(),
+                            'name' => $new_calender->getSummary(),
+                        ]);
+                    }
+                } 
+                else 
+                {
+                    return $this->apiResponseService->badRequest('The name already exists.');
+                }
+            } 
+            else 
+            {
+                $issue_type = TicketIssueType::create([
+                    'name' => $name,
+                    'sla_hours' => $sla,
                 ]);
+
+                if ($this->areaService->is_calendar_setup()) 
+                {
+                    $new_calender = $this->googleCalendarService->create_calender($name);
+
+                    Calender::create([
+                        'id' => $new_calender->getId(),
+                        'name' => $new_calender->getSummary(),
+                    ]);
+                }
             }
 
             $response_data = [
-                'id' => $new_issue_type->id,
-                'name' => $new_issue_type->name,
-                'service_level_agreement_duration_hour' => (string) $new_issue_type->sla_hours,
+                'id' => $issue_type->id,
+                'name' => $issue_type->name,
+                'service_level_agreement_duration_hour' => (string) $issue_type->sla_hours,
             ];
 
             return $this->apiResponseService->created($response_data, 'Issue type created successfully.');
+            
         }
         catch (Throwable $e)
         {
@@ -135,10 +167,20 @@ class IssueTypeController extends Controller
 
             $issue_type->delete();
 
+            if($this->areaService->is_calendar_setup())
+            {
+                $calender = Calender::where('name', $issue_type->name)->first();
+                $calender_id = $calender->id;
+
+                $this->googleCalendarService->delete_calender($calender_id);
+
+                $calender->forceDelete();
+            }
+
             $response_data = [
                 'id' => $issue_type->id,
                 'name' => $issue_type->name,
-                'service_level_agreement_duration_hour' => $issue_type->sla_duration_hour ?? 'Not assigned yet',
+                'service_level_agreement_duration_hour' => (string) $issue_type->sla_hours,
             ];
 
             return $this->apiResponseService->ok($response_data, 'Issue type deleted successfully.');
