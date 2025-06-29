@@ -37,22 +37,13 @@ class SettingController extends Controller
     public function member(Request $_request)
     {
 
-        $allColumns = Schema::getColumnListing((new Member)->getTable());
-
-        $excluded = [
-            "id",
-            "role_id",
-            "name",
-            "title",
-            "member_since",
-            "member_until",
-            "deleted_at",
-        ];
-
-        $filtered = array_diff($allColumns, $excluded);
+        $joinform = array_filter(
+            $this->areaService->get_join_form(),
+            fn($field) => $field !== 'name'
+        );
 
         $response_data = [
-            'form' => $filtered,
+            'form' => $joinform,
         ];
 
         return view('settings.setting-member', $response_data);
@@ -146,11 +137,11 @@ class SettingController extends Controller
         try
         {
             $forms = $_request->input('forms', []);
-            $forms = array_map('trim', $forms); 
+            $forms = array_map(function ($field) {
+                return strtolower(str_replace(' ', '_', trim($field)));
+            }, $forms);
 
             $this->areaService->set_join_form($forms);
-
-            $allColumns = Schema::getColumnListing('members');
 
             $protected = [
                 'id', 'role_id', 'name', 'title',
@@ -158,8 +149,9 @@ class SettingController extends Controller
                 'created_at', 'updated_at',
             ];
 
-            $toAdd = array_diff($forms, $allColumns);
+            $allColumns = Schema::getColumnListing('members');
 
+            $toAdd = array_diff($forms, $allColumns);
             $toDelete = array_diff($allColumns, array_merge($forms, $protected));
 
             if (!empty($toAdd)) {
