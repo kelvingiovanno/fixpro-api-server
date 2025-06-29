@@ -173,7 +173,7 @@ class TicketService
                     return [
                         'id' => $maintainer->id,
                         'name' => $maintainer->name,
-                        'role' => $maintainer->role,
+                        'role' => $maintainer->role->name,
                         'title' => $maintainer->title,
                         'specialties' => $maintainer->specialities->map(function ($specialty){
                             return [
