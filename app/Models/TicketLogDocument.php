@@ -25,7 +25,6 @@ class TicketLogDocument extends Model
     ];
 
     protected $hidden = [
-        'id',
         'log_id',
         'deleted_at',
     ];

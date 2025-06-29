@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Enums\JoinPolicyEnum;
 use App\Models\Enums\TicketIssueType;
-use App\Models\Member;
 use App\Models\SystemSetting;
 
 use App\Services\AreaService;
