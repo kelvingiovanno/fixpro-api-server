@@ -180,7 +180,7 @@ class MemberController extends Controller
             'data.id' => 'required|uuid',
             'data.name' => 'required|string',
             'data.role' => 'required|string',
-            'data.title' => 'required|string',
+            'data.title' => 'nullable|string',
             'data.specialties' => 'nullable|array',
             'data.specialties.*.id' => 'required|uuid|exists:ticket_issue_types,id',
             'data.specialties.*.name' => 'required|string|exists:ticket_issue_types,name',

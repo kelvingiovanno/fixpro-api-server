@@ -479,7 +479,19 @@ class TicketController extends Controller
 
         try
         {
-            $ticket = Ticket::findOrFail($ticket_id);
+            $ticket = Ticket::with([
+                'assessed',
+                'status',
+                'issuer',
+                'ticket_issues.issue',
+                'response',
+                'location',
+                'evaluated',
+                'documents',
+                'logs.issuer',
+                'logs.type',
+                'logs.documents',
+            ])->findOrFail($ticket_id);
 
             $requester = Member::find($request->client['id']);
 

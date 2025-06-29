@@ -11,35 +11,35 @@ use App\Models\TicketLog;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Str;
+    use Illuminate\Database\Eloquent\SoftDeletes;
+    use Illuminate\Support\Str;
 
-class Ticket extends Model
-{   
-    use HasFactory;
-    use SoftDeletes;
+    class Ticket extends Model
+    {   
+        use HasFactory;
+        use SoftDeletes;
 
-    protected $table = 'tickets';
+        protected $table = 'tickets';
 
-    protected $fillable = [
-        'member_id',
-        'assessed_by',
-        'evaluated_by',
-        'status_id',
-        'response_id',
-        'stated_issue',
-        'closed_at',
-        'raised_on',
-    ];
+        protected $fillable = [
+            'member_id',
+            'assessed_by',
+            'evaluated_by',
+            'status_id',
+            'response_id',
+            'stated_issue',
+            'closed_at',
+            'raised_on',
+        ];
 
-    protected $casts = [
-        'raised_on' => 'datetime',
-        'closed_on' => 'datetime',
-    ];
+        protected $casts = [
+            'raised_on' => 'datetime',
+            'closed_on' => 'datetime',
+        ];
 
-    protected $hidden = [
-        'deleted_at',
-    ];
+        protected $hidden = [
+            'deleted_at',
+        ];
 
     public $timestamps = false;
     public $incrementing = false; 
@@ -105,5 +105,10 @@ class Ticket extends Model
     public function calender_event()
     {
         return $this->hasOne(Event::class, 'ticket_id', 'id');
+    }
+
+    public function inbox()
+    {
+        return $this->hasMany(Inbox::class, 'ticket_id', 'id');
     }
 }

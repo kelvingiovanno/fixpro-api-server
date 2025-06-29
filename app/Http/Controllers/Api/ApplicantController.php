@@ -125,21 +125,7 @@ class ApplicantController extends Controller
             'data.role' => 'required|string',
             'data.specialization' => 'nullable|array',
             'data.specialization.*' => 'string|uuid|exists:ticket_issue_types,id',
-            'data.title' => 'required|string|max:255',
-        ],
-        [
-            'data.required' => 'The data field is required.',
-            'data.application_id.required' => 'The application ID is required.',
-            'data.application_id.uuid' => 'The application ID must be a valid UUID.',
-            'data.role.required' => 'The role is required.',
-            'data.role.string' => 'The role must be a string.',
-            'data.specialization.array' => 'The specialization field must be an array.',
-            'data.specialization.*.string' => 'Each specialization must be a string.',
-            'data.specialization.*.uuid' => 'Each specialization must be a valid UUID.',
-            'data.specialization.*.exists' => 'One or more specialization IDs do not exist.',
-            'data.title.required' => 'The title is required.',
-            'data.title.string' => 'The title must be a string.',
-            'data.title.max' => 'The title must not exceed 255 characters.',
+            'data.title' => 'nullable|string|max:255',
         ]);
         
         if ($validator->fails()) {

@@ -11,7 +11,7 @@ use App\Models\Member;
 
 use App\Exceptions\InvalidTicketStatusException;
 use App\Exceptions\IssueNotFoundException;
-
+use App\Models\Inbox;
 use App\Services\Reports\ServiceFormReport;
 use App\Services\Reports\WorkOrderReport;
 
@@ -247,6 +247,8 @@ class TicketService
         $created_ticket = DB::transaction(function () 
             use ($owner_id, $ticket, $issues, $location, $documents) 
         {
+            $owner = Member::find($owner_id);
+
             $ticket = Ticket::create([
                 'member_id' => $owner_id,
                 'status_id' => TicketStatusEnum::OPEN->id(),
@@ -261,6 +263,19 @@ class TicketService
                 'news' => 'Ticket has been created.',
                 'recorded_on' => now(),
             ]);
+
+            $menegements = Member::where('role_id', MemberRoleEnum::MANAGEMENT->id())->get();
+
+            foreach($menegements as $menegement)
+            {
+                Inbox::create([
+                    'member_id' => $menegement->id,
+                    'ticket_id' => $ticket->id,
+                    'title' => "Ticket was opened by {$owner->name}",
+                    'body' => $ticket['stated_issue'],
+                    'sent_on' => now(),
+                ]);
+            }
 
             $is_calender_setup = $this->areaService->is_calendar_setup();
 
@@ -407,6 +422,19 @@ class TicketService
                 'recorded_on' => now(),
             ]);
 
+            $menegements = Member::where('role_id', MemberRoleEnum::MANAGEMENT->id())->get();
+
+            foreach($menegements as $menegement)
+            {
+                Inbox::create([
+                    'member_id' => $menegement->id,
+                    'ticket_id' => $ticket->id,
+                    'title' => "Work Evaluation Requested",
+                    'body' => "A work evaluation has been requested for ticket #" . substr($ticket->id, 0, 5) . ".",
+                    'sent_on' => now(),
+                ]);
+            }
+
             foreach ($documents ?? [] as $document) 
             {
                 $filePath = $this->storageService->storeLogTicketDocument(
@@ -438,6 +466,8 @@ class TicketService
             use ($evaluated_by ,$ticket_id, $approved, $reason, $documents) {
             
             $ticket = Ticket::findOrFail($ticket_id);
+            
+            $handler_ids = $ticket->ticket_issues->pluck('maintainers.id');
 
             $ticket_log = null;
 
@@ -453,6 +483,17 @@ class TicketService
                     'news' => $reason,
                     'recorded_on' => now(),
                 ]);
+
+                foreach ($handler_ids as $handler_id)
+                {
+                    Inbox::create([
+                        'member_id' => $handler_id,
+                        'ticket_id' => $ticket->id,
+                        'title' => 'Ticket Rejected',
+                        'body' => 'Ticket #' . substr($ticket->id, 0, 5) . ' has been rejected and sent back to progress.',
+                        'sent_on' => now(),
+                    ]);
+                }
             }
             else 
             {
@@ -470,6 +511,17 @@ class TicketService
                         'recorded_on' => now(),
                     ]);
 
+                    foreach ($handler_ids as $handler_id)
+                    {
+                        Inbox::create([
+                            'member_id' => $handler_id,
+                            'ticket_id' => $ticket->id,
+                            'title' => 'Work Evaluation Approved',
+                            'body' => 'Ticket #' . substr($ticket->id, 0, 5) . ' has been approved and moved to quality control.',
+                            'sent_on' => now(),
+                        ]);
+                    }
+
                 }
                 else if($ticket->status->id == TicketStatusEnum::QUIALITY_CONTROL->id())
                 {
@@ -483,6 +535,25 @@ class TicketService
                         'news' => $reason,
                         'recorded_on' => now(),
                     ]);
+
+                    Inbox::create([
+                        'member_id' => $ticket->issuer->id,
+                        'ticket_id' => $ticket->id,
+                        'title' => 'Owner Evaluation Required',
+                        'body' => 'Please evaluate the result of ticket #' . substr($ticket->id, 0, 5) . '.',
+                        'sent_on' => now(),
+                    ]);
+
+                    foreach ($handler_ids as $handler_id)
+                    {
+                        Inbox::create([
+                            'member_id' => $handler_id,
+                            'ticket_id' => $ticket->id,
+                            'title' => 'Quality Control Passed',
+                            'body' => 'Ticket #' . substr($ticket->id, 0, 5) . ' has passed quality control and is now in owner evaluation.',
+                            'sent_on' => now(),
+                        ]);
+                    }
 
                 }
                 else if($ticket->status->id == TicketStatusEnum::OWNER_EVALUATION->id())
@@ -498,6 +569,17 @@ class TicketService
                         'news' => $reason,
                         'recorded_on' => now(),
                     ]);
+
+                    foreach ($handler_ids as $handler_id)
+                    {
+                        Inbox::create([
+                            'member_id' => $handler_id,
+                            'ticket_id' => $ticket->id,
+                            'title' => 'Ticket Closed',
+                            'body' => 'Ticket #' . substr($ticket->id, 0, 5) . ' has been approved and closed.',
+                            'sent_on' => now(),
+                        ]);
+                    }
                 }
                 else 
                 {

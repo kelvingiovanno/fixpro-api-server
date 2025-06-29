@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\JoinBarcodeController;
 use App\Http\Controllers\Api\SlaController;
 use App\Http\Controllers\Api\ApplicantController;
 use App\Http\Controllers\Api\CalenderController;
+use App\Http\Controllers\Api\InboxController;
 use App\Http\Controllers\Api\MemberController;
 use App\Http\Controllers\Api\TicketHandlerController;
 use App\Http\Controllers\Api\TicketLogController;
@@ -72,6 +73,8 @@ Route::middleware('api.auth')->group(function () {
         });
         
         Route::get('/calendar', [CalenderController::class, 'show_events']);
+
+        Route::get('/inbox', [InboxController::class, 'index']);
     });
 
     Route::middleware('role:' . implode(',', [

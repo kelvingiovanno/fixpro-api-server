@@ -19,6 +19,7 @@ use App\Models\Enums\TicketResponseType;
 use App\Models\Enums\TicketStatusType;
 use App\Models\Enums\TicketIssueType;
 use App\Models\Enums\TicketLogType;
+use App\Models\Inbox;
 use App\Models\Member;
 use App\Models\Ticket;
 use Carbon\Carbon;
@@ -82,6 +83,7 @@ class DatabaseSeeder extends Seeder
 
         Ticket::factory(15)->create();
         
+        Inbox::factory(30)->create();
     }
 
 }

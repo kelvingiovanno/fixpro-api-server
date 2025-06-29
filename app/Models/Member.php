@@ -109,4 +109,9 @@ class Member extends Model
     {
         return $this->hasOne(RefreshToken::class, 'member_id', 'id');
     }
+
+    public function inbox()
+    {
+        return $this->hasMany(Inbox::class,  'member_id', 'id');
+    }
 }
