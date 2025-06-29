@@ -8,6 +8,7 @@ use App\Models\Calender;
 use App\Models\Enums\TicketIssueType;
 
 use App\Services\ApiResponseService;
+use App\Services\AreaService;
 use App\Services\GoogleCalendarService;
 
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class IssueTypeController extends Controller
     public function __construct(
         protected ApiResponseService $apiResponseService,
         protected GoogleCalendarService $googleCalendarService,
+        protected AreaService $areaService,
         
     ) { }
 
@@ -59,16 +61,8 @@ class IssueTypeController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'data' => 'required|array',
-            'data.name' => 'required|string',
+            'data.name' => 'required|unique:ticket_issue_types,name',
             'data.service_level_agreement_duration_hour' => 'required|integer',
-        ], 
-        [
-            'data.required' => 'The data field is required.',
-            'data.array' => 'The data field must be an array.',
-            'data.name.required' => 'The name field is required.',
-            'data.name.string' => 'The name must be a string.',
-            'data.service_level_agreement_duration_hour.required' => 'The SLA duration is required.',
-            'data.service_level_agreement_duration_hour.integer' => 'The SLA duration must be a number (in hours).',
         ]);
 
         if($validator->fails())
@@ -85,12 +79,17 @@ class IssueTypeController extends Controller
 
             $new_issue_type = TicketIssueType::find($issue_type->id);
 
-            $new_calender = $this->googleCalendarService->create_calender($request['data']['name']);
+            $is_calender_setup = $this->areaService->is_calendar_setup();
 
-            Calender::create([
-                'id' => $new_calender->getId(), 
-                'name' => $new_calender->getSummary(),
-            ]);
+            if($is_calender_setup)
+            {
+                $new_calender = $this->googleCalendarService->create_calender($request['data']['name']);
+
+                Calender::create([
+                    'id' => $new_calender->getId(), 
+                    'name' => $new_calender->getSummary(),
+                ]);
+            }
 
             $response_data = [
                 'id' => $new_issue_type->id,
