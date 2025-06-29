@@ -66,7 +66,7 @@ class StorageService
     {
         Storage::disk('public')->put($filePath, $fileContent);
 
-        $publicUrl  =  asset('storage/' . $filePath);
+        $publicUrl  =  public_path('storage/' . $filePath);
             
         return $publicUrl ;
     }
