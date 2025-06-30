@@ -17,6 +17,7 @@ use App\Services\Reports\WorkOrderReport;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use PhpParser\Node\Stmt\Return_;
 
 class TicketService
 {
@@ -403,7 +404,7 @@ class TicketService
         ?array $documents
     ) {
 
-        DB::transaction(function () 
+        $ticket_log = DB::transaction(function () 
             use ($requester_id, $ticket_id, $remark, $documents)
         {
             $ticket = Ticket::findOrFail($ticket_id);
@@ -450,7 +451,11 @@ class TicketService
                     'previewable_on' => $filePath,
                 ]);
             }
+
+            return $ticket_log;
         });
+
+        return $ticket_log;
     }
     
     public function evaluate(
@@ -461,7 +466,7 @@ class TicketService
         ?array $documents,
 
     ) {
-        DB::transaction(function () 
+        $ticket_log = DB::transaction(function () 
             use ($evaluated_by ,$ticket_id, $approved, $reason, $documents) {
             
             $ticket = Ticket::findOrFail($ticket_id);
@@ -602,7 +607,11 @@ class TicketService
                     'previewable_on' => $filePath,
                 ]);
             }
+
+            return $ticket_log;
         });
+
+        return $ticket_log;
     }
 
     public function close(

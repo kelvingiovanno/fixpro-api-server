@@ -22,7 +22,7 @@ class WODocumentFactory extends Factory
             'resource_type' => $this->faker->randomElement(['pdf', 'doc']),
             'resource_name' => $this->faker->word . '.' . $this->faker->fileExtension,
             'resource_size' => $this->faker->numberBetween(100, 5000), 
-            'previewable_on' => public_path('/storage/dummy/dummy_photo.jpg'), 
+            'previewable_on' => asset('/storage/dummy/dummy_photo.jpg'), 
         ];
     }
 }

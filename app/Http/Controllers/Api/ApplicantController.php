@@ -125,6 +125,8 @@ class ApplicantController extends Controller
             'data.role' => 'required|string',
             'data.specialization' => 'nullable|array',
             'data.specialization.*' => 'string|uuid|exists:ticket_issue_types,id',
+            'data.capabilities' => 'nullable|array',
+            'data.capabilities.*' => 'string|exists:member_capabilities,name',
             'data.title' => 'nullable|string|max:255',
         ]);
         
@@ -136,8 +138,6 @@ class ApplicantController extends Controller
         {
             $applicant = Applicant::with('member')->findOrFail($request->data['application_id']);
 
-            logger($applicant->toArray());
-
             $applicant->update([
                 'status_id' => ApplicantStatusEnum::ACCEPTED->id(),
             ]);
@@ -148,6 +148,7 @@ class ApplicantController extends Controller
             ]);
             
             $applicant->member->specialities()->attach($request->data['specialization']);
+            $applicant->member->capabilities()->attach($request->data['capabilities']);
 
             $form_fields = $this->areaService->get_join_form();
 
@@ -161,7 +162,7 @@ class ApplicantController extends Controller
                 })->toArray(),
             ];
 
-            return $this->apiResponseService->created($response_data, 'Applicant Acccpted');
+            return $this->apiResponseService->ok($response_data, 'Applicant Acccpted');
         } 
         catch (ModelNotFoundException)
         {

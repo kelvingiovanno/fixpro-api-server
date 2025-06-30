@@ -66,7 +66,11 @@ class StorageService
     {
         Storage::disk('public')->put($filePath, $fileContent);
 
-        $publicUrl  =  public_path('storage/' . $filePath);
+        $publicUrl  =  url('storage/' . $filePath);
+
+        logger('path', [
+            'path' => $publicUrl
+        ]);
             
         return $publicUrl ;
     }

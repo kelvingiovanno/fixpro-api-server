@@ -40,7 +40,7 @@ class PrintViewReport
             ],
             'complaints' => $ticket->stated_issue,
             'supportive_documents' => $ticket->documents->map(function ($document){
-                return $document->previewable_on;
+                return public_path(parse_url($document->previewable_on, PHP_URL_PATH));
             }),
             'logs' => $ticket->logs->values()->map(function ($log, $index) {
                 return [
@@ -50,7 +50,7 @@ class PrintViewReport
                     'raised_on' => $log->recorded_on,
                     'news' => $log->news,
                     'supportive_documents' => $log->documents->map(function ($document) {
-                        return $document->previewable_on;
+                        return public_path(parse_url($document->previewable_on, PHP_URL_PATH));
                     }),
                 ];
             }),

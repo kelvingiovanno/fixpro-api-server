@@ -274,14 +274,53 @@ class TicketController extends Controller
 
         try 
         {
-            $this->ticketService->evaluate_request(
+            $ticket_log = $this->ticketService->evaluate_request(
                 $request->client['id'],
                 $ticket_id,
                 $request->data['remark'],
                 $request->input('data.supportive_documents'),
             );
 
-            return $this->apiResponseService->created(null, 'Evaluation request submitted successfully.');
+            $reponse_data = [
+                'id' => $ticket_log->id,
+                'owning_ticket_id' => $ticket_log->ticket_id,
+                'type' => $ticket_log->type->name,
+                'issuer' => [
+                    'id' => $ticket_log->issuer->id,
+                    'name' => $ticket_log->issuer->name,
+                    'role' => $ticket_log->issuer->role->name,
+                    'title' => $ticket_log->issuer->title,
+                    'specialties' => $ticket_log->issuer->specialities->map(function ($specialty){
+                        return [
+                            'id' => $specialty->id,
+                            'name' => $specialty->name,
+                            'service_level_agreement_duration_hour' => (string) $specialty->sla_hours,
+                        ]; 
+                    }),
+                    'capabilities' => $ticket_log->issuer->capabilities->map(function ($capability) {
+                        return $capability->name;
+                    }),
+                    'member_since' => now()->format('Y-m-d\TH:i:sP'),
+                ],
+                'recorded_on' => $ticket_log->recorded_on->format('Y-m-d\TH:i:sP'),
+                'news' => $ticket_log->news,
+                'attachments' => $ticket_log->documents->map(function ($document) {
+                    return [
+                        'id' => $document->id,
+                        'resource_type' => $document->resource_type,
+                        'resource_name' => $document->resource_name,
+                        'resource_size' => $document->resource_size,
+                        'previewable_on' => $document->previewable_on,
+                    ];
+                }),
+                'actionable' => [
+                    'genus' => 'SEGUE',
+                    'species' => 'TICKET',
+                    'segue_destination' => 'whatever',
+                ],
+            ];
+
+            return $this->apiResponseService->ok($reponse_data, 'Evaluation request submitted successfully.');
         } 
         catch(ModelNotFoundException)
         {
@@ -328,7 +367,7 @@ class TicketController extends Controller
 
         try
         {
-            $this->ticketService->evaluate(
+            $ticket_log = $this->ticketService->evaluate(
                 $request->client['id'],
                 $ticket_id,
                 $request->data['resolveToApprove'],
@@ -336,7 +375,46 @@ class TicketController extends Controller
                 $request->input('data.supportive_documents'),
             );
 
-            return $this->apiResponseService->created(null, 'Ticket evaluation recorded successfully.');
+            $reponse_data = [
+                'id' => $ticket_log->id,
+                'owning_ticket_id' => $ticket_log->ticket_id,
+                'type' => $ticket_log->type->name,
+                'issuer' => [
+                    'id' => $ticket_log->issuer->id,
+                    'name' => $ticket_log->issuer->name,
+                    'role' => $ticket_log->issuer->role->name,
+                    'title' => $ticket_log->issuer->title,
+                    'specialties' => $ticket_log->issuer->specialities->map(function ($specialty){
+                        return [
+                            'id' => $specialty->id,
+                            'name' => $specialty->name,
+                            'service_level_agreement_duration_hour' => (string) $specialty->sla_hours,
+                        ]; 
+                    }),
+                    'capabilities' => $ticket_log->issuer->capabilities->map(function ($capability) {
+                        return $capability->name;
+                    }),
+                    'member_since' => now()->format('Y-m-d\TH:i:sP'),
+                ],
+                'recorded_on' => $ticket_log->recorded_on->format('Y-m-d\TH:i:sP'),
+                'news' => $ticket_log->news,
+                'attachments' => $ticket_log->documents->map(function ($document) {
+                    return [
+                        'id' => $document->id,
+                        'resource_type' => $document->resource_type,
+                        'resource_name' => $document->resource_name,
+                        'resource_size' => $document->resource_size,
+                        'previewable_on' => $document->previewable_on,
+                    ];
+                }),
+                'actionable' => [
+                    'genus' => 'SEGUE',
+                    'species' => 'TICKET',
+                    'segue_destination' => 'whatever',
+                ],
+            ];
+
+            return $this->apiResponseService->ok($reponse_data, 'Ticket evaluation recorded successfully.');
         }
         catch (ModelNotFoundException)
         {

@@ -11,7 +11,7 @@ class ReferralCodeService
 {
     public function generate() : string
     {
-        $new_referral = Str::random(5);
+        $new_referral = strtoupper(Str::random(5));
 
         if(Cache::has('referral'))
         {

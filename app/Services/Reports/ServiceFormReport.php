@@ -35,9 +35,12 @@ class ServiceFormReport
                 'that_can_be_described_by' => $ticket->stated_issue,
             ],
             'supportive_documents' => collect($ticket->documents)->map(function ($document) {
+
+                logger(public_path(parse_url($document->previewable_on, PHP_URL_PATH)));
+
                 return [
                     'resource_name' => $document->resource_name,
-                    'image_src' => $document->previewable_on,
+                    'image_src' => public_path(parse_url($document->previewable_on, PHP_URL_PATH)),
                 ];
             })->toArray()
         ];

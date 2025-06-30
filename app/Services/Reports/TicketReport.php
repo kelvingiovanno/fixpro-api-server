@@ -33,18 +33,24 @@ class TicketReport
                 'area' => $this->areaService->get_name(),
             ],
             'tickets' => $tickets->map(function ($ticket) {
+                $before_url = optional(
+                    $ticket->documents->firstWhere('previewable_on', '!=', null)
+                )?->previewable_on;
+
+                $after_url = optional(
+                    $ticket->logs
+                        ->firstWhere('type_id', TicketLogTypeEnum::WORK_EVALUATION_REQUEST->id())
+                        ?->documents
+                        ->firstWhere('previewable_on', '!=', null)
+                )?->previewable_on;
+
                 return [
                     'id' => substr($ticket->id, -5),
                     'raised' => $ticket->raised_on,
                     'closed' => $ticket->closed_on ?? 'not closed yet',
                     'issues' => $ticket->ticket_issues->map(fn($ti) => $ti->issue->name),
-                    'before' => optional(
-                        $ticket->documents->firstWhere('previewable_on', '!=', null)
-                    )->previewable_on,
-                    'after' => optional(
-                        $ticket->logs->firstWhere('type_id', TicketLogTypeEnum::WORK_EVALUATION_REQUEST->id())->documents->firstWhere('previewable_on', '!=', null)
-                    )->previewable_on,
-
+                    'before' => $before_url ? public_path(parse_url($before_url, PHP_URL_PATH)) : null,
+                    'after' => $after_url ? public_path(parse_url($after_url, PHP_URL_PATH)) : null,
                     'handlers' => $ticket->ticket_issues
                         ->flatMap(fn($ti) => $ti->maintainers->pluck('name'))
                         ->unique()
