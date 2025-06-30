@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\IssueTypeEnum;
 use App\Enums\MemberRoleEnum;
 use App\Enums\TicketLogTypeEnum;
 use App\Enums\TicketStatusEnum;
@@ -835,6 +836,23 @@ class TicketService
                 'status_id' => TicketStatusEnum::ON_PROGRESS->id(),
             ]);
 
+            
+
+            foreach($handler_ids as $handler_id)
+            {       
+                Inbox::create([
+                    'member_id' => $handler_id,
+                    'ticket_id' => $ticket->id,
+                    'title' => 'New Ticket Assignment',
+                    'body' => sprintf(
+                        'You have been assigned to handle an issue: "%s" on Ticket #%s. Please review the work description and begin action.',
+                        $ticket_issue->issue->name,
+                        substr($ticket->id, -5)
+                    ),
+                    'sent_on' => now(),
+                ]);
+            }
+
             $ticket->load(
                 'location',
                 'response',
@@ -905,7 +923,7 @@ class TicketService
     public function add_log(
         string $ticket_id,
         string $log_type,
-        string $news,
+        ?string $news,
         ?array $documents,
         string $requester_id,
     ) {
