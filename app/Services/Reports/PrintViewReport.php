@@ -31,7 +31,7 @@ class PrintViewReport
                 'completed_at' => $ticket->closed_on ?? 'Not completed.',
                 'assessed_by' => $ticket->assessed->name ?? 'Not assessed.', 
             'ticket_status' => $ticket->status->name,
-                'requester_name' => $ticket->issuer->name,
+                'requester_name' => $ticket->issuer->name   ,
                 'identifier_no' => substr($ticket->issuer->id, -5),
                 'work_type' => $ticket->ticket_issues->pluck('issue.name')->toArray(),
                 'handling_priority' => $ticket->response->name,

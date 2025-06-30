@@ -21,7 +21,7 @@ class CapabilityMiddleware
     {
         $client_role_id = $request->client['role_id'];
 
-        if($client_role_id == MemberRoleEnum::MANAGEMENT->id())
+        if($client_role_id == MemberRoleEnum::MANAGEMENT->id() || $client_role_id == MemberRoleEnum::MEMBER->id())
         {
             return $next($request);
         }

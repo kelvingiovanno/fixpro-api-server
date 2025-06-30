@@ -38,35 +38,10 @@ class TicketController extends Controller
     {
         try 
         {
-            $client_role_id = $request->client['role_id'];
-
-            if($client_role_id == MemberRoleEnum::MEMBER->id())
-            {  
-                $member = Member::with([
-                    'maintained_tickets.ticket.status',
-                    'maintained_tickets.ticket.response',
-                ])->find($request->client['id']);
-
-                $tickets = $member?->maintained_tickets
-                    ->pluck('ticket')
-                    ->unique('id') 
-                    ->values();    
-
-                
-            }
-            else if ($client_role_id == MemberRoleEnum::CREW->id())
-            {
-                $tickets = Member::with([
-                    'tickets.ticket_issues.issue', 
-                    'tickets.status', 
-                    'tickets.response'
-                    
-                ])->find($request->client['id'])->ticket; 
-            }
-            else
-            {
-                $tickets = $this->ticketService->all(['ticket_issues.issue', 'status', 'response']);
-            }
+            $tickets = $this->ticketService->all(
+                $request->client['id'],
+                $request->client['role_id'],
+            );
 
             $response_data = $tickets->map(function ($ticket) {
                 return [

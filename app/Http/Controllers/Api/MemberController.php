@@ -156,7 +156,7 @@ class MemberController extends Controller
             $member->delete();
             $member->refresh_token->delete();
     
-            return $this->apiResponseService->accepted('Member revoked successfully.');
+            return $this->apiResponseService->accepted(null ,'Member revoked successfully.');
         } 
         catch(ModelNotFoundException)
         {

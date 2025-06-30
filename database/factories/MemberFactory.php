@@ -7,6 +7,7 @@ use App\Models\Enums\MemberRole;
 use App\Models\Enums\MemberStatus;
 use App\Models\Enums\TicketIssueType;
 use App\Models\Member;
+use App\Models\RefreshToken;
 use App\Models\TicketIssue;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -44,6 +45,10 @@ class MemberFactory extends Factory
 
             $capabilityIds = MemberCapability::inRandomOrder()->take(rand(0, 2))->pluck('id')->toArray();
             $member->capabilities()->attach($capabilityIds);
+
+            RefreshToken::factory()->create([
+                'member_id' => $member->id
+            ]);
         });
     }
 }

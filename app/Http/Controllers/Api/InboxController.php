@@ -27,7 +27,7 @@ class InboxController extends Controller
                 return [
                     'id' => $inbox->id,
                     'title' => $inbox->title,
-                    'boyd' => $inbox->body,
+                    'body' => $inbox->body,
                     'sent_on' => $inbox->sent_on->format('Y-m-d\TH:i:sP'),
                     'actionable' => [
                         'genus' => 'SEGUE',

@@ -24,7 +24,6 @@ class PeriodicReport
 {
     public function __construct(
         protected AreaService $areaService,
-        protected TicketService $ticketService,
         protected QuickChartService $quickChartService,
     ) {}
 
@@ -34,7 +33,7 @@ class PeriodicReport
 
         $year = now()->year;
 
-        $all_ticket = $this->ticketService->all();
+        $all_ticket = Ticket::with(['ticket_issues.issue', 'status', 'response'])->get();
 
         $current_month_open_tickets = $all_ticket->filter(function ($ticket) use ($month, $year) {
             return $ticket->raised_on->month == $month && $ticket->raised_on->year == $year;

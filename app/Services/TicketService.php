@@ -195,14 +195,49 @@ class TicketService
         return $details_data;
     }
 
-    public function all(array|string $eager = '')
-    {
-        $eager = $eager === '' ? [] : (array) $eager;
+    public function all(
+        string $requester_id,
+        string $requester_role_id,
+    ) {
+        
+        if($requester_role_id == MemberRoleEnum::CREW->id())
+        {
+  
 
-        $ticketIds = [];
+            $member = Member::with([
+                'tickets.ticket_issues.issue',
+                'tickets.status',
+                'tickets.response',
+                'maintained_tickets.ticket.ticket_issues.issue',
+                'maintained_tickets.ticket.status',
+                'maintained_tickets.ticket.response',
+            ])->findOrFail($requester_id);
 
-        DB::transaction(function () use ($eager, &$ticketIds) {
-            $tickets = Ticket::with($eager)->get();
+            $createdTickets = $member->tickets;
+
+            $maintainedTickets = $member->maintained_tickets
+                ->pluck('ticket') 
+                ->unique('id'); 
+
+
+            $tickets = $createdTickets->merge($maintainedTickets)->unique('id')->values();
+                    
+        }
+        else if($requester_role_id == MemberRoleEnum::MEMBER->id())
+        {
+            $tickets = Member::with([
+                'tickets.ticket_issues.issue', 
+                'tickets.status', 
+                'tickets.response'
+            ])->find($requester_id)->tickets; 
+        }
+        else
+        {
+            $tickets = Ticket::with(['ticket_issues.issue', 'status', 'response'])->get();
+        }
+
+
+        DB::transaction(function () use ($tickets, &$ticketIds) {
 
             foreach ($tickets as $ticket) {
                 $lastLog = $ticket->logs->sortByDesc('recorded_on')->first();
@@ -220,6 +255,8 @@ class TicketService
                         'closed_on' => now(),
                     ]);
 
+                    $ticket->load('status'); 
+
                     $ticket->logs()->create([
                         'member_id' => $ticket->issuer->id,
                         'type_id' => TicketLogTypeEnum::AUTO_CLOSE->id(),
@@ -232,9 +269,7 @@ class TicketService
             }
         });
 
-        return Ticket::with($eager)
-            ->when(!empty($ticketIds), fn ($query) => $query->whereIn('id', $ticketIds))
-            ->get();
+        return $tickets;
     }
 
     public function create(
@@ -841,7 +876,7 @@ class TicketService
             $ticket_log->documents()->create([
                 'resource_type' => 'document/pdf',
                 'resource_name' => 'work_order.pdf',
-                'resource_size' => (string) round(strlen($work_order) / 1048576, 2) . ' MB',
+                'resource_size' => (double) round(strlen($work_order) / 1048576, 2),
                 'previewable_on' => $work_order_path,
             ]);
 
@@ -856,7 +891,7 @@ class TicketService
                 $ticket_log->documents()->create([
                     'resource_type' => $document['resource_type'],
                     'resource_name' => $document['resource_name'],
-                    'resource_size' => $document['resource_size'],
+                    'resource_size' => (double) $document['resource_size'],
                     'previewable_on' => $filePath,
                 ]);
             }
@@ -893,7 +928,7 @@ class TicketService
                     $ticket_log->documents()->create([
                         'resource_type' => $document['resource_type'],
                         'resource_name' => $document['resource_name'],
-                        'resource_size' => $document['resource_size'],
+                        'resource_size' => (double) $document['resource_size'],
                         'previewable_on' => $filePath,
                     ]);
                 }

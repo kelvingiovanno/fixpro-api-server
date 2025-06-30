@@ -5,6 +5,7 @@ namespace App\Http\Controllers\api;
 use App\Http\Controllers\Controller;
 
 use App\Enums\ApplicantStatusEnum;
+use App\Enums\MemberCapabilityEnum;
 use App\Enums\MemberRoleEnum;
 use App\Models\Applicant;
 use App\Models\Member;
@@ -147,8 +148,13 @@ class ApplicantController extends Controller
                 'title' => $request->data['title'],
             ]);
             
+            $capabilityIds = array_map(
+                fn($cap) => MemberCapabilityEnum::from($cap)->id(),
+                $request->data['capabilities']
+            );
+
             $applicant->member->specialities()->attach($request->data['specialization']);
-            $applicant->member->capabilities()->attach($request->data['capabilities']);
+            $applicant->member->capabilities()->attach($capabilityIds);
 
             $form_fields = $this->areaService->get_join_form();
 

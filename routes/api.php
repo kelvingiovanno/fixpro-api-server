@@ -65,6 +65,9 @@ Route::middleware('api.auth')->group(function () {
                     Route::get('/', [TicketLogController::class, 'index']);
                 });
 
+                Route::post('/evaluate', [TicketController::class,'evaluate'])
+                        ->middleware('capability:' . MemberCapabilityEnum::APPROVAL->value);
+
             }); 
         });
 
@@ -93,9 +96,6 @@ Route::middleware('api.auth')->group(function () {
                 Route::prefix('evaluate')->group(function (){
                     Route::post('/request', [TicketController::class,'evaluate_request']);
                 });
-
-                Route::post('/evaluate', [TicketController::class,'evaluate'])
-                        ->middleware('capability:' . MemberCapabilityEnum::APPROVAL->value);
 
                 Route::prefix('handlers')->group(function () {
                     Route::get('/', [TicketHandlerController::class, 'index']);
