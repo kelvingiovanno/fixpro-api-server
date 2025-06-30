@@ -119,7 +119,7 @@ class TicketLogController extends Controller
             $ticket_log = $this->ticketService->add_log(
                 $ticket_id,
                 $request->data['type'],
-                $request->data['news'],
+                $request->input('data.news'),
                 $request->data['supportive_documents'],
                 $request->client['id'],
             );

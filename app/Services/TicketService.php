@@ -17,7 +17,6 @@ use App\Services\Reports\WorkOrderReport;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
-use PhpParser\Node\Stmt\Return_;
 
 class TicketService
 {
@@ -367,7 +366,7 @@ class TicketService
             );
 
             $ticket_log->documents()->create([
-                'resource_type' => 'pdf',
+                'resource_type' => 'application/pdf',
                 'resource_name' => 'service_form-' . substr($ticket->id, -5),
                 'resource_size' =>  (double)  round(strlen($service_form_pdf) / 1048576, 2),
                 'previewable_on' => $service_form_path,
@@ -435,7 +434,7 @@ class TicketService
     public function evaluate_request(
         string $requester_id,
         string $ticket_id,
-        string $remark,
+        ?string $remark,
         ?array $documents
     ) {
 
@@ -499,7 +498,7 @@ class TicketService
         string $ticket_id,
         bool $approved,
         bool $owner_approval,
-        string $reason,
+        ?string $reason,
         ?array $documents,
 
     ) {
@@ -705,7 +704,7 @@ class TicketService
         string $ticket_id,
         string $requester_id,
         string $requestor_role_id,
-        string $reason,
+        ?string $reason,
         ?array $documents,
     ) {
         $ticket_log = DB::transaction(function () 
@@ -766,7 +765,7 @@ class TicketService
     public function force_close(
         string $ticket_id,
         string $requester_id,
-        string $reason,
+        ?string $reason,
         ?array $documents,
     ) {
         DB::transaction(function () 
@@ -832,10 +831,15 @@ class TicketService
 
             $ticket_issue->maintainers()->sync($handler_ids);
 
+            $ticket->update([
+                'status_id' => TicketStatusEnum::ON_PROGRESS->id(),
+            ]);
+
             $ticket->load(
                 'location',
                 'response',
                 'issuer',
+                'status',
                 'ticket_issues.maintainers',
             );
 
@@ -863,7 +867,7 @@ class TicketService
             
             $ticket_issue->work_order()->create([
                 'id' => $wo_id,
-                'resource_type' => 'document/pdf',
+                'resource_type' => 'application/pdf',
                 'resource_name' => 'work_order.pdf',
                 'resource_size' => (string) round(strlen($work_order) / 1048576, 2) . ' MB',
                 'previewable_on' => $work_order_path,
@@ -874,7 +878,7 @@ class TicketService
             ]);
 
             $ticket_log->documents()->create([
-                'resource_type' => 'document/pdf',
+                'resource_type' => 'application/pdf',
                 'resource_name' => 'work_order.pdf',
                 'resource_size' => (double) round(strlen($work_order) / 1048576, 2),
                 'previewable_on' => $work_order_path,

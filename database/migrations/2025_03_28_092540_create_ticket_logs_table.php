@@ -17,7 +17,7 @@ return new class extends Migration
             $table->uuid('member_id')->nullable();
             $table->uuid('type_id')->nullable();
             $table->dateTime('recorded_on');
-            $table->string('news');
+            $table->string('news')->nullable();
 
             $table->foreign('type_id')->references('id')->on('ticket_log_types')->onDelete('set null');
             $table->foreign('ticket_id')->references('id')->on('tickets')->onDelete('set null');

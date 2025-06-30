@@ -281,7 +281,7 @@ class TicketController extends Controller
             $ticket_log = $this->ticketService->evaluate_request(
                 $request->client['id'],
                 $ticket_id,
-                $request->data['remark'],
+                $request->input('data.remark'),
                 $request->input('data.supportive_documents'),
             );
 
@@ -378,7 +378,7 @@ class TicketController extends Controller
                 $ticket_id,
                 $request->data['resolveToApprove'],
                 $request->data['requireOwnerApproval'],
-                $request->data['reason'],
+                $request->input('data.reason'),
                 $request->input('data.supportive_documents'),
             );
 
@@ -563,7 +563,7 @@ class TicketController extends Controller
             $this->ticketService->force_close(
                 $ticket_id,
                 $request->client['id'],
-                $request->data['reason'],
+                $request->input('data.reason'),
                 $request->input('data.supportive_documents'),
             );
             return $this->apiResponseService->created(null, 'The ticket has been successfully forced closed.');
