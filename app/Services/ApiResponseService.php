@@ -31,6 +31,18 @@ class ApiResponseService
     }
 
     /**
+     * Accepted Response (202 Accepted)
+     *
+     * @param mixed $data The data to return (optional)
+     * @param string $message The success message
+     * @return JsonResponse
+     */
+    public function accepted(mixed $data = null, string $message = 'Request accepted successfully'): JsonResponse
+    {
+        return $this->customResponse($message, JsonResponse::HTTP_ACCEPTED, $data);
+    }
+
+    /**
      * No Content Response (204 No Content)
      *
      * @param string $message The success message

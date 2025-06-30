@@ -19,6 +19,7 @@ return new class extends Migration
 
             $table->string('email')->nullable();
             $table->string('phone_number')->nullable();
+            $table->string('access_token')->nullable();
 
             $table->dateTime('member_since')->nullable();
             $table->dateTime('member_until')->nullable();

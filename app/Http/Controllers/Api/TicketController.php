@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Enums\MemberRoleEnum;
 use App\Http\Controllers\Controller;
 
 use App\Exceptions\InvalidTicketStatusException;
@@ -33,12 +34,40 @@ class TicketController extends Controller
         protected PrintViewReport $printViewReport,
     ) { }
 
-    public function index()
+    public function index(Request $request)
     {
         try 
         {
-            $tickets = $this->ticketService->all(['ticket_issues.issue', 'status', 'response']);
-            
+            $client_role_id = $request->client['role_id'];
+
+            if($client_role_id == MemberRoleEnum::MEMBER->id())
+            {  
+                $member = Member::with([
+                    'maintained_tickets.ticket.status',
+                    'maintained_tickets.ticket.response',
+                ])->find($request->client['id']);
+
+                $tickets = $member?->maintained_tickets
+                    ->pluck('ticket')
+                    ->unique('id') 
+                    ->values();    
+
+                
+            }
+            else if ($client_role_id == MemberRoleEnum::CREW->id())
+            {
+                $tickets = Member::with([
+                    'tickets.ticket_issues.issue', 
+                    'tickets.status', 
+                    'tickets.response'
+                    
+                ])->find($request->client['id'])->ticket; 
+            }
+            else
+            {
+                $tickets = $this->ticketService->all(['ticket_issues.issue', 'status', 'response']);
+            }
+
             $response_data = $tickets->map(function ($ticket) {
                 return [
                     'id' => $ticket->id,
@@ -352,7 +381,8 @@ class TicketController extends Controller
             'ticket_id' => 'required|uuid',
             'data' => 'required|array',
             'data.resolveToApprove' => 'required|boolean',
-            'data.reason' => 'required|string',  
+            'data.requireOwnerApproval' => 'required|boolean',
+            'data.reason' => 'nullable|string',  
             'data.supportive_documents' => 'nullable|array',
             'data.supportive_documents.*.resource_type' => 'required|string',
             'data.supportive_documents.*.resource_name' => 'required|string',
@@ -369,8 +399,10 @@ class TicketController extends Controller
         {
             $ticket_log = $this->ticketService->evaluate(
                 $request->client['id'],
+                $request->client['role_id'],
                 $ticket_id,
                 $request->data['resolveToApprove'],
+                $request->data['requireOwnerApproval'],
                 $request->data['reason'],
                 $request->input('data.supportive_documents'),
             );

@@ -150,10 +150,13 @@ class MemberController extends Controller
         {
             $member = Member::findOrFail($member_id);
 
-            JWTAuth::invalidate(JWTAuth::getToken());
+            $token = $member->access_token;
+            JWTAuth::setToken($token)->invalidate();
+
             $member->delete();
+            $member->refresh_token->delete();
     
-            return $this->apiResponseService->ok('Member revoked successfully.');
+            return $this->apiResponseService->accepted('Member revoked successfully.');
         } 
         catch(ModelNotFoundException)
         {

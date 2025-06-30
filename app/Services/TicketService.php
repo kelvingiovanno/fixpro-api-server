@@ -460,14 +460,16 @@ class TicketService
     
     public function evaluate(
         string $evaluated_by,
+        string $evaluate_role_id,
         string $ticket_id,
         bool $approved,
+        bool $owner_approval,
         string $reason,
         ?array $documents,
 
     ) {
         $ticket_log = DB::transaction(function () 
-            use ($evaluated_by ,$ticket_id, $approved, $reason, $documents) {
+            use ($evaluated_by, $evaluate_role_id,$ticket_id, $approved, $owner_approval, $reason, $documents) {
             
             $ticket = Ticket::findOrFail($ticket_id);
             
@@ -501,7 +503,7 @@ class TicketService
             }
             else 
             {
-                if($ticket->status->id == TicketStatusEnum::WORK_EVALUATION->id())
+                if($evaluate_role_id == MemberRoleEnum::CREW->id() && $ticket->status->id == TicketStatusEnum::WORK_EVALUATION->id())
                 {
                     $ticket->update([
                         'status_id' => TicketStatusEnum::QUIALITY_CONTROL->id(),
@@ -513,6 +515,14 @@ class TicketService
                         'type_id' => TicketLogTypeEnum::WORK_EVALUATION->id(),
                         'news' => $reason,
                         'recorded_on' => now(),
+                    ]);
+
+                    Inbox::create([
+                        'member_id' => $ticket->assessed_by,
+                        'ticket_id' => $ticket->id,
+                        'title' => 'Quiality Control Evaluation Required',
+                        'body' => 'Please evaluate the result of ticket #' . substr($ticket->id, 0, 5) . '.',
+                        'sent_on' => now(),
                     ]);
 
                     foreach ($handler_ids as $handler_id)
@@ -527,40 +537,82 @@ class TicketService
                     }
 
                 }
-                else if($ticket->status->id == TicketStatusEnum::QUIALITY_CONTROL->id())
-                {
-                    $ticket->update([
-                        'status_id' => TicketStatusEnum::OWNER_EVALUATION->id(),
-                    ]);
-
-                    $ticket_log = $ticket->logs()->create([
-                        'member_id' => $evaluated_by,
-                        'type_id' => TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id(),
-                        'news' => $reason,
-                        'recorded_on' => now(),
-                    ]);
-
-                    Inbox::create([
-                        'member_id' => $ticket->issuer->id,
-                        'ticket_id' => $ticket->id,
-                        'title' => 'Owner Evaluation Required',
-                        'body' => 'Please evaluate the result of ticket #' . substr($ticket->id, 0, 5) . '.',
-                        'sent_on' => now(),
-                    ]);
-
-                    foreach ($handler_ids as $handler_id)
+                else if(
+                    $evaluate_role_id == MemberRoleEnum::MANAGEMENT->id() &&
+                    (
+                        $ticket->status->id == TicketStatusEnum::QUIALITY_CONTROL->id() ||
+                        $ticket->status->id == TicketStatusEnum::WORK_EVALUATION->id()
+                    )
+                ){
+                    if($owner_approval)
                     {
+                        $ticket->update([
+                            'status_id' => TicketStatusEnum::OWNER_EVALUATION->id(),
+                        ]);
+
+                        $ticket_log = $ticket->logs()->create([
+                            'member_id' => $evaluated_by,
+                            'type_id' => TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id(),
+                            'news' => $reason,
+                            'recorded_on' => now(),
+                        ]);
+
                         Inbox::create([
-                            'member_id' => $handler_id,
+                            'member_id' => $ticket->issuer->id,
                             'ticket_id' => $ticket->id,
-                            'title' => 'Quality Control Passed',
-                            'body' => 'Ticket #' . substr($ticket->id, 0, 5) . ' has passed quality control and is now in owner evaluation.',
+                            'title' => 'Owner Evaluation Required',
+                            'body' => 'Please evaluate the result of ticket #' . substr($ticket->id, 0, 5) . '.',
                             'sent_on' => now(),
                         ]);
+
+                        foreach ($handler_ids as $handler_id)
+                        {
+                            Inbox::create([
+                                'member_id' => $handler_id,
+                                'ticket_id' => $ticket->id,
+                                'title' => 'Quality Control Passed',
+                                'body' => 'Ticket #' . substr($ticket->id, 0, 5) . ' has passed quality control and is now in owner evaluation.',
+                                'sent_on' => now(),
+                            ]);
+                        }
+
+                    }
+                    else 
+                    {
+                        $ticket->update([
+                            'status_id' => TicketStatusEnum::CLOSED->id(),
+                            'closed_on' => now(),
+                        ]);
+
+                        $ticket_log = $ticket->logs()->create([
+                            'member_id' => $evaluated_by,
+                            'type_id' => TicketLogTypeEnum::APPROVAL->id(),
+                            'news' => $reason,
+                            'recorded_on' => now(),
+                        ]);
+
+                        Inbox::create([
+                            'member_id' => $ticket->issuer->id,
+                            'ticket_id' => $ticket->id,
+                            'title' => 'Ticket Closed',
+                            'body' => 'Your ticket #' . substr($ticket->id, 0, 5) . ' has been approved and closed.',
+                            'sent_on' => now(),
+                        ]);
+
+                        foreach ($handler_ids as $handler_id)
+                        {
+                            Inbox::create([
+                                'member_id' => $handler_id,
+                                'ticket_id' => $ticket->id,
+                                'title' => 'Ticket Closed',
+                                'body' => 'Ticket #' . substr($ticket->id, 0, 5) . ' has been approved and closed.',
+                                'sent_on' => now(),
+                            ]);
+                        }
                     }
 
                 }
-                else if($ticket->status->id == TicketStatusEnum::OWNER_EVALUATION->id())
+                else if($evaluated_by == $ticket->issuer->id  && $ticket->status->id == TicketStatusEnum::OWNER_EVALUATION->id())
                 {
                     $ticket->update([
                         'status_id' => TicketStatusEnum::CLOSED->id(),

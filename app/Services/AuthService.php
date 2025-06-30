@@ -21,7 +21,7 @@ class AuthService
         $refreshExpiry = $now->copy()->addMonths(3);
 
         $member = $authenticationCode->applicant->member;
- 
+
         $customClaims = [
             'sub' => 'profix_api_service',
             'member_id' => $member->id,
@@ -34,6 +34,11 @@ class AuthService
         $accessToken = JWTAuth::encode(
             JWTAuth::factory()->customClaims($customClaims)->make()
         )->get();
+
+        
+        $member->update([
+            'access_token' => $accessToken,
+        ]);
 
         $refreshToken = Str::random(302);
 
@@ -97,6 +102,10 @@ class AuthService
         $accessToken = JWTAuth::encode(
             JWTAuth::factory()->customClaims($customClaims)->make()
         )->get();
+
+        $token->member->update([    
+            'access_token' => $accessToken,
+        ]);
 
         return [
             'access_token' => $accessToken,
