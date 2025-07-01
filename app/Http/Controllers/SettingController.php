@@ -145,7 +145,7 @@ class SettingController extends Controller
             $protected = [
                 'id', 'role_id', 'name', 'title',
                 'member_since', 'member_until', 'deleted_at',
-                'created_at', 'updated_at',
+                'created_at', 'updated_at', 'access_token',
             ];
 
             $allColumns = Schema::getColumnListing('members');
