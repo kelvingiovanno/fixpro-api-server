@@ -209,14 +209,12 @@ class ApplicantController extends Controller
         try 
         {
             $applicant = Applicant::findOrFail($application_id);
-    
-            JWTAuth::invalidate(JWTAuth::getToken());
             
             $applicant->update(['status_id' => ApplicantStatusEnum::REJECTED->id()]);
             
             $applicant->member->delete();
 
-            return $this->apiResponseService->ok('Applicant rejected successfully.');
+            return $this->apiResponseService->ok(null, 'Applicant rejected successfully.');
         } 
         catch (ModelNotFoundException)
         {
