@@ -96,7 +96,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PeriodicReport::class, function () {
             return new PeriodicReport(
                 $this->app->make(AreaService::class),
-                $this->app->make(TicketService::class),
                 $this->app->make(QuickChartService::class),
             );
         });

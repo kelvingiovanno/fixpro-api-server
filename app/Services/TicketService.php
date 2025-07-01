@@ -503,6 +503,9 @@ class TicketService
         ?array $documents,
 
     ) {
+
+        $reason = $reason ?? '';
+
         $ticket_log = DB::transaction(function () 
             use ($evaluated_by, $evaluate_role_id,$ticket_id, $approved, $owner_approval, $reason, $documents) {
             
@@ -538,7 +541,7 @@ class TicketService
             }
             else 
             {
-                if($evaluate_role_id == MemberRoleEnum::CREW->id() && $ticket->status->id == TicketStatusEnum::WORK_EVALUATION->id())
+                if($evaluate_role_id == MemberRoleEnum::CREW->id() && $ticket->status_id == TicketStatusEnum::WORK_EVALUATION->id())
                 {
                     $ticket->update([
                         'status_id' => TicketStatusEnum::QUIALITY_CONTROL->id(),
@@ -708,6 +711,9 @@ class TicketService
         ?string $reason,
         ?array $documents,
     ) {
+
+        $reason = $reason ?? '';
+
         $ticket_log = DB::transaction(function () 
             use ($ticket_id, $requester_id, $requestor_role_id, $reason, $documents) 
         {
@@ -769,6 +775,9 @@ class TicketService
         ?string $reason,
         ?array $documents,
     ) {
+
+        $reason = $reason ?? '';
+
         DB::transaction(function () 
         use ($ticket_id, $requester_id, $reason, $documents) {
 
@@ -835,8 +844,6 @@ class TicketService
             $ticket->update([
                 'status_id' => TicketStatusEnum::ON_PROGRESS->id(),
             ]);
-
-            
 
             foreach($handler_ids as $handler_id)
             {       
@@ -927,6 +934,9 @@ class TicketService
         ?array $documents,
         string $requester_id,
     ) {
+
+        $news = $news ?? '';
+
         $new_log = DB::transaction(function () 
             use($ticket_id, $log_type, $news, $documents, $requester_id) {
                 

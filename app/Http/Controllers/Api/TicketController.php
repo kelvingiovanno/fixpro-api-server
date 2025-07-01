@@ -17,12 +17,11 @@ use App\Services\Reports\PrintViewReport;
 use App\Services\ApiResponseService;
 use App\Services\StorageService;
 use App\Services\TicketService;
-use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-      
+use Illuminate\Log\Logger;
 use Throwable;
 
 class TicketController extends Controller   
@@ -372,13 +371,16 @@ class TicketController extends Controller
 
         try
         {
+
+            Logger($request->data['reason']);
+
             $ticket_log = $this->ticketService->evaluate(
                 $request->client['id'],
                 $request->client['role_id'],
                 $ticket_id,
                 $request->data['resolveToApprove'],
                 $request->data['requireOwnerApproval'],
-                $request->input('data.reason'),
+                $request->data['reason'],
                 $request->input('data.supportive_documents'),
             );
 
