@@ -40,7 +40,7 @@ class AuthService
             'access_token' => $accessToken,
         ]);
 
-        $refreshToken = Str::random(302);
+        $refreshToken = Str::random(100);
 
         RefreshToken::create([
             'member_id' => $member->id,
@@ -86,7 +86,7 @@ class AuthService
 
         $newToken = RefreshToken::create([
             'member_id' => $token->member->id,
-            'token' => Str::uuid(),
+            'token' => Str::uuid(100),
             'expires_on' => $refreshExpiry,
         ]);
 

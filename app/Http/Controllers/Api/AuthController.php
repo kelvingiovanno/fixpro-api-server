@@ -97,6 +97,10 @@ class AuthController extends Controller
         {
             return $this->apiResponseService->forbidden($e->getMessage());
         } 
+        catch(ModelNotFoundException)
+        {
+            return $this->apiResponseService->forbidden('Invalid refresh token.');
+        }
         catch (Throwable $e) 
         {
             Log::error('An error occurred while refreshing the access token.', [

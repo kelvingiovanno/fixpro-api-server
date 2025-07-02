@@ -219,6 +219,7 @@ class PeriodicReport
 
         return Member::with('specialities')
             ->where('role_id', MemberRoleEnum::CREW->id())
+            ->withTrashed()
             ->get()
             ->filter(function ($member) use ($startOfMonth, $endOfMonth) {
                 return $member->member_since <= $endOfMonth &&
@@ -254,6 +255,7 @@ class PeriodicReport
         $endOfMonth = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
 
         return Member::where('role_id', MemberRoleEnum::MANAGEMENT->id())
+            ->withTrashed()
             ->get()
             ->filter(function ($member) use ($startOfMonth, $endOfMonth) {
                 return $member->member_since <= $endOfMonth &&
@@ -287,6 +289,7 @@ class PeriodicReport
         $endOfMonth = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
 
         return Member::with(['tickets.ticket_issues.issue'])
+            ->withTrashed()
             ->where('role_id', MemberRoleEnum::MEMBER->id())
             ->get()
             ->filter(function ($member) use ($startOfMonth, $endOfMonth) {

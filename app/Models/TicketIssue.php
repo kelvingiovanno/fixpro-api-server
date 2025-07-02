@@ -58,7 +58,7 @@ class TicketIssue extends Model
 
     public function maintainers()
     {
-        return $this->belongsToMany(Member::class, 'maintainers', 'ticket_issue_id', 'member_id');
+        return $this->belongsToMany(Member::class, 'maintainers', 'ticket_issue_id', 'member_id')->withTrashed();
     }
 
     public function work_order()

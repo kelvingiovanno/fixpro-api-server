@@ -59,56 +59,56 @@ use Illuminate\Database\Eloquent\Model;
 
     public function issuer()
     {
-        return $this->belongsTo(Member::class, 'member_id', 'id');
+        return $this->belongsTo(Member::class, 'member_id', 'id') ->withTrashed();
     }
 
     public function assessed()
     {
-        return $this->belongsTo(Member::class, 'assessed_by', 'id');
+        return $this->belongsTo(Member::class, 'assessed_by', 'id')->withTrashed();
     }
 
     public function evaluated()
     {
-        return $this->belongsTo(Member::class, 'evaluated_by', 'id');
+        return $this->belongsTo(Member::class, 'evaluated_by', 'id')->withTrashed();
     }
 
     public function ticket_issues()
     {
-        return $this->hasMany(TicketIssue::class, 'ticket_id', 'id');
+        return $this->hasMany(TicketIssue::class, 'ticket_id', 'id')->withTrashed();
     }
 
     public function status()
     {
-        return $this->belongsTo(TicketStatusType::class, 'status_id', 'id');
+        return $this->belongsTo(TicketStatusType::class, 'status_id', 'id')->withTrashed();
     }
 
     public function response()
     {
-        return $this->belongsTo(TicketResponseType::class, 'response_id', 'id');
+        return $this->belongsTo(TicketResponseType::class, 'response_id', 'id')->withTrashed();
     }
 
     public function location()
     {
-        return $this->hasOne(Location::class, 'ticket_id', 'id');
+        return $this->hasOne(Location::class, 'ticket_id', 'id')->withTrashed();
     }
     
     public function documents() 
     {
-        return $this->hasMany(TicketDocument::class, 'ticket_id', 'id');
+        return $this->hasMany(TicketDocument::class, 'ticket_id', 'id')->withTrashed();
     }
 
     public function logs()
     {
-        return $this->hasMany(TicketLog::class, 'ticket_id', 'id');
+        return $this->hasMany(TicketLog::class, 'ticket_id', 'id')->withTrashed();
     }
 
     public function calender_event()
     {
-        return $this->hasOne(Event::class, 'ticket_id', 'id');
+        return $this->hasOne(Event::class, 'ticket_id', 'id')->withTrashed();
     }
 
     public function inbox()
     {
-        return $this->hasMany(Inbox::class, 'ticket_id', 'id');
+        return $this->hasMany(Inbox::class, 'ticket_id', 'id')->withTrashed();
     }
 }
