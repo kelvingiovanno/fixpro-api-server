@@ -103,9 +103,9 @@ class CalenderService
                     'event_title' => $event->summary,
                     'event_description' => $event->description,
                     'happening_on' => $event->start->format('Y-m-d\TH:i:sP'),
-                    'duration_in_seconds' =>  $event->start->diffInSeconds($event->end),
+                    'duration_in_seconds' =>  $event->end->diffInSeconds($event->start),
                     'reminder_enebled' => true,
-                    'effected_ticket' => $event->tikcet->id,
+                    'effected_ticket' => $event->ticket->id,
                 ];
             }
         }

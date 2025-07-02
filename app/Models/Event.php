@@ -54,8 +54,8 @@ class Event extends Model
         return $this->belongsTo(Calender::class, 'calender_id', 'id');
     }
 
-    public function tikcet()
+    public function ticket()
     {
-        return $this->belongsTo(Member::class, 'ticket_id', 'id');
+        return $this->belongsTo(Ticket::class, 'ticket_id', 'id');
     }
 }
