@@ -33,7 +33,11 @@ class PeriodicReport
 
         $year = now()->year;
 
-        $all_ticket = Ticket::with(['ticket_issues.issue', 'status', 'response'])->get();
+        $lastDateOfMonth = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
+
+        $all_ticket = Ticket::with(['ticket_issues.issue', 'status', 'response'])
+            ->whereDate('raised_on', '<=', $lastDateOfMonth)
+            ->get();
 
         $current_month_open_tickets = $all_ticket->filter(function ($ticket) use ($month, $year) {
             return $ticket->raised_on->month == $month && $ticket->raised_on->year == $year;
@@ -208,16 +212,30 @@ class PeriodicReport
 
     private function crew_stats(int $month, int $year): array
     {
+        logger($year);
+
+        $startOfMonth = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $endOfMonth = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
+
         return Member::with('specialities')
             ->where('role_id', MemberRoleEnum::CREW->id())
             ->get()
+            ->filter(function ($member) use ($startOfMonth, $endOfMonth) {
+                return $member->member_since <= $endOfMonth &&
+                    (
+                        is_null($member->member_until) ||
+                        $member->member_until >= $startOfMonth
+                    );
+            })
             ->map(function ($member) use ($month, $year) {
                 return [
                     'id' => substr($member->id, -5),
                     'name' => $member->name,
                     'title' => $member->title,
                     'specialties' => $member->specialities->pluck('name'),
-                    'HTC' => TicketIssue::whereHas('maintainers', fn($q) => $q->where('member_id', $member->id))
+                    'HTC' => TicketIssue::whereHas('maintainers', fn($q) =>
+                            $q->where('member_id', $member->id)
+                        )
                         ->whereHas('ticket', function ($q) use ($month, $year) {
                             $q->whereMonth('raised_on', $month)
                             ->whereYear('raised_on', $year);
@@ -225,13 +243,25 @@ class PeriodicReport
                         ->distinct('ticket_id')
                         ->count(),
                 ];
-        })->toArray();
+            })
+            ->toArray();
     }
+
 
     private function management_stats(int $month, int $year): array
     {
+        $startOfMonth = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $endOfMonth = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
+
         return Member::where('role_id', MemberRoleEnum::MANAGEMENT->id())
             ->get()
+            ->filter(function ($member) use ($startOfMonth, $endOfMonth) {
+                return $member->member_since <= $endOfMonth &&
+                    (
+                        is_null($member->member_until) ||
+                        $member->member_until >= $startOfMonth
+                    );
+            })
             ->map(function ($member) use ($month, $year) {
                 return [
                     'id' => substr($member->id, -5),
@@ -246,14 +276,26 @@ class PeriodicReport
                         ->whereYear('raised_on', $year)
                         ->count(),
                 ];
-        })->toArray();
+            })
+            ->toArray();
     }
+
 
     private function member_stats(int $month, int $year): array
     {
+        $startOfMonth = \Carbon\Carbon::create($year, $month, 1)->startOfMonth();
+        $endOfMonth = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
+
         return Member::with(['tickets.ticket_issues.issue'])
             ->where('role_id', MemberRoleEnum::MEMBER->id())
             ->get()
+            ->filter(function ($member) use ($startOfMonth, $endOfMonth) {
+                return $member->member_since <= $endOfMonth &&
+                    (
+                        is_null($member->member_until) ||
+                        $member->member_until >= $startOfMonth
+                    );
+            })
             ->map(function ($member) use ($month, $year) {
                 $tickets_in_month = $member->tickets->filter(fn($ticket) =>
                     $ticket->raised_on->month === $month &&
@@ -274,8 +316,8 @@ class PeriodicReport
                     'ticket_opened' => $tickets_in_month->count(),
                     'issues' => $issue_names,
                 ];
-        })->toArray();
+            })
+            ->toArray();
     }
-
 
 }

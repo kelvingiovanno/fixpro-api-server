@@ -36,7 +36,7 @@ class WorkOrderReport
                 'work_directive' => $work_description,
             ],
             'upon_the_request_of' => array_merge(
-                Arr::except($ticket->issuer->toArray(), ['id', 'role_id', 'member_since', 'member_until', 'title']),
+                Arr::except($ticket->issuer->toArray(), ['id', 'role_id', 'member_since', 'member_until', 'title', 'access_token']),
                 ['on' => $ticket->raised_on, 'name' => $ticket->issuer->name . ' (' . substr($ticket->issuer->id, -5) . ')']
             ),
             'to_be_carried_out_by' => $ticket->ticket_issues->firstWhere('issue_id', $issue_id)->maintainers->map(function ($member) {

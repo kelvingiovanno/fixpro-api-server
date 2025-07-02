@@ -49,9 +49,13 @@ class PrintViewReport
                     'log_type' => $log->type->name,
                     'raised_on' => $log->recorded_on,
                     'news' => $log->news,
-                    'supportive_documents' => $log->documents->map(function ($document) {
-                        return public_path(parse_url($document->previewable_on, PHP_URL_PATH));
-                    }),
+                    'supportive_documents' => $log->documents
+                        ->filter(function ($document) {
+                            return preg_match('/\.(png|jpe?g|gif|bmp|webp)$/i', $document->resource_name);
+                        })
+                        ->map(function ($document) {
+                            return public_path(parse_url($document->previewable_on, PHP_URL_PATH));
+                        }),
                 ];
             }),
             'print_view_requested_by' => $requester->name,

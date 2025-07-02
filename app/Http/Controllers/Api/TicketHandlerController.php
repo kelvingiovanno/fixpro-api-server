@@ -116,9 +116,12 @@ class TicketHandlerController extends Controller
         {
             $ticket = Ticket::with('ticket_issues.issue')->findOrFail($ticket_id);
 
+            
+            $ticket_logs = [];
+
             foreach ($request->input('data') as $assign) 
             {
-                $this->ticketService->assign_handlers(
+                $ticket_log = $this->ticketService->assign_handlers(
                     $ticket,
                     $assign['issue_type'],
                     $assign['appointed_member_ids'],
@@ -126,33 +129,51 @@ class TicketHandlerController extends Controller
                     $assign['supportive_documents'],
                     $request->client['id'],
                 );
-            };
 
-            $ticket->load([
-                'ticket_issues.issue',
-                'ticket_issues.maintainers.specialities',
-                'ticket_issues.maintainers.capabilities',
-                'ticket_issues.maintainers.role',
-            ]);
+                $ticket_logs[] = $ticket_log;
+            }
 
-            $response_data = $ticket->ticket_issues->flatMap(function ($issue) {
-                return $issue->maintainers->map(function ($maintainer) {
-                    return [
-                        'id' => $maintainer->id,
-                        'name' => $maintainer->name,
-                        'role' => $maintainer->role->name,
-                        'title' => $maintainer->title,
-                        'specialties' => $maintainer->specialities->map(function ($specialty) {
+            $response_data = collect($ticket_logs)->map(function ($ticket_log) {
+                return [
+                    'id' => $ticket_log->id,
+                    'owning_ticket_id' => $ticket_log->ticket_id,
+                    'type' => $ticket_log->type->name,
+                    'issuer' => [
+                        'id' => $ticket_log->issuer->id,
+                        'name' => $ticket_log->issuer->name,
+                        'role' => $ticket_log->issuer->role->name,
+                        'title' => $ticket_log->issuer->title,
+                        'specialties' => $ticket_log->issuer->specialities->map(function ($specialty){
                             return [
                                 'id' => $specialty->id,
                                 'name' => $specialty->name,
-                                'service_level_agreement_duration_hour' => $specialty->sla_hours ,
-                            ];
+                                'service_level_agreement_duration_hour' => (string) $specialty->sla_hours,
+                            ]; 
                         }),
-                        'capabilities' => $maintainer->capabilities->map(fn($capability) => $capability->name),
-                    ];
-                });
+                        'capabilities' => $ticket_log->issuer->capabilities->map(function ($capability) {
+                            return $capability->name;
+                        }),
+                        'member_since' => now()->format('Y-m-d\TH:i:sP'),
+                    ],
+                    'recorded_on' => $ticket_log->recorded_on->format('Y-m-d\TH:i:sP'),
+                    'news' => $ticket_log->news,
+                    'attachments' => $ticket_log->documents->map(function ($document) {
+                        return [
+                            'id' => $document->id,
+                            'resource_type' => $document->resource_type,
+                            'resource_name' => $document->resource_name,
+                            'resource_size' => $document->resource_size,
+                            'previewable_on' => $document->previewable_on,
+                        ];
+                    }),
+                    'actionable' => [
+                        'genus' => 'SEGUE',
+                        'species' => 'TICKET',
+                        'segue_destination' => 'whatever',
+                    ],
+                ];
             });
+
 
             return $this->apiResponseService->ok($response_data, 'Successfully assigned the handlers to the ticket.');
 

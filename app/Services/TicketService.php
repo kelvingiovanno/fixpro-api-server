@@ -504,8 +504,6 @@ class TicketService
 
     ) {
 
-        $reason = $reason ?? '';
-
         $ticket_log = DB::transaction(function () 
             use ($evaluated_by, $evaluate_role_id,$ticket_id, $approved, $owner_approval, $reason, $documents) {
             
@@ -520,6 +518,8 @@ class TicketService
                 $ticket->update([
                     'status_id' => TicketStatusEnum::ON_PROGRESS->id(),
                 ]);
+
+                $reason = $reason ?? 'Ticket evaluation resulted in rejection.';
 
                 $ticket_log = $ticket->logs()->create([
                     'member_id' => $evaluated_by,
@@ -547,6 +547,8 @@ class TicketService
                         'status_id' => TicketStatusEnum::QUIALITY_CONTROL->id(),
                         'evaluated_by' => $evaluated_by,   
                     ]);
+
+                    $reason = $reason ?? 'The work has been approved after evaluation.';
 
                     $ticket_log = $ticket->logs()->create([
                         'member_id' => $evaluated_by,
@@ -588,6 +590,8 @@ class TicketService
                             'status_id' => TicketStatusEnum::OWNER_EVALUATION->id(),
                         ]);
 
+                        $reason = $reason ?? 'The ticket has passed quality control.';
+
                         $ticket_log = $ticket->logs()->create([
                             'member_id' => $evaluated_by,
                             'type_id' => TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id(),
@@ -621,6 +625,8 @@ class TicketService
                             'status_id' => TicketStatusEnum::CLOSED->id(),
                             'closed_on' => now(),
                         ]);
+
+                        $reason = $reason ?? 'The ticket has been resolved and closed.';
 
                         $ticket_log = $ticket->logs()->create([
                             'member_id' => $evaluated_by,
@@ -656,6 +662,8 @@ class TicketService
                         'status_id' => TicketStatusEnum::CLOSED->id(),
                         'closed_on' => now(),
                     ]);
+
+                    $reason = $reason ?? 'The owner has approved the completion of the ticket.';
 
                     $ticket_log = $ticket->logs()->create([
                         'member_id' => $evaluated_by,
@@ -829,7 +837,8 @@ class TicketService
         ?array $documents,
         string $requester_id,
     ) {
-        DB::transaction(function () 
+        $ticket_log = DB::transaction(function () 
+
         use ($ticket, $issue_id, $handler_ids, $work_description, $documents, $requester_id) 
         {
             $ticket_issue = $ticket->ticket_issues->firstWhere('issue_id', $issue_id);
@@ -924,7 +933,11 @@ class TicketService
                     'previewable_on' => $filePath,
                 ]);
             }
+
+            return $ticket_log;
         });
+
+        return $ticket_log;
     }
 
     public function add_log(

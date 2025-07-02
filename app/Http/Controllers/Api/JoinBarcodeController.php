@@ -29,7 +29,7 @@ class JoinBarcodeController extends Controller
 
             $data = [
                 "endpoint" => $endpoint,
-                "referral_tracking_identifier" => $refferal,
+                "referralTrackingIdentifier" => $refferal,
             ];
 
             $jsonData = json_encode($data, JSON_UNESCAPED_SLASHES);

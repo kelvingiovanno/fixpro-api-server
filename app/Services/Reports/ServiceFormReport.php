@@ -25,7 +25,7 @@ class ServiceFormReport
                 'date' => now()->translatedFormat('l, d F Y'),
             ],
             'requestor_identity' => array_merge(
-                Arr::except($ticket->issuer->toArray(), ['id', 'role_id', 'member_since', 'member_until', 'title']),
+                Arr::except($ticket->issuer->toArray(), ['id', 'role_id', 'member_since', 'member_until', 'title', 'access_token']),
                 ['name' => $ticket->issuer->name . ' (' . substr($ticket->issuer->id, -5) . ')']
             ),
             'formally_requests' => [
@@ -35,9 +35,6 @@ class ServiceFormReport
                 'that_can_be_described_by' => $ticket->stated_issue,
             ],
             'supportive_documents' => collect($ticket->documents)->map(function ($document) {
-
-                logger(public_path(parse_url($document->previewable_on, PHP_URL_PATH)));
-
                 return [
                     'resource_name' => $document->resource_name,
                     'image_src' => public_path(parse_url($document->previewable_on, PHP_URL_PATH)),

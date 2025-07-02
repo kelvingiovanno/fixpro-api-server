@@ -23,9 +23,9 @@ class TicketReport
 
         $year = now()->year;
 
-        $tickets = Ticket::whereMonth('raised_on', $month)
-                        ->whereYear('raised_on', $year)
-                        ->get();
+        $endOfMonth = \Carbon\Carbon::create($year, $month, 1)->endOfMonth();
+
+        $tickets = Ticket::whereDate('raised_on', '<=', $endOfMonth)->get();
 
         $report_data = [
             'header' => [

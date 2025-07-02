@@ -241,7 +241,7 @@
             <td class="metric-cell">
                 <p class="metric-label">This month’s</p>
                 <p class="metric-title">SLA Compliance Rate</p>
-                <p class="metric-value" style="font-size: 55px;">{{ $compliance_rate }}</p>
+                <p class="metric-value" style="font-size: 55px;">{{ $compliance_rate }}%</p>
             </td>
             <td rowspan="3" class="department-performance-cell">
                 <table class="department-performance-table">

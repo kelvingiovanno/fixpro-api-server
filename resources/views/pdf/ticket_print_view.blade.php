@@ -110,10 +110,9 @@
 
     .log-images {
         margin-top: 40px;
-        padding: 20px;
     }
+
     .log-details {
-        margin-top: 20px;
         padding: 20px;
     }
 
@@ -184,34 +183,29 @@
     </div>
   </div>
 
-
-  <div class="section chronology">
+<div class="section chronology">
     <div class="chronology-heading">
         <h3>Chronology</h3>
     </div>
-    <table class="logs">
+    <div class="logs" style="page-break-inside: avoid">
       @foreach ($logs as $log)
-        <tr class="log-rows">
-            <td class="column">
-                <div class="log-images">
-                  @foreach ($log['supportive_documents'] as $document)
-                    <img src="{{ $document }}">
-                  @endforeach
-                </div>
-            </td>
-            <td class="column">
-              <table class="log-details">
-                <tr><td>Name</td><td>:</td><td>{{$log['name']}}</td></tr>
-                <tr><td>ID Number</td><td>:</td><td>{{$log['id_number']}}</td></tr>
-                <tr><td>Log Type</td><td>:</td><td>{{$log['log_type']}}</td></tr>
-                <tr><td>Raised On</td><td>:</td><td>{{$log['raised_on']}}</td></tr>
-                <tr><td>News</td><td>:</td><td>{{$log['news']}}</td></tr>
-              </table>
-            </td>
-        </tr>
+        <div class="log-block" style="page-break-inside: avoid; border: 1px solid #000; border-top: none; padding: 5px 10px;">
+          <div class="log-images">
+            @foreach ($log['supportive_documents'] as $document)
+              <img src="{{ $document }}" width="100px">
+            @endforeach
+          </div>
+          <table class="log-details" style="width: 100%;">
+            <tr><td>Name</td><td>:</td><td>{{ $log['name'] }}</td></tr>
+            <tr><td>ID Number</td><td>:</td><td>{{ $log['id_number'] }}</td></tr>
+            <tr><td>Log Type</td><td>:</td><td>{{ $log['log_type'] }}</td></tr>
+            <tr><td>Raised On</td><td>:</td><td>{{ $log['raised_on'] }}</td></tr>
+            <tr><td>News</td><td>:</td><td style="word-break: break-word;">{{ $log['news'] }}</td></tr>
+          </table>
+        </div>
       @endforeach
-    </table>
-  </div>
+    </div>
+</div>
 
 <script type="text/php">
     if (isset($pdf)) {
