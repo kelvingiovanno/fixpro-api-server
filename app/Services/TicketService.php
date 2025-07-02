@@ -319,7 +319,7 @@ class TicketService
             {
                 $calendar_issue_name = $ticket->ticket_issues()->create([
                     'issue_id' => $issue,
-                ])->issue->name;
+                ])->issue->id;
 
                 if($is_calender_setup)
                 {

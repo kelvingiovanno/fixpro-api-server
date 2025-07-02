@@ -53,7 +53,7 @@ class TicketIssue extends Model
 
     public function issue()
     {
-        return $this->belongsTo(TicketIssueType::class, 'issue_id', 'id');
+        return $this->belongsTo(TicketIssueType::class, 'issue_id', 'id')->withTrashed();
     }
 
     public function maintainers()

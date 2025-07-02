@@ -117,11 +117,11 @@ class CalenderService
         Ticket $ticket, 
         string $summary,
         string $description,
-        string $issue
+        string $issue_name
     ) {
-        $calendar_id = Calender::where('name', $issue)->first()->id;
+        $calendar_id = Calender::where('name', $issue_name)->first()->id;
 
-        $target_issue = TicketIssueType::from($issue)->id;
+        $target_issue = TicketIssueType::where('name', $issue_name)->first();
         
         $start_time = now()->addHours($target_issue->sla_hours + ($ticket->response->sla_modifier * $this->areaService->get_sla_response()))->toRfc3339String();
 
