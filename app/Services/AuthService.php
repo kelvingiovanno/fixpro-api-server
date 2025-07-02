@@ -17,7 +17,7 @@ class AuthService
         $authenticationCode = AuthenticationCode::findOrFail($code);
         $now = now();
 
-        $accessExpiry = $now->copy()->addDay();
+        $accessExpiry = $now->copy()->addMinutes(5);
         $refreshExpiry = $now->copy()->addMonths(3);
 
         $member = $authenticationCode->applicant->member;

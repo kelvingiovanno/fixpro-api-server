@@ -234,15 +234,13 @@ class PeriodicReport
                     'name' => $member->name,
                     'title' => $member->title,
                     'specialties' => $member->specialities->pluck('name'),
-                    'HTC' => TicketIssue::whereHas('maintainers', fn($q) =>
-                            $q->where('member_id', $member->id)
-                        )
-                        ->whereHas('ticket', function ($q) use ($month, $year) {
-                            $q->whereMonth('raised_on', $month)
-                            ->whereYear('raised_on', $year);
-                        })
-                        ->distinct('ticket_id')
-                        ->count(),
+                        'HTC' => TicketIssue::whereHas('maintainers', fn($q) =>
+                                $q->where('member_id', $member->id)
+                            )->whereHas('ticket', function ($q) use ($month, $year) {
+                                $q->whereMonth('raised_on', $month)
+                                ->whereYear('raised_on', $year);
+                            })->distinct('ticket_id')
+                            ->count(),
                 ];
             })
             ->toArray();
