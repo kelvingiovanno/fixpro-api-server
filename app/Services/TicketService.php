@@ -89,6 +89,7 @@ class TicketService
             'issuer.role',
             'issuer.specialities',
             'issuer.capabilities',
+            'ticket_issues.issue',
             'ticket_issues.maintainers',
             'ticket_issues.maintainers.role',
             'ticket_issues.maintainers.specialities',
@@ -319,7 +320,7 @@ class TicketService
             {
                 $calendar_issue_name = $ticket->ticket_issues()->create([
                     'issue_id' => $issue,
-                ])->issue->id;
+                ]);
 
                 if($is_calender_setup)
                 {
@@ -327,7 +328,7 @@ class TicketService
                         $ticket,
                         'Ticket Due - ' . substr($ticket->id, -5),
                         '',
-                        $calendar_issue_name,
+                        $calendar_issue_name->issue->name,
                     );
                 }
             }
