@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 
 use App\Services\ApiResponseService;
+use App\Services\AreaService;
 use App\Services\CalenderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -15,12 +16,17 @@ class CalenderController extends Controller
     public function __construct(
         protected ApiResponseService $apiResponseService ,
         protected CalenderService $calenderService,
+        protected AreaService $areaService,
     ){}
 
     public function show_events(Request $request)
     {
         try
-        {
+        {   
+            if(!$this->areaService->is_calendar_setup()) {
+                return $this->apiResponseService->badRequest('Google Calendar has not been set up yet.');
+            }
+
             $client_id = $request->client['id'];
             $client_role_id = $request->client['role_id'];
 

@@ -2,18 +2,15 @@
 
 namespace App\Services;
 
-use App\Enums\IssueTypeEnum;
 use App\Enums\MemberRoleEnum;
 
 use App\Models\Calender;
 use App\Models\Enums\TicketIssueType;
-use App\Models\Event;
 use App\Models\Member;
 use App\Models\Ticket;
 use App\Services\GoogleCalendarService;
 
 use Carbon\Carbon;
-use Illuminate\Support\Arr;
 
 class CalenderService
 {
@@ -45,8 +42,8 @@ class CalenderService
 
                 foreach ($events as $event) {
                     
-                    $startUtc = Carbon::parse($event->start)->format('Ymd\THis\Z');
-                    $endUtc = Carbon::parse($event->end)->format('Ymd\THis\Z');
+                    $startUtc = Carbon::parse($event->start)->setTimezone('Asia/Jakarta')->format('Ymd\THis\Z');
+                    $endUtc = Carbon::parse($event->end)->setTimezone('Asia/Jakarta')->format('Ymd\THis');
 
                     $title = urlencode($event->summary);
                     $description = urlencode($event->description ?? '');
@@ -58,7 +55,6 @@ class CalenderService
                         . "&dates={$startUtc}/{$endUtc}"
                         . "&details={$description}"
                         . "&location={$location}";
-
                     $response_data[] = [
                         'id' => $event->id,
                         'event_title' => $event->summary,
@@ -84,8 +80,8 @@ class CalenderService
 
             foreach ($events as $event) {
 
-                $startUtc = Carbon::parse($event->start)->format('Ymd\THis\Z');
-                $endUtc = Carbon::parse($event->end)->format('Ymd\THis\Z');
+                $startUtc = Carbon::parse($event->start)->setTimezone('Asia/Jakarta')->format('Ymd\THis\Z');
+                $endUtc = Carbon::parse($event->end)->setTimezone('Asia/Jakarta')->format('Ymd\THis');
 
                 $title = urlencode($event->summary);
                 $description = urlencode($event->description ?? '');
@@ -105,6 +101,7 @@ class CalenderService
                     'happening_on' => $event->start->format('Y-m-d\TH:i:sP'),
                     'duration_in_seconds' =>  $event->end->diffInSeconds($event->start),
                     'reminder_enebled' => true,
+                    'saved_on' => $googleCalendarLink,
                     'effected_ticket' => $event->ticket->id,
                 ];
             }
@@ -123,7 +120,7 @@ class CalenderService
 
         $target_issue = TicketIssueType::where('name', $issue_name)->first();
         
-        $start_time = now()->addHours($target_issue->sla_hours + ($ticket->response->sla_modifier * $this->areaService->get_sla_response()))->toRfc3339String();
+        $start_time = now()->addHours($target_issue->sla_hours + ($ticket->response->sla_modifier * ($this->areaService->get_sla_response() / 3600)))->toRfc3339String();
 
         $event_data = [
             'summary' => $summary,
