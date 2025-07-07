@@ -42,6 +42,7 @@ class CalenderService
 
                 foreach ($events as $event) {
                     
+
                     $startUtc = Carbon::parse($event->start)->setTimezone('Asia/Jakarta')->format('Ymd\THis\Z');
                     $endUtc = Carbon::parse($event->end)->setTimezone('Asia/Jakarta')->format('Ymd\THis');
 
@@ -63,7 +64,7 @@ class CalenderService
                         'duration_in_seconds' =>  $event->start->diffInSeconds($event->end),
                         'reminder_enebled' => true,
                         'saved_on' => $googleCalendarLink,
-                        'affected_ticket' => $event->tikcet->id,
+                        'affected_ticket' => $event->ticket->id,
                     ];
                 }
             }
