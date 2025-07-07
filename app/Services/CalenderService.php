@@ -63,7 +63,7 @@ class CalenderService
                         'duration_in_seconds' =>  $event->start->diffInSeconds($event->end),
                         'reminder_enebled' => true,
                         'saved_on' => $googleCalendarLink,
-                        'effected_ticket' => $event->tikcet->id,
+                        'affected_ticket' => $event->tikcet->id,
                     ];
                 }
             }
@@ -102,7 +102,7 @@ class CalenderService
                     'duration_in_seconds' =>  $event->end->diffInSeconds($event->start),
                     'reminder_enebled' => true,
                     'saved_on' => $googleCalendarLink,
-                    'effected_ticket' => $event->ticket->id,
+                    'affected_ticket' => $event->ticket->id,
                 ];
             }
         }
