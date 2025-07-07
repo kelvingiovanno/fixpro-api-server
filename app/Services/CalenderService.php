@@ -58,11 +58,11 @@ class CalenderService
                         . "&location={$location}";
                     $response_data[] = [
                         'id' => $event->id,
-                        'event_title' => $event->summary,
-                        'event_description' => $event->description,
+                        'title' => $event->summary,
+                        'description' => $event->description,
                         'happening_on' => $event->start->format('Y-m-d\TH:i:sP'),
                         'duration_in_seconds' =>  $event->start->diffInSeconds($event->end),
-                        'reminder_enebled' => true,
+                        'reminder_enabled' => true,
                         'saved_on' => $googleCalendarLink,
                         'affected_ticket' => $event->ticket->id,
                     ];
@@ -97,11 +97,11 @@ class CalenderService
 
                 $response_data[] = [
                     'id' => $event->id,
-                    'event_title' => $event->summary,
-                    'event_description' => $event->description,
+                    'title' => $event->summary,
+                    'description' => $event->description,
                     'happening_on' => $event->start->format('Y-m-d\TH:i:sP'),
                     'duration_in_seconds' =>  $event->end->diffInSeconds($event->start),
-                    'reminder_enebled' => true,
+                    'reminder_enabled' => true,
                     'saved_on' => $googleCalendarLink,
                     'affected_ticket' => $event->ticket->id,
                 ];
