@@ -28,7 +28,7 @@ use Illuminate\Database\Eloquent\Model;
             'status_id',
             'response_id',
             'stated_issue',
-            'closed_at',
+            'closed_on',
             'raised_on',
         ];
 

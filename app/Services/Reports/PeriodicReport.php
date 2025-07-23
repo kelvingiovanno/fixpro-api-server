@@ -112,8 +112,8 @@ class PeriodicReport
     {
         $logIds = [
             'assessment' => TicketLogTypeEnum::ASSESSMENT->id(),
-            'owner_eval' => TicketLogTypeEnum::OWNER_EVALUATION_REQUEST->id(),
-            'work_progress' => TicketLogTypeEnum::WORK_PROGRESS->id(),
+            'work_eval_req' => TicketLogTypeEnum::WORK_EVALUATION_REQUEST->id(),
+            'invitation' => TicketLogTypeEnum::INVITATION->id(),
             'time_extension' => TicketLogTypeEnum::TIME_EXTENSION->id(),
         ];
 
@@ -126,10 +126,8 @@ class PeriodicReport
             $logs = $ticket->logs->sortBy('recorded_on')->values();
 
             $assessmentLog = $logs->firstWhere('type_id', $logIds['assessment']);
-            $evalLog = $logs->last(fn($log) => $log->type_id === $logIds['owner_eval']);
-            $progressLog = $logs->firstWhere('type_id', $logIds['work_progress']);
-
-            if (!$assessmentLog || !$evalLog || !$progressLog) continue;
+            $evalLog = $logs->last(fn($log) => $log->type_id === $logIds['work_eval_req']);
+            $progressLog = $logs->firstWhere('type_id', $logIds['invitation']);
 
             $responseTime = $ticket->raised_on->diffInSeconds($assessmentLog->recorded_on);
             
