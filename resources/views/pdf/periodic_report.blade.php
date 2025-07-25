@@ -384,7 +384,7 @@
         $w = $pdf->get_width();
         $h = $pdf->get_height();
 
-        $pageText = "Page {PAGE_NUM} of {PAGE_COUNT} | Periodic " . $header['date'];
+        $pageText = "Page {PAGE_NUM} of {PAGE_COUNT} | Periodic " . {{ $header['date'] }};
 
         $fullText = $pageText;
         $font = null;
